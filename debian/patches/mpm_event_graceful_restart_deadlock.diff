@@ -1,0 +1,38 @@
+# https://svn.apache.org/r1634526
+# https://bz.apache.org/bugzilla/show_bug.cgi?id=56960
+# 
+# Author: Jim Jagielski <jim@apache.org>
+# Date:   Mon Oct 27 12:46:45 2014 +0000
+# 
+#     Merge r1629577 from trunk:
+#     
+#     event: Fix worker-listener deadlock in graceful restart caused by get_worker()
+#     allocating new worker after ap_queue_info_term(), but not setting the
+#     have_idle_worker variable. PR 56960.
+#     
+#     Submitted By: Zin UDA
+#     Committed By: jkaluza
+#     
+#     Submitted by: jkaluza
+#     Reviewed/backported by: jim
+#     
+#     git-svn-id: https://svn.apache.org/repos/asf/httpd/httpd/branches/2.4.x@1634526 13f79535-47bb-0310-9956-ffa450edef68
+# 
+--- apache2.orig/server/mpm/event/event.c
++++ apache2/server/mpm/event/event.c
+@@ -1264,13 +1264,13 @@ static void get_worker(int *have_idle_wo
+     else
+         rc = ap_queue_info_try_get_idler(worker_queue_info);
+ 
+-    if (rc == APR_SUCCESS) {
++    if (rc == APR_SUCCESS || APR_STATUS_IS_EOF(rc)) {
+         *have_idle_worker_p = 1;
+     }
+     else if (!blocking && rc == APR_EAGAIN) {
+         *all_busy = 1;
+     }
+-    else if (!APR_STATUS_IS_EOF(rc)) {
++    else {
+         ap_log_error(APLOG_MARK, APLOG_ERR, rc, ap_server_conf, APLOGNO(00472)
+                      "ap_queue_info_wait_for_idler failed.  "
+                      "Attempting to shutdown process gracefully");

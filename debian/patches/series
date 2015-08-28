@@ -1,0 +1,19 @@
+fhs_compliance.patch
+no_LD_LIBRARY_PATH.patch
+suexec-CVE-2007-1742.patch
+customize_apxs.patch
+build_suexec-custom.patch
+pull_upstream_2.4.x_branch.patch
+# This patch is applied manually
+#suexec-custom.patch
+CVE-2014-3583_mod_proxy_fcgi.diff
+mpm_event_use_after_free.diff
+mod_ssl_memleak.diff
+mod_ssl-oscp_stapling_crash.diff
+CVE-2014-8109_mod_lua.diff
+CVE-2015-0228_mod_lua.diff
+CVE-2015-3183-chunk-header-parsing.diff
+CVE-2015-3185-ap_some_auth_required.diff
+define_restarts.diff
+mpm_event_graceful_restart_deadlock.diff
+mpm_event_crash.diff

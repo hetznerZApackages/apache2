@@ -1,0 +1,138 @@
+# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=779078
+#
+# https://bz.apache.org/bugzilla/show_bug.cgi?id=57268
+#
+# https://svn.apache.org/r1642858
+# https://svn.apache.org/r1645936
+# https://svn.apache.org/r1651656
+# https://svn.apache.org/r1664365
+#
+# Fix mpm_event crashes due to various race conditions
+#
+--- apache2.orig/server/mpm/event/event.c
++++ apache2/server/mpm/event/event.c
+@@ -767,7 +767,21 @@ static void set_signals(void)
+ #endif
+ }
+ 
+-static int start_lingering_close_common(event_conn_state_t *cs)
++static void notify_suspend(event_conn_state_t *cs)
++{
++    ap_run_suspend_connection(cs->c, cs->r);
++    cs->suspended = 1;
++    cs->c->sbh = NULL;
++}
++
++static void notify_resume(event_conn_state_t *cs, ap_sb_handle_t *sbh)
++{
++    cs->c->sbh = sbh;
++    cs->suspended = 0;
++    ap_run_resume_connection(cs->c, cs->r);
++}
++
++static int start_lingering_close_common(event_conn_state_t *cs, int in_worker)
+ {
+     apr_status_t rv;
+     struct timeout_queue *q;
+@@ -798,8 +812,13 @@ static int start_lingering_close_common(
+         cs->pub.state = CONN_STATE_LINGER_NORMAL;
+     }
+     apr_atomic_inc32(&lingering_count);
++    if (in_worker) { 
++        notify_suspend(cs);
++    }
++    else {
++        cs->c->sbh = NULL;
++    }
+     apr_thread_mutex_lock(timeout_mutex);
+-    cs->c->sbh = NULL;
+     TO_QUEUE_APPEND(*q, cs);
+     cs->pfd.reqevents = (
+             cs->pub.sense == CONN_SENSE_WANT_WRITE ? APR_POLLOUT :
+@@ -831,10 +850,11 @@ static int start_lingering_close_common(
+ static int start_lingering_close_blocking(event_conn_state_t *cs)
+ {
+     if (ap_start_lingering_close(cs->c)) {
++        notify_suspend(cs);
+         ap_push_pool(worker_queue_info, cs->p);
+         return 0;
+     }
+-    return start_lingering_close_common(cs);
++    return start_lingering_close_common(cs, 1);
+ }
+ 
+ /*
+@@ -858,7 +878,7 @@ static int start_lingering_close_nonbloc
+         ap_push_pool(worker_queue_info, cs->p);
+         return 0;
+     }
+-    return start_lingering_close_common(cs);
++    return start_lingering_close_common(cs, 0);
+ }
+ 
+ /*
+@@ -882,18 +902,6 @@ static int stop_lingering_close(event_co
+     return 0;
+ }
+ 
+-static void notify_suspend(event_conn_state_t *cs)
+-{
+-    ap_run_suspend_connection(cs->c, cs->r);
+-    cs->suspended = 1;
+-}
+-
+-static void notify_resume(event_conn_state_t *cs)
+-{
+-    cs->suspended = 0;
+-    ap_run_resume_connection(cs->c, cs->r);
+-}
+-
+ /*
+  * This runs before any non-MPM cleanup code on the connection;
+  * if the connection is currently suspended as far as modules
+@@ -904,7 +912,7 @@ static apr_status_t ptrans_pre_cleanup(v
+     event_conn_state_t *cs = dummy;
+ 
+     if (cs->suspended) {
+-        notify_resume(cs);
++        notify_resume(cs, NULL);
+     }
+     return APR_SUCCESS;
+ }
+@@ -1003,9 +1011,10 @@ static void process_socket(apr_thread_t
+     }
+     else {
+         c = cs->c;
+-        c->sbh = sbh;
+-        notify_resume(cs);
++        notify_resume(cs, sbh);
+         c->current_thread = thd;
++        /* Subsequent request on a conn, and thread number is part of ID */
++        c->id = conn_id;
+     }
+ 
+     if (c->clogging_input_filters && !c->aborted) {
+@@ -1083,7 +1092,6 @@ read_request:
+ 
+     if (cs->pub.state == CONN_STATE_LINGER) {
+         start_lingering_close_blocking(cs);
+-        notify_suspend(cs);
+     }
+     else if (cs->pub.state == CONN_STATE_CHECK_REQUEST_LINE_READABLE) {
+         /* It greatly simplifies the logic to use a single timeout value here
+@@ -1096,7 +1104,6 @@ read_request:
+          */
+         cs->expiration_time = ap_server_conf->keep_alive_timeout +
+                               apr_time_now();
+-        c->sbh = NULL;
+         notify_suspend(cs);
+         apr_thread_mutex_lock(timeout_mutex);
+         TO_QUEUE_APPEND(keepalive_q, cs);
+@@ -1114,7 +1121,6 @@ read_request:
+     }
+     else if (cs->pub.state == CONN_STATE_SUSPENDED) {
+         apr_atomic_inc32(&suspended_count);
+-        c->sbh = NULL;
+         notify_suspend(cs);
+     }
+ }
