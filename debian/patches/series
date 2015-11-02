@@ -1,3 +1,4 @@
+hetz_symlinkprotection.diff
 fhs_compliance.patch
 no_LD_LIBRARY_PATH.patch
 suexec-CVE-2007-1742.patch
@@ -17,3 +18,5 @@ CVE-2015-3185-ap_some_auth_required.diff
 define_restarts.diff
 mpm_event_graceful_restart_deadlock.diff
 mpm_event_crash.diff
+hetz_relax_ownership_enforcement.diff
+hetz_symlinkprotection.diff
