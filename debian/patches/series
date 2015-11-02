@@ -1,4 +1,3 @@
-hetz_symlinkprotection.diff
 fhs_compliance.patch
 no_LD_LIBRARY_PATH.patch
 suexec-CVE-2007-1742.patch
