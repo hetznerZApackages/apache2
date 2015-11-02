@@ -1,7 +1,7 @@
-Index: support/suexec.c
+Index: apache2/support/suexec.c
 ===================================================================
---- support.orig/suexec.c
-+++ support/suexec.c
+--- apache2.orig/support/suexec.c
++++ apache2/support/suexec.c
 @@ -565,6 +565,8 @@ int main(int argc, char *argv[])
          exit(119);
      }
