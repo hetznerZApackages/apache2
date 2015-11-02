@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u3+hetz1~exp1) jessie-hetz-experimental; urgency=medium
+
+  * Import for jessie 
+
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Mon, 02 Nov 2015 11:31:29 +0200
+
 apache2 (2.4.10-10+deb8u3) jessie; urgency=medium
 
   * Revert fix for deferred mpm switch for now, because it is at least not
