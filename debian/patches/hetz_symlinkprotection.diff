@@ -1,5 +1,3 @@
-Index: apache2/server/request.c
-===================================================================
 --- apache2.orig/server/request.c
 +++ apache2/server/request.c
 @@ -436,7 +436,7 @@ static int resolve_symlink(char *d, apr_
