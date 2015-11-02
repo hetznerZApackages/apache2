@@ -79,7 +79,7 @@ clean build build-arch build-indep binary binary-arch binary-indep: %:
 override_dh_auto_configure: generate-maintainer-scripts prebuild-checks support/suexec-custom.c
 	./configure --enable-layout=Debian --enable-so --with-program-name=apache2 \
 		--enable-suexec --with-suexec-caller=www-data \
-		--with-suexec-bin=/usr/lib/apache2/suexec --with-suexec-docroot=/var/www \
+		--with-suexec-bin=/usr/lib/apache2/suexec --with-suexec-docroot=/usr \
 		--with-suexec-userdir=public_html --with-suexec-logfile=/var/log/apache2/suexec.log \
 		--with-suexec-uidmin=100 --enable-suexec=shared --enable-log-config=static \
 		--with-apr=/usr/bin/apr-1-config --with-apr-util=/usr/bin/apu-1-config \

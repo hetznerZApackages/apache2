@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u3+hetz1~exp8) jessie-hetz-experimental; urgency=medium
+
+  * Suexec docroot is now /usr 
+
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Mon, 02 Nov 2015 15:12:59 +0200
+
 apache2 (2.4.10-10+deb8u3+hetz1~exp7) jessie-hetz-experimental; urgency=medium
 
   * Apply hetzner patches for sylink protection and to relax owner enforment in suexec
