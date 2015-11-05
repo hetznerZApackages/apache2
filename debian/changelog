@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u3+hetz1) jessie-hetz; urgency=medium
+
+  * Released 2.4.10-10+deb8u3+hetz1~exp8 as 2.4.10-10+deb8u3+hetz1
+
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Thu, 05 Nov 2015 11:19:06 +0200
+
 apache2 (2.4.10-10+deb8u3+hetz1~exp8) jessie-hetz-experimental; urgency=medium
 
   * Suexec docroot is now /usr 
