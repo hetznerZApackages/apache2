@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u3+hetz2) jessie-hetz; urgency=medium
+
+  * Released 2.4.10-10+deb8u3+hetz2~exp4 as 2.4.10-10+deb8u3+hetz2
+
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Thu, 07 Jan 2016 16:39:35 +0200
+
 apache2 (2.4.10-10+deb8u3+hetz2~exp4) jessie-hetz-experimental; urgency=medium
 
   * Build only i386 
