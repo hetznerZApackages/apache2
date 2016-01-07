@@ -34,7 +34,7 @@ Description: Apache HTTP Server
  configuration files, init scripts and support scripts.
 
 Package: apache2-data
-Architecture: all
+Architecture: i386
 Depends: ${misc:Depends}
 Replaces: apache2.2-common
 Conflicts: apache2.2-common (<< 2.3~)
@@ -296,7 +296,7 @@ Description: Apache HTTP Server configurable suexec program for mod_suexec
 
 Package: apache2-doc
 Section: doc
-Architecture: all
+Architecture: i386
 Pre-Depends: ${misc:Pre-Depends}
 Recommends: apache2
 Depends: ${misc:Depends}
