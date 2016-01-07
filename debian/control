@@ -14,7 +14,7 @@ Vcs-Git: git://anonscm.debian.org/pkg-apache/apache2.git
 Homepage: http://httpd.apache.org/
 
 Package: apache2
-Architecture: any
+Architecture: i386
 Pre-Depends: dpkg (>= 1.17.14)
 Depends: ${misc:Depends}, lsb-base, procps [!hurd-i386],
  perl, mime-support, apache2-bin (= ${binary:Version}),
@@ -48,7 +48,7 @@ Description: Apache HTTP Server (common files)
  error pages and static index files.
 
 Package: apache2-bin
-Architecture: any
+Architecture: i386
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}
 # MODULE_MAGIC_NUMBER_MAJOR from apache2/include/ap_mmn.h
 Provides: ${apache2:API}
@@ -68,7 +68,7 @@ Description: Apache HTTP Server (modules and other binary files)
  instance.
 
 Package: apache2-mpm-worker
-Architecture: any
+Architecture: i386
 Section: oldlibs
 Priority: extra
 Provides: httpd, httpd-cgi
@@ -78,7 +78,7 @@ Description: transitional worker MPM package for apache2
  can be safely removed after the installation is complete.
 
 Package: apache2-mpm-prefork
-Architecture: any
+Architecture: i386
 Section: oldlibs
 Priority: extra
 Provides: httpd, httpd-cgi
@@ -88,7 +88,7 @@ Description: transitional prefork MPM package for apache2
  can be safely removed after the installation is complete.
 
 Package: apache2-mpm-event
-Architecture: any
+Architecture: i386
 Section: oldlibs
 Priority: extra
 Provides: httpd, httpd-cgi
@@ -98,7 +98,7 @@ Description: transitional event MPM package for apache2
  can be safely removed after the  installation is complete.
 
 Package: apache2-mpm-itk
-Architecture: any
+Architecture: i386
 Section: oldlibs
 Priority: extra
 Provides: httpd, httpd-cgi
@@ -108,7 +108,7 @@ Description: transitional itk MPM package for apache2
  can be safely removed after the installation is complete.
 
 Package: apache2.2-bin
-Architecture: any
+Architecture: i386
 Section: oldlibs
 Priority: extra
 Breaks: gnome-user-share (<< 3.8.0-2~), libapache2-mod-dnssd (<< 0.6-3.1~)
@@ -119,7 +119,7 @@ Description: Transitional package for apache2-bin
  after the installation is complete.
 
 Package: apache2.2-common
-Architecture: any
+Architecture: i386
 Section: oldlibs
 Priority: extra
 Depends: ${misc:Depends}, apache2 (>= 2.3~)
@@ -217,7 +217,7 @@ Conflicts: libapache2-mod-bt,
   libapache2-mod-shib
 
 Package: libapache2-mod-proxy-html
-Architecture: any
+Architecture: i386
 Section: oldlibs
 Priority: extra
 Pre-Depends: dpkg (>= 1.17.14)
@@ -227,7 +227,7 @@ Description: Transitional package for apache2-bin
  after the installation is complete.
 
 Package: libapache2-mod-macro
-Architecture: any
+Architecture: i386
 Section: oldlibs
 Priority: extra
 Pre-Depends: dpkg (>= 1.17.14)
@@ -238,7 +238,7 @@ Description: Transitional package for apache2-bin
 
 
 Package: apache2-utils
-Architecture: any
+Architecture: i386
 Multi-Arch: foreign
 Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}
 Description: Apache HTTP Server (utility programs for web servers)
@@ -257,7 +257,7 @@ Description: Apache HTTP Server (utility programs for web servers)
   - httxt2dbm (Generate dbm files for use with RewriteMap)
 
 Package: apache2-suexec
-Architecture: any
+Architecture: i386
 Section: oldlibs
 Priority: extra
 Pre-Depends: dpkg (>= 1.17.14)
@@ -268,7 +268,7 @@ Description: transitional package for apache2-suexec-pristine
  removed after the installation is complete.
 
 Package: apache2-suexec-pristine
-Architecture: any
+Architecture: i386
 Depends: ${misc:Depends}, ${shlibs:Depends}, apache2-bin
 Replaces: apache2-suexec (<< 2.3~)
 Breaks: apache2-suexec (<< 2.3~)
@@ -280,7 +280,7 @@ Description: Apache HTTP Server standard suexec program for mod_suexec
 
 Package: apache2-suexec-custom
 Priority: extra
-Architecture: any
+Architecture: i386
 Depends: ${misc:Depends}, ${shlibs:Depends}, apache2-bin
 Replaces: apache2-suexec (<< 2.3~)
 Breaks: apache2-suexec (<< 2.3~)
@@ -310,7 +310,7 @@ Description: Apache HTTP Server (on-site documentation)
  running Apache HTTP server instance or by browsing the file system directly.
 
 Package: apache2-dev
-Architecture: any
+Architecture: i386
 Depends: ${misc:Depends}, openssl,
  libapr1-dev, libaprutil1-dev, debhelper (>= 9), ${perl:Depends}
 Provides: apache2-prefork-dev, apache2-threaded-dev, dh-apache2
@@ -334,7 +334,7 @@ Description: Apache HTTP Server (development headers)
 Package: apache2-dbg
 Section: debug
 Priority: extra
-Architecture: any
+Architecture: i386
 Depends: ${misc:Depends}, apache2-bin (= ${binary:Version})
 Description: Apache debugging symbols
  The Apache HTTP Server Project's goal is to build a secure, efficient and
