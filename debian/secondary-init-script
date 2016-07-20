@@ -9,8 +9,6 @@
 # Short-Description: Start/stop apache2 web server (config /etc/apache2-XXX)
 ### END INIT INFO
 
-set -e
-
 #
 # this init script can be installed as /etc/init.d/apache2-XXX
 #

@@ -430,7 +430,7 @@ sub threaded {
     if ( $? != 0 ) {
 
         # config doesn't work
-        if ( -e "$enabldir/mpm_prefork.load" || -e "$enabldir/mpm_itk.load" )
+        if ( -e "$enabldir/mpm_prefork.load" )
         {
             return 0;
         }
