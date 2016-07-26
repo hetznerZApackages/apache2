@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u5+hetz1) jessie-hetz; urgency=high
+
+  * Released 2.4.10-10+deb8u5+hetz1~exp1 as 2.4.10-10+deb8u5+hetz1
+
+ -- Johan Basson <johan.basson@hetzner.co.za>  Tue, 26 Jul 2016 14:41:56 +0200
+
 apache2 (2.4.10-10+deb8u5+hetz1~exp1) jessie-hetz-experimental; urgency=high
 
   * Import from upstream 
