@@ -1,3 +1,31 @@
+apache2 (2.4.10-10+deb8u5+hetz1~exp1) jessie-hetz-experimental; urgency=high
+
+  * Import from upstream 
+
+ -- Johan Basson <johan.basson@hetzner.co.za>  Tue, 26 Jul 2016 13:37:57 +0200
+
+apache2 (2.4.10-10+deb8u5) jessie-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * CVE-2016-5387: Sets environmental variable based on user supplied Proxy
+    request header.
+    Don't pass through HTTP_PROXY in server/util_script.c
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 20 Jul 2016 06:50:37 +0200
+
+apache2 (2.4.10-10+deb8u4) jessie; urgency=medium
+
+  * Add versioned replaces/breaks for libapache2-mod-macro to apache2,
+    for the config files in /etc. Closes: #806326
+  * Fix split-logfile to work with current perl. Closes: #803472
+  * Fix tests on deferred mpm switch. Add special casing for mpm_itk,
+    which is not an mpm anymore, despite the name. Closes: #789914
+    Closes: #791902
+  * Fix secondary-init-script to not source the main init script with 'set -e'.
+    Closes: #803177
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 28 Nov 2015 15:02:23 +0100
+
 apache2 (2.4.10-10+deb8u3+hetz2) jessie-hetz; urgency=medium
 
   * Released 2.4.10-10+deb8u3+hetz2~exp4 as 2.4.10-10+deb8u3+hetz2

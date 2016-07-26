@@ -209,10 +209,10 @@ sub load_modules
 		my $file = $_;
 		next if $file !~ m/\.load$/;
 		$file =~ s/\.load//;
-		if ($file =~ /mpm_(\w+)/ && $file ne 'mpm_itk')
+		if ($file =~ /mpm_(?:event|worker|prefork)/)
 		{
 			$MPM = $1 if $MPM eq 'invalid';
-			if(grep { $_ =~ m/^mpm_/ } @MODULES)
+			if(grep { $_ =~ m/^mpm_(?:event|worker|prefork)/ } @MODULES)
 			{
 				fail("There is more than one MPM loaded. Do not proceed due to undefined results", 1);
 			}

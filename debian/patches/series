@@ -19,3 +19,5 @@ mpm_event_graceful_restart_deadlock.diff
 mpm_event_crash.diff
 hetz_relax_ownership_enforcement.diff
 hetz_symlinkprotection.diff
+split_logfile-strict.patch
+CVE-2016-5387.patch
