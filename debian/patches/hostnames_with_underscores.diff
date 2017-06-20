@@ -1,0 +1,11 @@
+--- apache2.orig/server/vhost.c
++++ apache2/server/vhost.c
+@@ -758,7 +758,7 @@ static apr_status_t strict_hostname_chec
+         if (!apr_isascii(*ch)) {
+             goto bad;
+         }
+-        else if (apr_isalpha(*ch) || *ch == '-') {
++        else if (apr_isalpha(*ch) || *ch == '-' || *ch == '_') {
+             is_dotted_decimal = 0;
+         }
+         else if (ch[0] == '.') {

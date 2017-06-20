@@ -19,3 +19,13 @@ mpm_event_graceful_restart_deadlock.diff
 mpm_event_crash.diff
 split_logfile-strict.patch
 CVE-2016-5387.patch
+mod_socache_memcache_idle_timeout.patch
+mod_proxy_fcgi_304_body.patch
+CVE-2016-2161-mod_auth_digest_segfault.diff
+CVE-2016-0736-mod_session_crypto-padding-oracle.diff
+CVE-2016-8743-enforce_http.diff
+hostnames_with_underscores.diff
+CVE-2017-3167.diff
+CVE-2017-3169.diff
+CVE-2017-7668.diff
+CVE-2017-7679.diff
