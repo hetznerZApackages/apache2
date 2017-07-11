@@ -1,3 +1,9 @@
+apache2 (2.4.10-1+hetz1~exp1) jessie-hetz-experimental; urgency=high
+
+  * New upstream version 2.4.10-1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Tue, 11 Jul 2017 08:27:08 +0200
+
 apache2 (2.4.10-10+deb8u5+hetz1) jessie-hetz; urgency=high
 
   * Released 2.4.10-10+deb8u5+hetz1~exp1 as 2.4.10-10+deb8u5+hetz1
