@@ -1,8 +1,68 @@
-apache2 (2.4.10-1+hetz1~exp1) jessie-hetz-experimental; urgency=high
+apache2 (2.4.10-10+deb8u9+hetz1~exp1) jessie-hetz-experimental; urgency=medium
 
-  * New upstream version 2.4.10-1
+  * Update Jessie package with latest security patches
 
- -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Tue, 11 Jul 2017 08:27:08 +0200
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Tue, 11 Jul 2017 08:39:41 +0200
+
+apache2 (2.4.10-10+deb8u9) jessie-security; urgency=medium
+
+  * CVE-2017-3167: Authentication bypass with ap_get_basic_auth_pw()
+  * CVE-2017-3169: mod_ssl NULL pointer dereference
+  * CVE-2017-7668: Buffer overrun in ap_find_token()
+  * CVE-2017-7679: mod_mime buffer overread
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 20 Jun 2017 21:02:39 +0200
+
+apache2 (2.4.10-10+deb8u8) jessie-security; urgency=medium
+
+  * CVE-2016-8743: Enforce more HTTP conformance for request lines and
+    request headers, to prevent response splitting and cache pollution
+    by malicious clients or downstream proxies.
+    If this causes problems with non-conforming clients, some checks can
+    be relaxed by adding the new directive 'HttpProtocolOptions unsafe'
+    to the configuration.
+    Differently than the upstream 2.4.25 release which will also be in the
+    Debian 9 (stretch) release, this update for Debian 8 (jessie) accepts
+    underscores in host and domain names even while 'HttpProtocolOptions
+    strict' is in effect.
+    More information is available at
+    http://httpd.apache.org/docs/2.4/mod/core.html#httpprotocoloptions
+  * CVE-2016-0736: mod_session_crypto: Prevent padding oracle attack.
+  * CVE-2016-2161: mod_auth_digest: Prevent segfaults when the shared memory
+    space is exhausted.
+  * Activate mod_reqtimeout in new installs and during updates from
+    before 2.4.10-10+deb8u8. It was wrongly not activated in new installs
+    since jessie. This made the default installation vulnerable to some
+    DoS attacks.
+  * Don't run 2.2 to 2.4 upgrade logic again when upgrading from
+    2.4.10-10+deb8u*. Closes: #836818
+
+ -- Stefan Fritsch <sf@debian.org>  Fri, 24 Feb 2017 19:36:41 +0100
+
+apache2 (2.4.10-10+deb8u7) jessie; urgency=medium
+
+  * Fix installation of /lib/systemd/system/apache2.service.d/forking.conf.
+
+ -- Julien Cristau <jcristau@debian.org>  Thu, 15 Sep 2016 22:42:19 +0200
+
+apache2 (2.4.10-10+deb8u6) jessie; urgency=medium
+
+  * Fix race condition and logical error in init script. Thanks to Thomas
+    Stangner for the patch. Closes: #822144
+  * Remove links to manpages.debian.org in default index.html to avoid
+    broken robots doing a DoS on the site. Closes: #821313
+  * mod_socache_memcache: Increase idle timeout to 15s to allow keep-alive
+    connections. Closes: #803035
+  * mod_proxy_fcgi: Fix wrong behavior with 304 responses. Closes: #827472
+  * Correct systemd-sysv-generator behavior by customizing some parameters.
+    This fixes 'systemctl status' returning incorrect results.
+    Closes: #827444
+  * mod_proxy_html: Add missing config file mods-available/proxy_html.conf.
+    This is intentionally not enabled during upgrade, to make it less
+    likely to break existing setups. It will be enabled by a a2dismod/a2enmod
+    cycle, though. Closes: #827258
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 07 Aug 2016 12:58:11 +0200
 
 apache2 (2.4.10-10+deb8u5+hetz1) jessie-hetz; urgency=high
 

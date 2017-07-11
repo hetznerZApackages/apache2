@@ -125,7 +125,7 @@ case "$1" in
 	fi
 	# 2) an apache2.2-common conffiles exists or the 2.2 apache2 package is
 	# installed
-	if [ -n "$2" ] || obsolete_conffile_exists ; then
+	if dpkg --compare-versions "$2" lt-nl 2.4 || ( [ -z "$2" ] && obsolete_conffile_exists ) ; then
 		prepare_rm_conffile
 		prepare_mv_conffile
 	fi

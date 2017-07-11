@@ -205,7 +205,7 @@ enable_default_modules()
 				alias dir autoindex \
 				env mime negotiation setenvif \
 				filter deflate \
-				status ; do
+				status reqtimeout ; do
 			a2enmod -m -q $module
 		done
 	elif we_are_upgrading_from_wheezy $@; then
@@ -222,6 +222,14 @@ enable_default_modules()
 				a2enmod -m -q $module
 			fi
 		done
+	fi
+	if [ -z "$2" ] ; then
+		return 0
+	fi
+	# mod_reqtimeout activation was missed since jessie
+	if dpkg --compare-versions "$2" lt "2.4.10-10+deb8u8"
+	then
+			a2enmod -m -q reqtimeout
 	fi
 }
 
@@ -270,6 +278,21 @@ install_default_site()
 	fi
 }
 
+is_problematic_index_html () {
+	local FILE="$1"
+	[ -f "$FILE" ] || return 1
+	local MD5=$(md5sum "$FILE" 2> /dev/null |cut -d' ' -f 1)
+	[ -n "$MD5" ] || return 1
+	grep -q "$MD5" <<- EOF
+	1736dfc80cf1f5a8966c096a0b094377
+	776221a94e5a174dc2396c0f3f6b6a74
+	51a41c3207374dad24ec64a0f2646bdc
+	c481228d439cbb54bdcedbaec5bbb11a
+	3183a3d71d86bcc88aaf3ca5cbbefb45
+	74cec59a19e5d16f7cc6a2445e35fa3b
+	EOF
+}
+
 # XXX: This site is installed in the apache2-data package. Should the postinst
 # scriptlet move there too?
 install_default_files()
@@ -292,6 +315,14 @@ install_default_files()
 		if $do_copy ; then
 			cp /usr/share/apache2/default-site/index.html /var/www/html/index.html
 		fi
+	else
+		# see #821313
+		for dir in /var/www /var/www/html ; do
+			local file=$dir/index.html
+			if is_problematic_index_html $file ; then
+				cp /usr/share/apache2/default-site/index.html $file
+			fi
+		done
 	fi
 }
 

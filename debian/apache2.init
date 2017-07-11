@@ -139,6 +139,7 @@ apache_wait_start() {
 
 apache_wait_stop() {
 	local STATUS=$1
+	local METH=$2
 
 	if [ $STATUS != 0 ] ; then
 	        return $STATUS
@@ -146,11 +147,18 @@ apache_wait_stop() {
 
 	PIDTMP=$(pidofproc -p $PIDFILE $DAEMON)
 	if [ -n "${PIDTMP:-}" ] && kill -0 "${PIDTMP:-}" 2> /dev/null; then
+
+	        if [ "$METH" = "kill" ]; then
+	            killproc -p $PIDFILE $DAEMON
+	        else
+	            $APACHE2CTL $METH > /dev/null 2>&1
+	        fi
+
 	        local i=0
 	        while kill -0 "${PIDTMP:-}" 2> /dev/null;  do
 	                if [ $i = '60' ]; then
-	                        break
 	                        STATUS=2
+	                        break
 	                fi
 	                [ "$VERBOSE" != no ] && log_progress_msg "."
 	                sleep 1
@@ -223,15 +231,13 @@ do_stop()
 	fi
 
 	if [ $AP_RET = 2 ] && apache_conftest ; then
-	        $APACHE2CTL $STOP > /dev/null 2>&1
-	        apache_wait_stop $?
+	        apache_wait_stop $? $STOP
 	        return $?
 	else
 	        if [ $AP_RET = 2 ]; then
-					clear_error_msg
+	                clear_error_msg
 	                APACHE2_INIT_MESSAGE="The apache2$DIR_SUFFIX configtest failed, so we are trying to kill it manually. This is almost certainly suboptimal, so please make sure your system is working as you'd expect now!"
-	                killproc -p $PIDFILE $DAEMON
-	                apache_wait_stop $?
+	                apache_wait_stop $? "kill"
 	                return $?
 	        elif [ $AP_RET = 1 ] ; then
 	                APACHE2_INIT_MESSAGE="There are processes named 'apache2' running which do not match your pid file which are left untouched in the name of safety, Please review the situation by hand".

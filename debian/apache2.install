@@ -5,3 +5,4 @@ debian/apache2ctl				/usr/sbin
 debian/a2query					/usr/sbin
 debian/ask-for-passphrase			/usr/share/apache2/
 debian/debhelper/apache2-maintscript-helper	/usr/share/apache2/
+debian/forking.conf				/lib/systemd/system/apache2.service.d
