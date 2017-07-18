@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u10) jessie-security; urgency=medium
+
+  * CVE-2017-9788: mod_auth_digest: Fix leak of uninitialized memory
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 18 Jul 2017 20:29:16 +0200
+
 apache2 (2.4.10-10+deb8u9) jessie-security; urgency=medium
 
   * CVE-2017-3167: Authentication bypass with ap_get_basic_auth_pw()
