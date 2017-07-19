@@ -1,3 +1,15 @@
+apache2 (2.4.10-10+deb8u10+hetz1~exp1) jessie-hetz-experimental; urgency=medium
+
+  * Update to upstream to patch: CVE-2017-9788
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Wed, 19 Jul 2017 11:43:00 +0200
+
+apache2 (2.4.10-10+deb8u10) jessie-security; urgency=medium
+
+  * CVE-2017-9788: mod_auth_digest: Fix leak of uninitialized memory
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 18 Jul 2017 20:29:16 +0200
+
 apache2 (2.4.10-10+deb8u9+hetz1~exp1) jessie-hetz-experimental; urgency=medium
 
   * Update Jessie package with latest security patches
