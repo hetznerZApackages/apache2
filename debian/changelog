@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u10+hetz1) jessie-hetz; urgency=medium
+
+  * Released 2.4.10-10+deb8u10+hetz1~exp1 as 2.4.10-10+deb8u10+hetz1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Wed, 19 Jul 2017 11:48:43 +0200
+
 apache2 (2.4.10-10+deb8u10+hetz1~exp1) jessie-hetz-experimental; urgency=medium
 
   * Update to upstream to patch: CVE-2017-9788
