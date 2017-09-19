@@ -39,7 +39,7 @@
  * the request will be logged to the log file(s) defined outside
  * the virtual host section. If a TransferLog or CustomLog directive
  * appears in the VirtualHost section, the log files defined outside
- * the VirtualHost will _not_ be used. This makes this module compatable
+ * the VirtualHost will _not_ be used. This makes this module compatible
  * with the CLF and config log modules, where the use of TransferLog
  * inside the VirtualHost section overrides its use outside.
  *
@@ -101,6 +101,9 @@
  * %...{format}t:  The time, in the form given by format, which should
  *                 be in strftime(3) format.
  * %...T:  the time taken to serve the request, in seconds.
+ * %...{s}T:  the time taken to serve the request, in seconds, same as %T.
+ * %...{us}T:  the time taken to serve the request, in micro seconds, same as %D.
+ * %...{ms}T:  the time taken to serve the request, in milliseconds.
  * %...D:  the time taken to serve the request, in micro seconds.
  * %...u:  remote user (from auth; may be bogus if return status (%s) is 401)
  * %...U:  the URL path requested.
@@ -262,6 +265,7 @@ typedef struct {
     apr_array_header_t *format;
     void *log_writer;
     char *condition_var;
+    int inherit;
     ap_expr_info_t *condition_expr;
     /** place of definition or NULL if already checked */
     const ap_directive_t *directive;
@@ -431,6 +435,12 @@ static const char *log_header_in(request_rec *r, char *a)
     return ap_escape_logitem(r->pool, apr_table_get(r->headers_in, a));
 }
 
+static const char *log_trailer_in(request_rec *r, char *a)
+{
+    return ap_escape_logitem(r->pool, apr_table_get(r->trailers_in, a));
+}
+
+
 static APR_INLINE char *find_multiple_headers(apr_pool_t *pool,
                                               const apr_table_t *table,
                                               const char *key)
@@ -512,6 +522,11 @@ static const char *log_header_out(request_rec *r, char *a)
     }
 
     return ap_escape_logitem(r->pool, cp);
+}
+
+static const char *log_trailer_out(request_rec *r, char *a)
+{
+    return ap_escape_logitem(r->pool, apr_table_get(r->trailers_out, a));
 }
 
 static const char *log_note(request_rec *r, char *a)
@@ -754,16 +769,28 @@ static const char *log_request_time(request_rec *r, char *a)
     }
 }
 
-static const char *log_request_duration(request_rec *r, char *a)
-{
-    apr_time_t duration = get_request_end_time(r) - r->request_time;
-    return apr_psprintf(r->pool, "%" APR_TIME_T_FMT, apr_time_sec(duration));
-}
-
 static const char *log_request_duration_microseconds(request_rec *r, char *a)
-{
+{    
     return apr_psprintf(r->pool, "%" APR_TIME_T_FMT,
                         (get_request_end_time(r) - r->request_time));
+}
+
+static const char *log_request_duration_scaled(request_rec *r, char *a)
+{
+    apr_time_t duration = get_request_end_time(r) - r->request_time;
+    if (*a == '\0' || !strcasecmp(a, "s")) {
+        duration = apr_time_sec(duration);
+    }
+    else if (!strcasecmp(a, "ms")) {
+        duration = apr_time_as_msec(duration);
+    }
+    else if (!strcasecmp(a, "us")) {
+    }
+    else {
+        /* bogus format */
+        return a;
+    }
+    return apr_psprintf(r->pool, "%" APR_TIME_T_FMT, duration);
 }
 
 /* These next two routines use the canonical name:port so that log
@@ -916,7 +943,7 @@ static char *parse_log_misc_string(apr_pool_t *p, log_format_item *it,
 static char *parse_log_item(apr_pool_t *p, log_format_item *it, const char **sa)
 {
     const char *s = *sa;
-    ap_log_handler *handler;
+    ap_log_handler *handler = NULL;
 
     if (*s != '%') {
         return parse_log_misc_string(p, it, sa);
@@ -986,7 +1013,16 @@ static char *parse_log_item(apr_pool_t *p, log_format_item *it, const char **sa)
             break;
 
         default:
-            handler = (ap_log_handler *)apr_hash_get(log_hash, s++, 1);
+            /* check for '^' + two character format first */
+            if (*s == '^' && *(s+1) && *(s+2)) { 
+                handler = (ap_log_handler *)apr_hash_get(log_hash, s, 3); 
+                if (handler) { 
+                   s += 3;
+                }
+            }
+            if (!handler) {  
+                handler = (ap_log_handler *)apr_hash_get(log_hash, s++, 1);  
+            }
             if (!handler) {
                 char dummy[2];
 
@@ -1137,12 +1173,13 @@ static int config_log_transaction(request_rec *r, config_log_state *cls,
     if (!log_writer) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00645)
                 "log writer isn't correctly setup");
-         return HTTP_INTERNAL_SERVER_ERROR;
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
     rv = log_writer(r, cls->log_writer, strs, strl, format->nelts, len);
-    if (rv != APR_SUCCESS)
-        ap_log_rerror(APLOG_MARK, APLOG_WARNING, rv, r, APLOGNO(00646) "Error writing to %s",
-                      cls->fname);
+    if (rv != APR_SUCCESS) {
+        ap_log_rerror(APLOG_MARK, APLOG_WARNING, rv, r, APLOGNO(00646)
+                      "Error writing to %s", cls->fname);
+    }
     return OK;
 }
 
@@ -1170,12 +1207,15 @@ static int multi_log_transaction(request_rec *r)
             config_log_transaction(r, cls, mls->default_format);
         }
     }
-    else if (mls->server_config_logs) {
+
+    if (mls->server_config_logs) {
         clsarray = (config_log_state *) mls->server_config_logs->elts;
         for (i = 0; i < mls->server_config_logs->nelts; ++i) {
             config_log_state *cls = &clsarray[i];
 
-            config_log_transaction(r, cls, mls->default_format);
+            if (cls->inherit || !mls->config_logs->nelts) {
+                config_log_transaction(r, cls, mls->default_format);
+            }
         }
     }
 
@@ -1300,6 +1340,33 @@ static const char *add_custom_log(cmd_parms *cmd, void *dummy, const char *fn,
     return err_string;
 }
 
+static const char *add_global_log(cmd_parms *cmd, void *dummy, const char *fn,
+                                  const char *fmt, const char *envclause) {
+    multi_log_state *mls = ap_get_module_config(cmd->server->module_config,
+                                                &log_config_module);
+    config_log_state *clsarray;
+    config_log_state *cls;
+    const char *ret;
+
+    const char *err = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+
+    if (err) {
+        return err;
+    }
+
+    /* Add a custom log through the normal channel */
+    ret = add_custom_log(cmd, dummy, fn, fmt, envclause);
+
+    /* Set the inherit flag unless there was some error */
+    if (ret == NULL) {
+        clsarray = (config_log_state*)mls->config_logs->elts;
+        cls = &clsarray[mls->config_logs->nelts-1];
+        cls->inherit = 1;
+    }
+
+    return ret;
+}
+
 static const char *set_transfer_log(cmd_parms *cmd, void *dummy,
                                     const char *fn)
 {
@@ -1324,6 +1391,8 @@ static const command_rec config_log_cmds[] =
 AP_INIT_TAKE23("CustomLog", add_custom_log, NULL, RSRC_CONF,
      "a file name, a custom log format string or format name, "
      "and an optional \"env=\" or \"expr=\" clause (see docs)"),
+AP_INIT_TAKE23("GlobalLog", add_global_log, NULL, RSRC_CONF,
+     "Same as CustomLog, but forces virtualhosts to inherit the log"),
 AP_INIT_TAKE1("TransferLog", set_transfer_log, NULL, RSRC_CONF,
      "the filename of the access log"),
 AP_INIT_TAKE12("LogFormat", log_format, NULL, RSRC_CONF,
@@ -1516,7 +1585,7 @@ static void ap_register_log_handler(apr_pool_t *p, char *tag,
     log_struct->func = handler;
     log_struct->want_orig_default = def;
 
-    apr_hash_set(log_hash, tag, 1, (const void *)log_struct);
+    apr_hash_set(log_hash, tag, strlen(tag), (const void *)log_struct);
 }
 static ap_log_writer_init *ap_log_set_writer_init(ap_log_writer_init *handle)
 {
@@ -1690,10 +1759,13 @@ static int log_pre_config(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp)
         log_pfn_register(p, "k", log_requests_on_connection, 0);
         log_pfn_register(p, "r", log_request_line, 1);
         log_pfn_register(p, "D", log_request_duration_microseconds, 1);
-        log_pfn_register(p, "T", log_request_duration, 1);
+        log_pfn_register(p, "T", log_request_duration_scaled, 1);
         log_pfn_register(p, "U", log_request_uri, 1);
         log_pfn_register(p, "s", log_status, 1);
         log_pfn_register(p, "R", log_handler, 1);
+
+        log_pfn_register(p, "^ti", log_trailer_in, 0);
+        log_pfn_register(p, "^to", log_trailer_out, 0);
     }
 
     /* reset to default conditions */

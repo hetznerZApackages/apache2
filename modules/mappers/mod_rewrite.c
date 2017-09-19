@@ -142,59 +142,61 @@ static const char* really_last_key = "rewrite_really_last";
 #define REDIRECT_ENVVAR_SCRIPT_URL "REDIRECT_" ENVVAR_SCRIPT_URL
 #define ENVVAR_SCRIPT_URI "SCRIPT_URI"
 
-#define CONDFLAG_NONE               1<<0
-#define CONDFLAG_NOCASE             1<<1
-#define CONDFLAG_NOTMATCH           1<<2
-#define CONDFLAG_ORNEXT             1<<3
-#define CONDFLAG_NOVARY             1<<4
+#define CONDFLAG_NONE               (1<<0)
+#define CONDFLAG_NOCASE             (1<<1)
+#define CONDFLAG_NOTMATCH           (1<<2)
+#define CONDFLAG_ORNEXT             (1<<3)
+#define CONDFLAG_NOVARY             (1<<4)
 
-#define RULEFLAG_NONE               1<<0
-#define RULEFLAG_FORCEREDIRECT      1<<1
-#define RULEFLAG_LASTRULE           1<<2
-#define RULEFLAG_NEWROUND           1<<3
-#define RULEFLAG_CHAIN              1<<4
-#define RULEFLAG_IGNOREONSUBREQ     1<<5
-#define RULEFLAG_NOTMATCH           1<<6
-#define RULEFLAG_PROXY              1<<7
-#define RULEFLAG_PASSTHROUGH        1<<8
-#define RULEFLAG_QSAPPEND           1<<9
-#define RULEFLAG_NOCASE             1<<10
-#define RULEFLAG_NOESCAPE           1<<11
-#define RULEFLAG_NOSUB              1<<12
-#define RULEFLAG_STATUS             1<<13
-#define RULEFLAG_ESCAPEBACKREF      1<<14
-#define RULEFLAG_DISCARDPATHINFO    1<<15
-#define RULEFLAG_QSDISCARD          1<<16
-#define RULEFLAG_END                1<<17
+#define RULEFLAG_NONE               (1<<0)
+#define RULEFLAG_FORCEREDIRECT      (1<<1)
+#define RULEFLAG_LASTRULE           (1<<2)
+#define RULEFLAG_NEWROUND           (1<<3)
+#define RULEFLAG_CHAIN              (1<<4)
+#define RULEFLAG_IGNOREONSUBREQ     (1<<5)
+#define RULEFLAG_NOTMATCH           (1<<6)
+#define RULEFLAG_PROXY              (1<<7)
+#define RULEFLAG_PASSTHROUGH        (1<<8)
+#define RULEFLAG_QSAPPEND           (1<<9)
+#define RULEFLAG_NOCASE             (1<<10)
+#define RULEFLAG_NOESCAPE           (1<<11)
+#define RULEFLAG_NOSUB              (1<<12)
+#define RULEFLAG_STATUS             (1<<13)
+#define RULEFLAG_ESCAPEBACKREF      (1<<14)
+#define RULEFLAG_DISCARDPATHINFO    (1<<15)
+#define RULEFLAG_QSDISCARD          (1<<16)
+#define RULEFLAG_END                (1<<17)
+#define RULEFLAG_QSLAST             (1<<19)
 
 /* return code of the rewrite rule
  * the result may be escaped - or not
  */
-#define ACTION_NORMAL               1<<0
-#define ACTION_NOESCAPE             1<<1
-#define ACTION_STATUS               1<<2
+#define ACTION_NORMAL               (1<<0)
+#define ACTION_NOESCAPE             (1<<1)
+#define ACTION_STATUS               (1<<2)
 
 
-#define MAPTYPE_TXT                 1<<0
-#define MAPTYPE_DBM                 1<<1
-#define MAPTYPE_PRG                 1<<2
-#define MAPTYPE_INT                 1<<3
-#define MAPTYPE_RND                 1<<4
-#define MAPTYPE_DBD                 1<<5
-#define MAPTYPE_DBD_CACHE           1<<6
+#define MAPTYPE_TXT                 (1<<0)
+#define MAPTYPE_DBM                 (1<<1)
+#define MAPTYPE_PRG                 (1<<2)
+#define MAPTYPE_INT                 (1<<3)
+#define MAPTYPE_RND                 (1<<4)
+#define MAPTYPE_DBD                 (1<<5)
+#define MAPTYPE_DBD_CACHE           (1<<6)
 
-#define ENGINE_DISABLED             1<<0
-#define ENGINE_ENABLED              1<<1
+#define ENGINE_DISABLED             (1<<0)
+#define ENGINE_ENABLED              (1<<1)
 
-#define OPTION_NONE                 1<<0
-#define OPTION_INHERIT              1<<1
-#define OPTION_INHERIT_BEFORE       1<<2
-#define OPTION_NOSLASH              1<<3
-#define OPTION_ANYURI               1<<4
-#define OPTION_MERGEBASE            1<<5
-#define OPTION_INHERIT_DOWN         1<<6
-#define OPTION_INHERIT_DOWN_BEFORE  1<<7
-#define OPTION_IGNORE_INHERIT       1<<8
+#define OPTION_NONE                 (1<<0)
+#define OPTION_INHERIT              (1<<1)
+#define OPTION_INHERIT_BEFORE       (1<<2)
+#define OPTION_NOSLASH              (1<<3)
+#define OPTION_ANYURI               (1<<4)
+#define OPTION_MERGEBASE            (1<<5)
+#define OPTION_INHERIT_DOWN         (1<<6)
+#define OPTION_INHERIT_DOWN_BEFORE  (1<<7)
+#define OPTION_IGNORE_INHERIT       (1<<8)
+#define OPTION_IGNORE_CONTEXT_INFO  (1<<9)
 
 #ifndef RAND_MAX
 #define RAND_MAX 32767
@@ -442,8 +444,7 @@ static void do_rewritelog(request_rec *r, int level, char *perdir,
     if (!APLOG_R_IS_LEVEL(r, APLOG_DEBUG + level))
         return;
 
-    rhost = ap_get_remote_host(r->connection, r->per_dir_config,
-                               REMOTE_NOLOOKUP, NULL);
+    rhost = ap_get_useragent_host(r, REMOTE_NOLOOKUP, NULL);
     rname = ap_get_remote_logname(r);
 
     for (redir=0, req=r; req->prev; req = req->prev) {
@@ -472,6 +473,7 @@ static void do_rewritelog(request_rec *r, int level, char *perdir,
 
     AP_REWRITE_LOG((uintptr_t)r, level, r->main ? 0 : 1, (char *)ap_get_server_name(r), logline);
 
+    /* Intentional no APLOGNO */
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG + level, 0, r, "%s", logline);
 
     return;
@@ -557,6 +559,14 @@ static unsigned is_absolute_uri(char *uri, int *supportsqs)
         else if (!strncasecmp(uri, "ttps://", 7)) { /* https://  */
             *sqs = 1;
             return 8;
+        }
+        else if (!strncasecmp(uri, "2://", 4)) {    /* h2://     */
+            *sqs = 1;
+            return 5;
+        }
+        else if (!strncasecmp(uri, "2c://", 5)) {   /* h2c://    */
+            *sqs = 1;
+            return 6;
         }
         break;
 
@@ -723,7 +733,8 @@ static char *escape_absolute_uri(apr_pool_t *p, char *uri, unsigned scheme)
  * split out a QUERY_STRING part from
  * the current URI string
  */
-static void splitout_queryargs(request_rec *r, int qsappend, int qsdiscard)
+static void splitout_queryargs(request_rec *r, int qsappend, int qsdiscard, 
+                               int qslast)
 {
     char *q;
     int split;
@@ -742,7 +753,8 @@ static void splitout_queryargs(request_rec *r, int qsappend, int qsdiscard)
         rewritelog((r, 2, NULL, "discarding query string"));
     }
 
-    q = ap_strchr(r->filename, '?');
+    q = qslast ? ap_strrchr(r->filename, '?') : ap_strchr(r->filename, '?');
+
     if (q != NULL) {
         char *olduri;
         apr_size_t len;
@@ -750,18 +762,23 @@ static void splitout_queryargs(request_rec *r, int qsappend, int qsdiscard)
         olduri = apr_pstrdup(r->pool, r->filename);
         *q++ = '\0';
         if (qsappend) {
-            r->args = apr_pstrcat(r->pool, q, "&", r->args, NULL);
+            if (*q) { 
+                r->args = apr_pstrcat(r->pool, q, "&" , r->args, NULL);
+            }
         }
         else {
             r->args = apr_pstrdup(r->pool, q);
         }
 
-        len = strlen(r->args);
-        if (!len) {
-            r->args = NULL;
-        }
-        else if (r->args[len-1] == '&') {
-            r->args[len-1] = '\0';
+        if (r->args) { 
+           len = strlen(r->args);
+      
+           if (!len) {
+               r->args = NULL;
+           }
+           else if (r->args[len-1] == '&') {
+               r->args[len-1] = '\0';
+           }
         }
 
         rewritelog((r, 3, NULL, "split uri=%s -> uri=%s, args=%s", olduri,
@@ -909,7 +926,7 @@ static int prefix_stat(const char *path, apr_pool_t *pool)
 /*
  * substitute the prefix path 'match' in 'input' with 'subst' (RewriteBase)
  */
-static char *subst_prefix_path(request_rec *r, char *input, char *match,
+static char *subst_prefix_path(request_rec *r, char *input, const char *match,
                                const char *subst)
 {
     apr_size_t len = strlen(match);
@@ -1334,9 +1351,16 @@ static char *lookup_map_dbd(request_rec *r, char *key, const char *label)
     const char *errmsg;
     apr_dbd_results_t *res = NULL;
     apr_dbd_row_t *row = NULL;
-    const char *ret = NULL;
+    char *ret = NULL;
     int n = 0;
     ap_dbd_t *db = dbd_acquire(r);
+    
+    if (db == NULL) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02963)
+                      "rewritemap: No db handle available! "
+                      "Check your database access");
+        return NULL;
+   }
 
     stmt = apr_hash_get(db->prepared, label, APR_HASH_KEY_STRING);
 
@@ -1351,12 +1375,14 @@ static char *lookup_map_dbd(request_rec *r, char *key, const char *label)
     while ((rv = apr_dbd_get_row(db->driver, r->pool, res, &row, -1)) == 0) {
         ++n;
         if (ret == NULL) {
-            ret = apr_dbd_get_entry(db->driver, row, 0);
+            ret = apr_pstrdup(r->pool,
+                              apr_dbd_get_entry(db->driver, row, 0));
         }
         else {
             /* randomise crudely amongst multiple results */
             if ((double)rand() < (double)RAND_MAX/(double)n) {
-                ret = apr_dbd_get_entry(db->driver, row, 0);
+                ret = apr_pstrdup(r->pool,
+                                  apr_dbd_get_entry(db->driver, row, 0));
             }
         }
     }
@@ -1369,11 +1395,11 @@ static char *lookup_map_dbd(request_rec *r, char *key, const char *label)
     case 0:
         return NULL;
     case 1:
-        return apr_pstrdup(r->pool, ret);
+        return ret;
     default:
         /* what's a fair rewritelog level for this? */
         rewritelog((r, 3, NULL, "Multiple values found for %s", key));
-        return apr_pstrdup(r->pool, ret);
+        return ret;
     }
 }
 
@@ -2475,10 +2501,18 @@ static void add_cookie(request_rec *r, char *s)
 
     char *tok_cntx;
     char *cookie;
+    /* long-standing default, but can't use ':' in a cookie */
+    const char *sep = ":"; 
 
-    var = apr_strtok(s, ":", &tok_cntx);
-    val = apr_strtok(NULL, ":", &tok_cntx);
-    domain = apr_strtok(NULL, ":", &tok_cntx);
+    /* opt-in to ; separator if first character is a ; */
+    if (s && *s == ';') { 
+        sep = ";"; 
+        s++;
+    }
+
+    var = apr_strtok(s, sep, &tok_cntx);
+    val = apr_strtok(NULL, sep, &tok_cntx);
+    domain = apr_strtok(NULL, sep, &tok_cntx);
 
     if (var && val && domain) {
         request_rec *rmain = r;
@@ -2494,10 +2528,10 @@ static void add_cookie(request_rec *r, char *s)
         if (!data) {
             char *exp_time = NULL;
 
-            expires = apr_strtok(NULL, ":", &tok_cntx);
-            path = expires ? apr_strtok(NULL, ":", &tok_cntx) : NULL;
-            secure = path ? apr_strtok(NULL, ":", &tok_cntx) : NULL;
-            httponly = secure ? apr_strtok(NULL, ":", &tok_cntx) : NULL;
+            expires = apr_strtok(NULL, sep, &tok_cntx);
+            path = expires ? apr_strtok(NULL, sep, &tok_cntx) : NULL;
+            secure = path ? apr_strtok(NULL, sep, &tok_cntx) : NULL;
+            httponly = secure ? apr_strtok(NULL, sep, &tok_cntx) : NULL;
 
             if (expires) {
                 apr_time_exp_t tms;
@@ -2948,6 +2982,9 @@ static const char *cmd_rewriteoptions(cmd_parms *cmd,
         else if (!strcasecmp(w, "mergebase")) {
             options |= OPTION_MERGEBASE;
         }
+        else if (!strcasecmp(w, "ignorecontextinfo")) {
+            options |= OPTION_IGNORE_CONTEXT_INFO;
+        }
         else {
             return apr_pstrcat(cmd->pool, "RewriteOptions: unknown option '",
                                w, "'", NULL);
@@ -3232,9 +3269,7 @@ static const char *cmd_rewritecond(cmd_parms *cmd, void *in_dconf,
     rewrite_server_conf *sconf;
     rewritecond_entry *newcond;
     ap_regex_t *regexp;
-    char *a1;
-    char *a2;
-    char *a3;
+    char *a1 = NULL, *a2 = NULL, *a3 = NULL;
     const char *err;
 
     sconf = ap_get_module_config(cmd->server->module_config, &rewrite_module);
@@ -3565,6 +3600,9 @@ static const char *cmd_rewriterule_setflag(apr_pool_t *p, void *_cfg,
         } else if ( !strcasecmp(key, "SD")
                 || !strcasecmp(key, "sdiscard") ) {       /* qsdiscard */
             cfg->flags |= RULEFLAG_QSDISCARD;
+        } else if ( !strcasecmp(key, "SL")
+                || !strcasecmp(key, "slast") ) {          /* qslast */
+            cfg->flags |= RULEFLAG_QSLAST;
         }
         else {
             ++error;
@@ -3651,9 +3689,7 @@ static const char *cmd_rewriterule(cmd_parms *cmd, void *in_dconf,
     rewrite_server_conf *sconf;
     rewriterule_entry *newrule;
     ap_regex_t *regexp;
-    char *a1;
-    char *a2;
-    char *a3;
+    char *a1 = NULL, *a2 = NULL, *a3 = NULL;
     const char *err;
 
     sconf = ap_get_module_config(cmd->server->module_config, &rewrite_module);
@@ -4041,7 +4077,7 @@ static int apply_rewrite_rule(rewriterule_entry *p, rewrite_ctx *ctx)
     /* Ok, we already know the pattern has matched, but we now
      * additionally have to check for all existing preconditions
      * (RewriteCond) which have to be also true. We do this at
-     * this very late stage to avoid unnessesary checks which
+     * this very late stage to avoid unnecessary checks which
      * would slow down the rewriting engine.
      */
     rewriteconds = p->rewriteconds;
@@ -4119,7 +4155,9 @@ static int apply_rewrite_rule(rewriterule_entry *p, rewrite_ctx *ctx)
         r->path_info = NULL;
     }
 
-    splitout_queryargs(r, p->flags & RULEFLAG_QSAPPEND, p->flags & RULEFLAG_QSDISCARD);
+    splitout_queryargs(r, p->flags & RULEFLAG_QSAPPEND, 
+                          p->flags & RULEFLAG_QSDISCARD, 
+                          p->flags & RULEFLAG_QSLAST);
 
     /* Add the previously stripped per-directory location prefix, unless
      * (1) it's an absolute URL path and
@@ -4161,7 +4199,6 @@ static int apply_rewrite_rule(rewriterule_entry *p, rewrite_ctx *ctx)
                     r->filename));
 
         r->filename = apr_pstrcat(r->pool, "proxy:", r->filename, NULL);
-        apr_table_setn(r->notes, "rewrite-proxy", "1");
         return 1;
     }
 
@@ -4258,6 +4295,17 @@ static int apply_rewrite_list(request_rec *r, apr_array_header_t *rewriterules,
         rc = apply_rewrite_rule(p, ctx);
 
         if (rc) {
+
+            /* Catch looping rules with pathinfo growing unbounded */
+            if ( strlen( r->filename ) > 2*r->server->limit_req_line ) {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                              "RewriteRule '%s' and URI '%s' "
+                              "exceeded maximum length (%d)", 
+                              p->pattern, r->uri, 2*r->server->limit_req_line );
+                r->status = HTTP_INTERNAL_SERVER_ERROR;
+                return ACTION_STATUS;
+            }
+
             /* Regardless of what we do next, we've found a match. Check to see
              * if any of the request header fields were involved, and add them
              * to the Vary field of the response.
@@ -4464,6 +4512,7 @@ static int hook_uri2file(request_rec *r)
     unsigned int port;
     int rulestatus;
     void *skipdata;
+    const char *oargs;
 
     /*
      *  retrieve the config structures
@@ -4512,6 +4561,12 @@ static int hook_uri2file(request_rec *r)
                     r->uri));
         return DECLINED;
     }
+
+    /*
+     *  remember the original query string for later check, since we don't
+     *  want to apply URL-escaping when no substitution has changed it.
+     */
+    oargs = r->args;
 
     /*
      *  add the SCRIPT_URL variable to the env. this is a bit complicated
@@ -4647,11 +4702,21 @@ static int hook_uri2file(request_rec *r)
 
             /* append the QUERY_STRING part */
             if (r->args) {
+                char *escaped_args = NULL;
+                int noescape = (rulestatus == ACTION_NOESCAPE ||
+                                (oargs && !strcmp(r->args, oargs)));
+
                 r->filename = apr_pstrcat(r->pool, r->filename, "?",
-                                          (rulestatus == ACTION_NOESCAPE)
+                                          noescape
                                             ? r->args
-                                            : ap_escape_uri(r->pool, r->args),
+                                            : (escaped_args =
+                                               ap_escape_uri(r->pool, r->args)),
                                           NULL);
+
+                rewritelog((r, 1, NULL, "%s %s to query string for redirect %s",
+                            noescape ? "copying" : "escaping",
+                            r->args ,
+                            noescape ? "" : escaped_args));
             }
 
             /* determine HTTP redirect response code */
@@ -4817,7 +4882,7 @@ static int hook_fixup(request_rec *r)
 
     /*
      *  Do the Options check after engine check, so
-     *  the user is able to explicitely turn RewriteEngine Off.
+     *  the user is able to explicitly turn RewriteEngine Off.
      */
     if (!(ap_allow_options(r) & (OPT_SYM_LINKS | OPT_SYM_OWNER))) {
         /* FollowSymLinks is mandatory! */
@@ -4832,7 +4897,7 @@ static int hook_fixup(request_rec *r)
     /*
      *  remember the current filename before rewriting for later check
      *  to prevent deadlooping because of internal redirects
-     *  on final URL/filename which can be equal to the inital one.
+     *  on final URL/filename which can be equal to the initial one.
      *  also, we'll restore original r->filename if we decline this
      *  request
      */
@@ -4975,6 +5040,7 @@ static int hook_fixup(request_rec *r)
             return n;
         }
         else {
+            const char *tmpfilename = NULL;
             /* it was finally rewritten to a local path */
 
             /* if someone used the PASSTHROUGH flag in per-dir
@@ -5005,6 +5071,8 @@ static int hook_fixup(request_rec *r)
                             " URL: %s [IGNORING REWRITE]", r->filename));
                 return OK;
             }
+
+            tmpfilename = r->filename;
 
             /* if there is a valid base-URL then substitute
              * the per-dir prefix with this base-URL if the
@@ -5039,6 +5107,27 @@ static int hook_fixup(request_rec *r)
                                     r->filename+l));
 
                         r->filename = apr_pstrdup(r->pool, r->filename+l);
+                    }
+                }
+            }
+
+            /* No base URL, or r->filename wasn't still under dconf->directory
+             * or, r->filename wasn't still under the document root. 
+             * If there's a context document root AND a context prefix, and 
+             * the context document root is a prefix of r->filename, replace.
+             * This allows a relative substitution on a path found by mod_userdir 
+             * or mod_alias without baking in a RewriteBase.
+             */
+            if (tmpfilename == r->filename && 
+                !(dconf->options & OPTION_IGNORE_CONTEXT_INFO)) { 
+                if ((ccp = ap_context_document_root(r)) != NULL) { 
+                    const char *prefix = ap_context_prefix(r);
+                    if (prefix != NULL) { 
+                        rewritelog((r, 2, dconf->directory, "trying to replace "
+                                    "context docroot %s with context prefix %s",
+                                    ccp, prefix));
+                        r->filename = subst_prefix_path(r, r->filename,
+                                ccp, prefix);
                     }
                 }
             }

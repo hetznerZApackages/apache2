@@ -48,7 +48,6 @@
 #include "mpm_common.h"
 #include "scoreboard.h"
 #include "mod_core.h"
-#include "mod_proxy.h"
 #include "ap_listen.h"
 
 #include "mod_so.h" /* for ap_find_loaded_module_symbol */
@@ -468,17 +467,16 @@ apr_status_t ap_core_output_filter(ap_filter_t *f, apr_bucket_brigade *new_bb)
     if (new_bb == NULL) {
         rv = send_brigade_nonblocking(net->client_socket, bb,
                                       &(ctx->bytes_written), c);
-        if (APR_STATUS_IS_EAGAIN(rv)) {
-            rv = APR_SUCCESS;
-        }
-        else if (rv != APR_SUCCESS) {
+        if (rv != APR_SUCCESS && !APR_STATUS_IS_EAGAIN(rv)) {
             /* The client has aborted the connection */
             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, rv, c,
                           "core_output_filter: writing data to the network");
+            apr_brigade_cleanup(bb);
             c->aborted = 1;
+            return rv;
         }
         setaside_remaining_output(f, ctx, bb, c);
-        return rv;
+        return APR_SUCCESS;
     }
 
     bytes_in_brigade = 0;
@@ -547,6 +545,7 @@ apr_status_t ap_core_output_filter(ap_filter_t *f, apr_bucket_brigade *new_bb)
             /* The client has aborted the connection */
             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, rv, c,
                           "core_output_filter: writing data to the network");
+            apr_brigade_cleanup(bb);
             c->aborted = 1;
             return rv;
         }
@@ -560,6 +559,7 @@ apr_status_t ap_core_output_filter(ap_filter_t *f, apr_bucket_brigade *new_bb)
             /* The client has aborted the connection */
             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, rv, c,
                           "core_output_filter: writing data to the network");
+            apr_brigade_cleanup(bb);
             c->aborted = 1;
             return rv;
         }
@@ -591,7 +591,6 @@ static void setaside_remaining_output(ap_filter_t *f,
             }
             ap_save_brigade(f, &(ctx->buffered_bb), &bb,
                             ctx->deferred_write_pool);
-            apr_brigade_cleanup(bb);
         }
     }
     else if (ctx->deferred_write_pool) {
@@ -644,7 +643,6 @@ static apr_status_t send_brigade_nonblocking(apr_socket_t *s,
                 if (nvec > 0) {
                     (void)apr_socket_opt_set(s, APR_TCP_NOPUSH, 1);
                     rv = writev_nonblocking(s, vec, nvec, bb, bytes_written, c);
-                    nvec = 0;
                     if (rv != APR_SUCCESS) {
                         (void)apr_socket_opt_set(s, APR_TCP_NOPUSH, 0);
                         return rv;
@@ -653,6 +651,7 @@ static apr_status_t send_brigade_nonblocking(apr_socket_t *s,
                 rv = sendfile_nonblocking(s, bucket, bytes_written, c);
                 if (nvec > 0) {
                     (void)apr_socket_opt_set(s, APR_TCP_NOPUSH, 0);
+                    nvec = 0;
                 }
                 if (rv != APR_SUCCESS) {
                     return rv;
@@ -718,8 +717,7 @@ static void remove_empty_buckets(apr_bucket_brigade *bb)
     apr_bucket *bucket;
     while (((bucket = APR_BRIGADE_FIRST(bb)) != APR_BRIGADE_SENTINEL(bb)) &&
            (APR_BUCKET_IS_METADATA(bucket) || (bucket->length == 0))) {
-        APR_BUCKET_REMOVE(bucket);
-        apr_bucket_destroy(bucket);
+        apr_bucket_delete(bucket);
     }
 }
 
@@ -792,19 +790,16 @@ static apr_status_t writev_nonblocking(apr_socket_t *s,
             for (i = offset; i < nvec; ) {
                 apr_bucket *bucket = APR_BRIGADE_FIRST(bb);
                 if (APR_BUCKET_IS_METADATA(bucket)) {
-                    APR_BUCKET_REMOVE(bucket);
-                    apr_bucket_destroy(bucket);
+                    apr_bucket_delete(bucket);
                 }
                 else if (n >= vec[i].iov_len) {
-                    APR_BUCKET_REMOVE(bucket);
-                    apr_bucket_destroy(bucket);
+                    apr_bucket_delete(bucket);
                     offset++;
                     n -= vec[i++].iov_len;
                 }
                 else {
                     apr_bucket_split(bucket, n);
-                    APR_BUCKET_REMOVE(bucket);
-                    apr_bucket_destroy(bucket);
+                    apr_bucket_delete(bucket);
                     vec[i].iov_len -= n;
                     vec[i].iov_base = (char *) vec[i].iov_base + n;
                     break;
@@ -883,12 +878,10 @@ static apr_status_t sendfile_nonblocking(apr_socket_t *s,
     *cumulative_bytes_written += bytes_written;
     if ((bytes_written < file_length) && (bytes_written > 0)) {
         apr_bucket_split(bucket, bytes_written);
-        APR_BUCKET_REMOVE(bucket);
-        apr_bucket_destroy(bucket);
+        apr_bucket_delete(bucket);
     }
     else if (bytes_written == file_length) {
-        APR_BUCKET_REMOVE(bucket);
-        apr_bucket_destroy(bucket);
+        apr_bucket_delete(bucket);
     }
     return rv;
 }

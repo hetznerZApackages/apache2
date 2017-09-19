@@ -32,10 +32,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/**
- * @file  http_connection.h
- * @brief Apache connection library
- */
 
 /**
  * This is the protocol module driver.  This calls all of the
@@ -48,8 +44,17 @@ extern "C" {
 AP_CORE_DECLARE(void) ap_process_connection(conn_rec *c, void *csd);
 
 /**
+ * Shutdown the connection for writing.
+ * @param c The connection to shutdown
+ * @param flush Whether or not to flush pending data before
+ * @return APR_SUCCESS or the underlying error
+ */
+AP_CORE_DECLARE(apr_status_t) ap_shutdown_conn(conn_rec *c, int flush);
+
+/**
  * Flushes all remain data in the client send buffer
  * @param c The connection to flush
+ * @remark calls ap_shutdown_conn(c, 1)
  */
 AP_CORE_DECLARE(void) ap_flush_conn(conn_rec *c);
 
@@ -69,6 +74,8 @@ AP_CORE_DECLARE(void) ap_flush_conn(conn_rec *c);
  * @param c The connection we are closing
  */
 AP_DECLARE(void) ap_lingering_close(conn_rec *c);
+
+AP_DECLARE(int) ap_prep_lingering_close(conn_rec *c);
 
 AP_DECLARE(int) ap_start_lingering_close(conn_rec *c);
 
@@ -116,6 +123,18 @@ AP_DECLARE_HOOK(int,pre_connection,(conn_rec *c, void *csd))
  */
 AP_DECLARE_HOOK(int,process_connection,(conn_rec *c))
 
+/**
+ * This hook implements different protocols.  Before a connection is closed,
+ * protocols might have to perform some housekeeping actions, such as 
+ * sending one last goodbye packet. The connection is, unless some other
+ * error already happened before, still open and operational.
+ * All pre-close-connection hooks are run until one returns something 
+ * other than ok or decline
+ * @param c The connection on which the request has been received.
+ * @return OK or DECLINED
+ */
+AP_DECLARE_HOOK(int,pre_close_connection,(conn_rec *c))
+
 /** End Of Connection (EOC) bucket */
 AP_DECLARE_DATA extern const apr_bucket_type_t ap_bucket_type_eoc;
 
@@ -145,5 +164,5 @@ AP_DECLARE(apr_bucket *) ap_bucket_eoc_create(apr_bucket_alloc_t *list);
 }
 #endif
 
-#endif  /* !APACHE_HTTP_REQUEST_H */
+#endif  /* !APACHE_HTTP_CONNECTION_H */
 /** @} */

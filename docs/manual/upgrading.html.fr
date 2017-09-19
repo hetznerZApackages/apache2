@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -16,7 +18,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">Glossaire</a> | <a href="./sitemap.html">Plan du site</a></p>
 <p class="apache">Serveur Apache HTTP Version 2.4</p>
-<img alt="" src="./images/feather.gif" /></div>
+<img alt="" src="./images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.4</a></div><div id="page-content"><div id="preamble"><h1>Mise à jour de la version 2.2 vers la version 2.4</h1>
@@ -24,6 +26,8 @@
 <p><span>Langues Disponibles: </span><a href="./en/upgrading.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
 <a href="./fr/upgrading.html" title="Français">&nbsp;fr&nbsp;</a></p>
 </div>
+<div class="outofdate">Cette traduction peut être périmée. Vérifiez la version
+            anglaise pour les changements récents.</div>
 
   <p>Afin d'assister les utilisateurs lors de leurs opérations de mise à
   jour, nous maintenons un document
@@ -37,8 +41,8 @@
   l'API</a>.</p>
 
   <p>Ce document présente les changements de comportement du serveur qui
-  peuvent nécessiter une modification de la configuration, et la manière
-  d'utiliser la version 2.4 du serveur en parallèle avec la
+  peuvent nécessiter une modification de la configuration, et une
+  méthode pour utiliser la version 2.4 du serveur en parallèle avec la
   version 2.2. Pour tirer parti des nouvelles fonctionnalités de la
   version 2.4, reportez-vous au document "Nouvelles fonctionnalités".</p>
 
@@ -55,7 +59,7 @@
 <li><img alt="" src="./images/down.gif" /> <a href="#third-party">Modules tiers</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#commonproblems">Problèmes de mise à jour courants</a></li>
 </ul><h3>Voir aussi</h3><ul class="seealso"><li><a href="new_features_2_4.html">Vue d'ensemble des nouvelles
-fonctionnalités du serveur HTTP Apache 2.4</a></li></ul><ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
+fonctionnalités du serveur HTTP Apache 2.4</a></li><li><a href="#comments_section">Commentaires</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="compile-time" id="compile-time">Modifications des paramètres de compilation</a></h2>
@@ -88,7 +92,7 @@ fonctionnalités du serveur HTTP Apache 2.4</a></li></ul><ul class="seealso"><li>
 
       <li>configure: par défaut, seul un jeu de modules de base est
       chargé. Les autres directives <code class="directive">LoadModule</code>
-      sont mises en commentaires.</li>
+      sont mises en commentaires dans le fichier de configuration.</li>
 
       <li>configure: le jeu de modules "most" est compilé par défaut</li>
 
@@ -112,7 +116,7 @@ nécessiter une mise à jour des fichiers de configuration de la version
       probablement être mis à jour.</p>
 
     <p>Vous devez vous reporter au document <a href="howto/auth.html">Authentification, autorisation et contrôle
-    d'accès</a>, et plus particulièrement à la section <a href="howto/auth.html#beyond">Plus loin qu'une simple
+    d'accès</a>, et plus particulièrement à la section <a href="howto/auth.html#beyond">Pour aller plus loin qu'une simple
     autorisation</a> qui explique les nouveaux mécanismes permettant de
     contrôler l'ordre dans lequel les directives d'autorisation sont
     appliquées.</p>
@@ -138,12 +142,23 @@ nécessiter une mise à jour des fichiers de configuration de la version
       requête était assuré via les directives <code class="directive"><a href="./mod/mod_access_compat.html#order">Order</a></code>, <code class="directive"><a href="./mod/mod_access_compat.html#allow">Allow</a></code>, <code class="directive"><a href="./mod/mod_access_compat.html#deny">Deny</a></code>, et <code class="directive"><a href="./mod/mod_access_compat.html#satisfy">Satisfy</a></code>.</p>
 
       <p>Dans la version 2.4, ce contrôle d'accès est assuré, comme tout
-      contrôle d'autorisation, via le nouveau module
+      contrôle d'autorisation, par le nouveau module
       <code class="module"><a href="./mod/mod_authz_host.html">mod_authz_host</a></code>. Bien que le module
       <code class="module"><a href="./mod/mod_access_compat.html">mod_access_compat</a></code> soit fourni à des fins de
       compatibilité avec les anciennes configurations, les anciennes
       directives de contrôle d'accès devront être remplacées par les
       nouveaux mécanismes d'authentification.</p>
+
+      <div class="note"><h3>Mélanger anciennes et nouvelles directives</h3>
+      <p>Mélanger d'anciennes directives comme <code class="directive"><a href="./mod/mod_access_compat.html#order">Order</a></code>, <code class="directive"><a href="./mod/mod_access_compat.html#allow">Allow</a></code> ou <code class="directive"><a href="./mod/mod_access_compat.html#deny">Deny</a></code> avec des nouvelles comme
+      <code class="directive"><a href="./mod/mod_authz_core.html#require">Require</a></code> est techniquement
+      possible mais déconseillé. En effet, <code class="module"><a href="./mod/mod_access_compat.html">mod_access_compat</a></code> a
+      été conçu pour supporter des configurations ne contenant que des anciennes
+      directives afin de faciliter le passage à la version 2.4. Les
+      exemples ci-dessous vous permettront de vous faire une meilleure idée des
+      problèmes qui peuvent survenir.
+      </p>
+      </div>
 
       <p>Voici quelques exemples de contrôle d'accès avec l'ancienne et
       la nouvelle méthode :</p>
@@ -171,6 +186,66 @@ Allow from example.org</pre>
 </div>
       <div class="example"><h3>version 2.4 :</h3><pre class="prettyprint lang-config">Require host example.org</pre>
 </div>
+    <p>Dans l'exemple suivant, tous les hôtes du domaine example.org
+      ont l'autorisation d'accès, tous les autres sont rejetés :</p>
+
+      <div class="example"><h3>version 2.2 :</h3><pre class="prettyprint lang-config">Order Deny,Allow
+Deny from all
+Allow from example.org</pre>
+</div>
+      <div class="example"><h3>version 2.4 :</h3><pre class="prettyprint lang-config">Require host example.org</pre>
+</div>
+
+      <p>Dans l'exemple suivant, le mélange d'anciennes et de nouvelles
+      directives produit des résultats inattendus.</p>
+ 
+      <div class="example"><h3>Mélange d'anciennes et de nouvelles directives : RESULTAT
+	INATTENDU</h3><pre class="prettyprint lang-config">DocumentRoot "/var/www/html"
+
+&lt;Directory "/"&gt;
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+&lt;/Directory&gt;
+
+&lt;Location "/server-status"&gt;
+    SetHandler server-status
+    Require 127.0.0.1
+&lt;/Location&gt;
+
+access.log - GET /server-status 403 127.0.0.1
+error.log - AH01797: client denied by server configuration: /var/www/html/server-status</pre>
+</div>
+      <p>Pourquoi httpd interdit l'accès à server-status alors que la
+      configuration semble l'autoriser ? Parce que dans ce scénario de <a href="sections.html#merging">fusion</a> de configuration, les
+      directives de <code class="module"><a href="./mod/mod_access_compat.html">mod_access_compat</a></code> sont prioritaires par
+      rapport à celles de <code class="module"><a href="./mod/mod_authz_host.html">mod_authz_host</a></code>.</p>
+
+      <p>L'exemple suivant quant à lui produit un résultat conforme :</p>
+
+      <div class="example"><h3>Mélange d'anciennes et de nouvelles directives : RESULTAT
+	CONFORME</h3><pre class="prettyprint lang-config">DocumentRoot "/var/www/html"
+
+&lt;Directory "/"&gt;
+    AllowOverride None
+    Require all denied
+&lt;/Directory&gt;
+
+&lt;Location "/server-status"&gt;
+    SetHandler server-status
+    Order deny,allow
+    Deny from all
+    Allow From 127.0.0.1
+&lt;/Location&gt;
+
+access.log - GET /server-status 200 127.0.0.1</pre>
+</div> 
+      <p>En conclusion, même si une configuration hybride peut fonctionner,
+      essayez de l'éviter lors de la mise à jour : soit conservez les anciennes
+      directives, puis migrez-les vers les nouvelles ultérieurement, soit
+      effectuez une migration immédiate de toutes les anciennes directives vers
+      les nouvelles.  
+      </p>      
     
 
     
@@ -182,7 +257,7 @@ Allow from example.org</pre>
       certaines configurations particulières, comme décrit ci-dessous.</p>
 
       <ul>
-        <li><code class="directive">MaxRequestsPerChild</code> a été renommée en
+        <li>La directive <code class="directive">MaxRequestsPerChild</code> a été renommée en
 	<code class="directive"><a href="./mod/mpm_common.html#maxconnectionsperchild">MaxConnectionsPerChild</a></code>;
 	ce nouveau nom reflète mieux l'usage de cette directive.
 	L'ancien nom est encore supporté.</li>
@@ -278,6 +353,14 @@ Allow from example.org</pre>
 	configuration de la directive <code class="directive"><a href="./mod/core.html#loglevel">LogLevel</a></code> au niveau répertoire.
         </li>
 
+	<li><code class="module"><a href="./mod/mod_proxy_scgi.html">mod_proxy_scgi</a></code>: certaines applications web
+	ne fonctionneront plus correctement avec la nouvelle
+	configuration de <code>PATH_INFO</code> qui est différente de
+	celle de la version 2.2. La configuration
+	précédente peut être
+	restaurée en définissant la variable
+	<code>proxy-scgi-pathinfo</code>.</li>
+
 	<li><code class="module"><a href="./mod/mod_ssl.html">mod_ssl</a></code>: le contrôle de révocation des
 	certificats basé sur les CRL doit être maintenant explicitement
 	configuré via la directive <code class="directive"><a href="./mod/mod_ssl.html#sslcarevocationcheck">SSLCARevocationCheck</a></code>.
@@ -372,7 +455,7 @@ Allow from example.org</pre>
 
     <p>De nombreux modules tiers conçus pour la version 2.2
     fonctionneront sans changement avec le serveur HTTP Apache
-    version 2.4. Certains nécessiterons cependant des modifications ; se
+    version 2.4. Certains nécessiteront cependant des modifications ; se
     reporter à la vue d'ensemble <a href="developer/new_api_2_4.html">Mise à jour de l'API</a>.</p>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
@@ -435,7 +518,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/upgrading.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">Glossaire</a> | <a href="./sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

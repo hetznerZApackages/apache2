@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -16,7 +18,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p>
 <p class="apache">Apache HTTP Sunucusu Sürüm 2.4</p>
-<img alt="" src="../images/feather.gif" /></div>
+<img alt="" src="../images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Sunucusu</a> &gt; <a href="http://httpd.apache.org/docs/">Belgeleme</a> &gt; <a href="../">Sürüm 2.4</a> &gt; <a href="./">Sanal Konaklar</a></div><div id="page-content"><div id="preamble"><h1>İsme Dayalı Sanal Konaklar</h1>
@@ -38,7 +40,7 @@
 </ul><h3>Ayrıca bakınız:</h3><ul class="seealso"><li><a href="ip-based.html">IP Adresine Dayalı Sanal Konaklar</a></li><li><a href="details.html">Konak Eşlemenin Derinliğine İncelenmesi</a>
 </li><li><a href="mass.html">Devingen olarak Yapılandırılan Kütlesel Sanal
 Barındırma</a></li><li><a href="examples.html">Çok kullanılan sanal konak yapılandırma
-örnekleri</a></li></ul><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
+örnekleri</a></li><li><a href="#comments_section">Yorum</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="namevip" id="namevip">İsme dayalı ve IP’ye dayalı Sanal Konaklar</a></h2>
@@ -84,6 +86,12 @@ Barındırma</a></li><li><a href="examples.html">Çok kullanılan sanal konak ya
       sunucu ismini <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> ve
       <code class="directive"><a href="../mod/core.html#serveralias">ServerAlias</a></code> yönergelerindeki
       isimlerle karşılaştırır.</p>
+
+    <p>Herhangi bir isme dayalı sanal konakta <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> yönergesini kullanmazsanız, sunucu
+      bu yönergeye sistem konak adından türetilmiş tam nitelenmiş alan adının
+      (FQDN) tanımlandığını varsayacaktır. Bu örtük atama sezgiselliğin
+      istenmediği bir sanal konak eşleşmesi ile sonuçlanabilir ve bu
+      önerilmez.</p>
 
   <h3><a name="defaultvhost" id="defaultvhost">Bir IP adresi ve port çifti için öntanımlı isme dayalı sankon</a></h3>
    
@@ -142,12 +150,12 @@ Barındırma</a></li><li><a href="examples.html">Çok kullanılan sanal konak ya
     #İlk sanal konak aynı zamanda *:80 için de öntanımlıdır.
     ServerName site1.example.com
     ServerAlias example.com
-    DocumentRoot /siteler/site1
+    DocumentRoot "/siteler/site1"
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost *:80&gt;
     ServerName site2.example.com
-    DocumentRoot /siteler/site2
+    DocumentRoot "/siteler/site2"
 &lt;/VirtualHost&gt;</pre>
 
 
@@ -221,7 +229,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/vhosts/name-based.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
