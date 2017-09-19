@@ -30,3 +30,5 @@ CVE-2017-3169.diff
 CVE-2017-7668.diff
 CVE-2017-7679.diff
 CVE-2017-9788-mod_auth_digest.diff
+
+core-Disallow-Methods-registration-at-run-time-.htac.patch

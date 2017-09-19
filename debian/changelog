@@ -1,3 +1,11 @@
+apache2 (2.4.10-10+deb8u11) jessie-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * CVE-2017-9798: Use-after-free by limiting unregistered HTTP method
+    (Closes: #876109)
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Tue, 19 Sep 2017 21:08:12 +0200
+
 apache2 (2.4.10-10+deb8u10) jessie-security; urgency=medium
 
   * CVE-2017-9788: mod_auth_digest: Fix leak of uninitialized memory
