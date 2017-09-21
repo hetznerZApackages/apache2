@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u11+hetz1) jessie-hetz; urgency=high
+
+  * Released 2.4.10-10+deb8u11+hetz1~exp2 as 2.4.10-10+deb8u11+hetz1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Thu, 21 Sep 2017 11:25:44 +0200
+
 apache2 (2.4.10-10+deb8u11+hetz1~exp2) jessie-hetz-experimental; urgency=high
 
   * Ensure we are building 64bit only
