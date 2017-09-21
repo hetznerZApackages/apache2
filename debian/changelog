@@ -1,3 +1,17 @@
+apache2 (2.4.10-10+deb8u11+hetz1~exp1) jessie-hetz-experimental; urgency=high
+
+  * Update to apply upstream patch
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Thu, 21 Sep 2017 10:00:16 +0200
+
+apache2 (2.4.10-10+deb8u11) jessie-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * CVE-2017-9798: Use-after-free by limiting unregistered HTTP method
+    (Closes: #876109)
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Tue, 19 Sep 2017 21:08:12 +0200
+
 apache2 (2.4.10-10+deb8u10+hetz1) jessie-hetz; urgency=medium
 
   * Released 2.4.10-10+deb8u10+hetz1~exp1 as 2.4.10-10+deb8u10+hetz1
