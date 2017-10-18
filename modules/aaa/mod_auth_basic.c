@@ -195,7 +195,7 @@ static const char *set_use_digest_algorithm(cmd_parms *cmd, void *config,
                            "AuthBasicUseDigestAlgorithm: ", alg, NULL);
     }
 
-    conf->use_digest_algorithm = apr_pstrdup(cmd->pool, alg);
+    conf->use_digest_algorithm = alg;
     conf->use_digest_algorithm_set = 1;
 
     return NULL;
@@ -254,7 +254,6 @@ static int get_basic_auth(request_rec *r, const char **user,
 {
     const char *auth_line;
     char *decoded_line;
-    int length;
 
     /* Get the appropriate header */
     auth_line = apr_table_get(r->headers_in, (PROXYREQ_PROXY == r->proxyreq)
@@ -279,10 +278,7 @@ static int get_basic_auth(request_rec *r, const char **user,
         auth_line++;
     }
 
-    decoded_line = apr_palloc(r->pool, apr_base64_decode_len(auth_line) + 1);
-    length = apr_base64_decode(decoded_line, auth_line);
-    /* Null-terminate the string. */
-    decoded_line[length] = '\0';
+    decoded_line = ap_pbase64decode(r->pool, auth_line);
 
     *user = ap_getword_nulls(r->pool, (const char**)&decoded_line, ':');
     *pw = decoded_line;
@@ -315,8 +311,8 @@ static int authenticate_basic_user(request_rec *r)
 
     /* We need an authentication realm. */
     if (!ap_auth_name(r)) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR,
-                      0, r, APLOGNO(01615) "need AuthName: %s", r->uri);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01615)
+                      "need AuthName: %s", r->uri);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -385,7 +381,7 @@ static int authenticate_basic_user(request_rec *r)
 
         apr_table_unset(r->notes, AUTHN_PROVIDER_NAME_NOTE);
 
-        /* Something occured. Stop checking. */
+        /* Something occurred. Stop checking. */
         if (auth_result != AUTH_USER_NOT_FOUND) {
             break;
         }
@@ -428,7 +424,7 @@ static int authenticate_basic_user(request_rec *r)
             break;
         }
 
-        /* If we're returning 403, tell them to try again. */
+        /* If we're returning 401, tell them to try again. */
         if (return_code == HTTP_UNAUTHORIZED) {
             note_basic_auth_failure(r);
         }

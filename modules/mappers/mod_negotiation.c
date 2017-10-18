@@ -791,8 +791,9 @@ static enum header_state get_header_line(char *buffer, int len, apr_file_t *map)
              */
 
             while (c != '\n' && apr_isspace(c)) {
-                if(apr_file_getc(&c, map) != APR_SUCCESS)
+                if (apr_file_getc(&c, map) != APR_SUCCESS) {
                     break;
+                }
             }
 
             apr_file_ungetc(c, map);
@@ -828,33 +829,27 @@ static apr_off_t get_body(char *buffer, apr_size_t *len, const char *tag,
                           apr_file_t *map)
 {
     char *endbody;
-    int bodylen;
-    int taglen;
+    apr_size_t bodylen;
     apr_off_t pos;
 
-    taglen = strlen(tag);
-    *len -= taglen;
 
     /* We are at the first character following a body:tag\n entry
      * Suck in the body, then backspace to the first char after the
      * closing tag entry.  If we fail to read, find the tag or back
      * up then we have a hosed file, so give up already
      */
+    --*len; /* Reserve space for '\0' */
     if (apr_file_read(map, buffer, len) != APR_SUCCESS) {
         return -1;
     }
+    buffer[*len] = '\0';
 
-    /* put a copy of the tag *after* the data read from the file
-     * so that strstr() will find something with no reliance on
-     * terminating '\0'
-     */
-    memcpy(buffer + *len, tag, taglen);
-    endbody = strstr(buffer, tag);
-    if (endbody == buffer + *len) {
+    endbody = ap_strstr(buffer, tag);
+    if (!endbody) {
         return -1;
     }
     bodylen = endbody - buffer;
-    endbody += taglen;
+    endbody += strlen(tag);
     /* Skip all the trailing cruft after the end tag to the next line */
     while (*endbody) {
         if (*endbody == '\n') {
@@ -1064,10 +1059,9 @@ static int read_type_map(apr_file_t **map, negotiation_state *neg,
     return OK;
 }
 
-
 /* Sort function used by read_types_multi. */
-static int variantsortf(var_rec *a, var_rec *b) {
-
+static int variantsortf(var_rec *a, var_rec *b)
+{
     /* First key is the source quality, sort in descending order. */
 
     /* XXX: note that we currently implement no method of setting the
@@ -1707,7 +1701,7 @@ static void set_language_quality(negotiation_state *neg, var_rec *variant)
              * we are allowed to use the prefix of in HTTP/1.1
              */
             char *lang = ((char **) (variant->content_languages->elts))[j];
-            int idx = -1;
+            int idx;
 
             /* If we wish to fallback or
              * we use our own LanguagePriority index.
@@ -1733,7 +1727,6 @@ static void set_language_quality(negotiation_state *neg, var_rec *variant)
             }
         }
     }
-    return;
 }
 
 /* Determining the content length --- if the map didn't tell us,
@@ -2245,27 +2238,21 @@ static int is_variant_better(negotiation_state *neg, var_rec *variant,
  */
 static int variant_has_language(var_rec *variant, const char *lang)
 {
-    int j, max;
-
     /* fast exit */
     if (   !lang
-        || !variant->content_languages
-        || !(max = variant->content_languages->nelts)) {
+        || !variant->content_languages) {
         return 0;
     }
 
-    for (j = 0; j < max; ++j) {
-        if (!strcmp(lang,
-                    ((char **) (variant->content_languages->elts))[j])) {
-            return 1;
-        }
+    if (ap_array_str_contains(variant->content_languages, lang)) {
+        return 1;
     }
 
     return 0;
 }
 
 /* check for environment variables 'no-gzip' and
- * 'gzip-only-text/html' to get a behaviour similiar
+ * 'gzip-only-text/html' to get a behaviour similar
  * to mod_deflate
  */
 static int discard_variant_by_env(var_rec *variant, int discard)
@@ -2788,7 +2775,7 @@ static int setup_choice_response(request_rec *r, negotiation_state *neg,
      * see that Vary header yet at this point in the control flow.
      * This won't cause any cache consistency problems _unless_ the
      * CGI script also returns a Cache-Control header marking the
-     * response as cachable.  This needs to be fixed, also there are
+     * response as cacheable.  This needs to be fixed, also there are
      * problems if a CGI returns an Etag header which also need to be
      * fixed.
      */
@@ -2890,7 +2877,7 @@ static int do_negotiation(request_rec *r, negotiation_state *neg,
 
             /* Some HTTP/1.0 clients are known to choke when they get
              * a 300 (multiple choices) response without a Location
-             * header.  However the 300 code response we are are about
+             * header.  However the 300 code response we are about
              * to generate will only reach 1.0 clients which support
              * transparent negotiation, and they should be OK. The
              * response should never reach older 1.0 clients, even if
@@ -2973,8 +2960,9 @@ static int handle_map_file(request_rec *r)
     char *udir;
     const char *new_req;
 
-    if(strcmp(r->handler,MAP_FILE_MAGIC_TYPE) && strcmp(r->handler,"type-map"))
+    if (strcmp(r->handler, MAP_FILE_MAGIC_TYPE) && strcmp(r->handler, "type-map")) {
         return DECLINED;
+    }
 
     neg = parse_accept_headers(r);
     if ((res = read_type_map(&map, neg, r))) {
@@ -2982,7 +2970,9 @@ static int handle_map_file(request_rec *r)
     }
 
     res = do_negotiation(r, neg, &best, 0);
-    if (res != 0) return res;
+    if (res != 0) {
+        return res;
+    }
 
     if (best->body)
     {
@@ -3137,7 +3127,7 @@ static int handle_multi(request_rec *r)
     ap_internal_fast_redirect(sub_req, r);
 
     /* give no advise for time on this subrequest.  Perhaps we
-     * should tally the last mtime amoung all variants, and date
+     * should tally the last mtime among all variants, and date
      * the most recent, but that could confuse the proxies.
      */
     r->mtime = 0;

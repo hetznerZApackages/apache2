@@ -198,7 +198,6 @@ AP_DECLARE(void) ap_wait_or_timeout(apr_exit_why_e *status, int *exitcode,
 
     apr_sleep(apr_time_from_sec(1));
     ret->pid = -1;
-    return;
 }
 
 #if defined(TCP_NODELAY)
@@ -343,7 +342,7 @@ const char *ap_mpm_set_coredumpdir(cmd_parms *cmd, void *dummy,
         return err;
     }
 
-    fname = ap_server_root_relative(cmd->pool, arg);
+    fname = ap_server_root_relative(cmd->temp_pool, arg);
     if (!fname) {
         return apr_pstrcat(cmd->pool, "Invalid CoreDumpDirectory path ",
                            arg, NULL);
