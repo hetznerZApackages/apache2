@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -16,7 +18,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
 <p class="apache">Serveur Apache HTTP Version 2.4</p>
-<img alt="" src="../images/feather.gif" /></div>
+<img alt="" src="../images/feather.png" /></div>
 <div class="up"><a href="../"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a></div><div id="page-content"><div id="preamble"><h1>Documentation sur les serveurs virtuels Apache</h1>
@@ -87,10 +89,16 @@
 
     <p>Pour vérifier et analyser la configuration de vos serveurs 
     virtuels, vous pouvez utiliser l'argument <code>-S</code> sur 
-    la ligne de commande lançant le programme Apache comme ceci&nbsp;:</p>
+    la ligne de commande.</p>
 
-    <div class="example"><p><code>
-    /usr/local/apache2/bin/httpd -S
+    <div class="example"><h3>Exemple Unix</h3><p><code>
+    
+    apachectl -S
+    </code></p></div>
+
+    <div class="example"><h3>Exemple Windows</h3><p><code>
+    
+    httpd.exe -S
     </code></p></div>
 
     <p>Cette commande affichera dans le détail comment Apache a 
@@ -110,7 +118,7 @@
 <a href="../tr/vhosts/" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a> |
 <a href="../zh-cn/vhosts/" hreflang="zh-cn" rel="alternate" title="Simplified Chinese">&nbsp;zh-cn&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

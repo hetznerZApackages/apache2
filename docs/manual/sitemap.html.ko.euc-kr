@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="EUC-KR"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko"><head>
+<meta content="text/html; charset=EUC-KR" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -17,7 +19,7 @@
 <div id="page-header">
 <p class="menu"><a href="./mod/">모듈</a> | <a href="./mod/directives.html">지시어들</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">용어</a> | <a href="./sitemap.html">사이트맵</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="./images/feather.gif" /></div>
+<img alt="" src="./images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.4</a></div>
@@ -210,7 +212,7 @@
 <li><a href="mod/mod_dumpio.html">아파치 모듈 mod_dumpio</a></li>
 <li><a href="mod/mod_echo.html">아파치 모듈 mod_echo</a></li>
 <li><a href="mod/mod_env.html">아파치 모듈 mod_env</a></li>
-<li><a href="mod/mod_example.html">아파치 모듈 mod_example</a></li>
+<li><a href="mod/mod_example_hooks.html">아파치 모듈 mod_example_hooks</a></li>
 <li><a href="mod/mod_expires.html">아파치 모듈 mod_expires</a></li>
 <li><a href="mod/mod_ext_filter.html">아파치 모듈 mod_ext_filter</a></li>
 <li><a href="mod/mod_file_cache.html">아파치 모듈 mod_file_cache</a></li>
@@ -218,6 +220,7 @@
 <li><a href="mod/mod_headers.html">아파치 모듈 mod_headers</a></li>
 <li><a href="mod/mod_heartbeat.html">아파치 모듈 mod_heartbeat</a></li>
 <li><a href="mod/mod_heartmonitor.html">아파치 모듈 mod_heartmonitor</a></li>
+<li><a href="mod/mod_http2.html">아파치 모듈 mod_http2</a></li>
 <li><a href="mod/mod_ident.html">아파치 모듈 mod_ident</a></li>
 <li><a href="mod/mod_imagemap.html">아파치 모듈 mod_imagemap</a></li>
 <li><a href="mod/mod_include.html">아파치 모듈 mod_include</a></li>
@@ -247,8 +250,10 @@
 <li><a href="mod/mod_proxy_fcgi.html">아파치 모듈 mod_proxy_fcgi</a></li>
 <li><a href="mod/mod_proxy_fdpass.html">아파치 모듈 mod_proxy_fdpass</a></li>
 <li><a href="mod/mod_proxy_ftp.html">아파치 모듈 mod_proxy_ftp</a></li>
+<li><a href="mod/mod_proxy_hcheck.html">아파치 모듈 mod_proxy_hcheck</a></li>
 <li><a href="mod/mod_proxy_html.html">아파치 모듈 mod_proxy_html</a></li>
 <li><a href="mod/mod_proxy_http.html">아파치 모듈 mod_proxy_http</a></li>
+<li><a href="mod/mod_proxy_http2.html">아파치 모듈 mod_proxy_http2</a></li>
 <li><a href="mod/mod_proxy_scgi.html">아파치 모듈 mod_proxy_scgi</a></li>
 <li><a href="mod/mod_proxy_wstunnel.html">아파치 모듈 mod_proxy_wstunnel</a></li>
 <li><a href="mod/mod_ratelimit.html">아파치 모듈 mod_ratelimit</a></li>
@@ -331,7 +336,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/sitemap.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">모듈</a> | <a href="./mod/directives.html">지시어들</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">용어</a> | <a href="./sitemap.html">사이트맵</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
