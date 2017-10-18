@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u3+hetz1~exp4) jessie-hetz-experimental; urgency=high
+
+  * Remove proxy_http2 module 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Wed, 18 Oct 2017 16:20:09 +0200
+
 apache2 (2.4.25-3+deb9u3+hetz1~exp3) jessie-hetz-experimental; urgency=high
 
   * still backporting
