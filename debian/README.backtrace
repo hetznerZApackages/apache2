@@ -7,9 +7,11 @@ In case of a crash, do the following:
 
 1) Install the packages apache2-dbg libapr1-dbg libaprutil1-dbg gdb. 
 
-2) Add "CoreDumpDirectory /var/cache/apache2" to your apache configuration.
+2) Add "CoreDumpDirectory /var/cache/apache2/core" to your apache configuration.
 
 3) Execute as root:
+	mkdir -p /var/cache/apache2/core
+	chown www-data: /var/cache/apache2/core
 	/etc/init.d/apache2 stop
 	ulimit -c unlimited
 	/etc/init.d/apache2 start
@@ -19,14 +21,14 @@ In case of a crash, do the following:
 
 5) If you use a forking MPM (e.g. mod_prefork), execute:
 
-	gdb /usr/sbin/apache2 /var/cache/apache2/core
+	gdb /usr/sbin/apache2 /var/cache/apache2/core/core
 	(gdb) bt full
 	...
 	(gdb) quit
 
 If you use a threaded mpm (mod_worker, mod_event), execute:
 
-	gdb /usr/sbin/apache2 /var/cache/apache2/core
+	gdb /usr/sbin/apache2 /var/cache/apache2/core/core
         (gdb) thread apply all bt full
 	...
 	(gdb) quit

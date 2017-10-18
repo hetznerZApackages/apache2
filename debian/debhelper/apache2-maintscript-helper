@@ -76,7 +76,7 @@ else
 	fi
 
 	APACHE2_MAINTSCRIPT_DEFER=
-	if ! dpkg-query -f '${Status}' -W apache2|grep -q installed; then
+	if ! dpkg-query -f '${Status}' -W apache2|egrep -q 'installed|triggers-awaited|triggers-pending'; then
 		echo "Package apache2 is not configured yet. Will defer actions by package $DPKG_MAINTSCRIPT_PACKAGE."
 		APACHE2_MAINTSCRIPT_DEFER=/var/lib/apache2/deferred_actions
 	fi
@@ -286,16 +286,26 @@ apache2_switch_mpm()
 		return 1
 	fi
 
-	local CUR_MPM=$(a2query -M) || return 1
+	local a2query_ret=0
+	a2query -m "$mpm_$MPM" > /dev/null 2>&1 || a2query_ret=$?
 
-	if [ $CUR_MPM != $MPM ] ; then
-		a2dismod -m -q "mpm_$CUR_MPM";
-		a2enmod -m -q "mpm_$MPM";
-		apache2_msg "info" "apache2_switch_mpm Switch to $MPM"
-	else
+	case $a2query_ret in
+	0)
 		apache2_msg "info" "apache2_switch_mpm $MPM: No action required"
 		return 0
-	fi
+		;;
+	32)
+		apache2_msg "info" "apache2_switch_mpm $MPM: Has been disabled manually, not changing"
+		return 1
+		;;
+
+	esac
+
+	local CUR_MPM=$(a2query -M) || return 1
+
+	a2dismod -m -q "mpm_$CUR_MPM";
+	a2enmod -m -q "mpm_$MPM";
+	apache2_msg "info" "apache2_switch_mpm Switch to $MPM"
 
 	if ! apache2_has_module "mpm_$MPM" ; then
 		# rollback
@@ -338,9 +348,9 @@ apache2_switch_mpm()
 #          2.4.6-4: Allow apache2_invoke to disable configuration in preinst/postinst
 apache2_invoke()
 {
-	local CMD=$1
-	local CONF=$2
-	local RCD_ACTION=$3
+	local CMD="$1"
+	local CONF="$2"
+	local RCD_ACTION="$3"
 	local invoke_rcd=0
 	local check_switch=""
 	local invoke_string=""
@@ -349,7 +359,7 @@ apache2_invoke()
 	[ -x "/usr/sbin/a2query" ] || return 1
 
 	if [ -n "$APACHE2_MAINTSCRIPT_DEFER" ] ; then
-		echo "$APACHE2_MAINTSCRIPT_PACKAGE apache2_invoke $*" >> $APACHE2_MAINTSCRIPT_DEFER
+		echo "$APACHE2_MAINTSCRIPT_PACKAGE apache2_invoke $*" >> "$APACHE2_MAINTSCRIPT_DEFER"
 		return 0
 	fi
 
@@ -391,8 +401,8 @@ apache2_invoke()
 				apache2_msg "info" "apache2_invoke $CONF: already enabled"
 				APACHE2_NEED_ACTION=1
 			elif [ "$a2query_ret" -eq 32	 ] ; then
-				# the maintainer disabled the module
-				apache2_msg "info" "apache2_invoke $CONF: no action - $invoke_string was disabled by maintainer"
+				# the admin disabled the module
+				apache2_msg "info" "apache2_invoke $CONF: no action - $invoke_string was disabled by local admin"
 				return 0
 			else
 				# coming here either means:
@@ -485,12 +495,12 @@ apache2_reload()
 		apache2_msg "err" "apache2_reload: Your configuration is broken. Not ${action}ing Apache 2"
 		grep -v -e "Action 'configtest' failed." \
 			-e "The Apache error log may have more information." \
-			$tmpfile |
+			"$tmpfile" |
 			while read LINE ; do
 				apache2_msg "err" "apache2_reload: $LINE"
 			done
 	fi
-	rm -f $tmpfile
+	rm -f "$tmpfile"
 }
 
 # vim: syntax=sh sw=8 sts=8 sr noet

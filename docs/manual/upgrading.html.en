@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -16,7 +18,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="./images/feather.gif" /></div>
+<img alt="" src="./images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.4</a></div><div id="page-content"><div id="preamble"><h1>Upgrading to 2.4 from 2.2</h1>
@@ -49,7 +51,7 @@
 <li><img alt="" src="./images/down.gif" /> <a href="#third-party">Third Party Modules</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#commonproblems">Common problems when upgrading</a></li>
 </ul><h3>See also</h3><ul class="seealso"><li><a href="new_features_2_4.html">Overview of new features in
-  Apache HTTP Server 2.4</a></li></ul><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
+  Apache HTTP Server 2.4</a></li><li><a href="#comments_section">Comments</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="compile-time" id="compile-time">Compile-Time Configuration Changes</a></h2>
@@ -81,7 +83,7 @@
 
       <li>configure: By default, only a basic set of modules is loaded. The
       other <code class="directive">LoadModule</code> directives are commented
-      out.</li>
+      out in the configuration file.</li>
 
       <li>configure: the "most" module set gets built by default</li>
 
@@ -136,24 +138,33 @@
       although for compatibility with old configurations, the new
       module <code class="module"><a href="./mod/mod_access_compat.html">mod_access_compat</a></code> is provided.</p>
 
+      <div class="note"><h3>Mixing old and new directives</h3>
+      <p>Mixing old directives like <code class="directive"><a href="./mod/mod_access_compat.html#order">Order</a></code>, <code class="directive"><a href="./mod/mod_access_compat.html#allow">Allow</a></code> or <code class="directive"><a href="./mod/mod_access_compat.html#deny">Deny</a></code> with new ones like
+      <code class="directive"><a href="./mod/mod_authz_core.html#require">Require</a></code> is technically possible 
+      but discouraged. <code class="module"><a href="./mod/mod_access_compat.html">mod_access_compat</a></code> was created to support 
+      configurations containing only old directives to facilitate the 2.4 upgrade. 
+      Please check the examples below to get a better idea about issues that might arise.
+      </p>
+      </div>
+
       <p>Here are some examples of old and new ways to do the same
       access control.</p>
 
-      <p>In this example, all requests are denied.</p>
+      <p>In this example, there is no authentication and all requests are denied.</p>
       <div class="example"><h3>2.2 configuration:</h3><pre class="prettyprint lang-config">Order deny,allow
 Deny from all</pre>
 </div>
       <div class="example"><h3>2.4 configuration:</h3><pre class="prettyprint lang-config">Require all denied</pre>
 </div>
 
-      <p>In this example, all requests are allowed.</p>
+      <p>In this example, there is no authentication and all requests are allowed.</p>
       <div class="example"><h3>2.2 configuration:</h3><pre class="prettyprint lang-config">Order allow,deny
 Allow from all</pre>
 </div>
       <div class="example"><h3>2.4 configuration:</h3><pre class="prettyprint lang-config">Require all granted</pre>
 </div>
 
-      <p>In the following example, all hosts in the example.org domain
+      <p>In the following example, there is no authentication and all hosts in the example.org domain
       are allowed access; all other hosts are denied access.</p>
 
       <div class="example"><h3>2.2 configuration:</h3><pre class="prettyprint lang-config">Order Deny,Allow
@@ -162,7 +173,112 @@ Allow from example.org</pre>
 </div>
       <div class="example"><h3>2.4 configuration:</h3><pre class="prettyprint lang-config">Require host example.org</pre>
 </div>
+
+      <p>In the following example, mixing old and new directives leads to 
+      unexpected results.</p>
+ 
+      <div class="example"><h3>Mixing old and new directives: NOT WORKING AS EXPECTED</h3><pre class="prettyprint lang-config">DocumentRoot "/var/www/html"
+
+&lt;Directory "/"&gt;
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+&lt;/Directory&gt;
+
+&lt;Location "/server-status"&gt;
+    SetHandler server-status
+    Require 127.0.0.1
+&lt;/Location&gt;
+
+access.log - GET /server-status 403 127.0.0.1
+error.log - AH01797: client denied by server configuration: /var/www/html/server-status</pre>
+</div>
+      <p>Why httpd denies access to servers-status even if the configuration seems to allow it?
+        Because <code class="module"><a href="./mod/mod_access_compat.html">mod_access_compat</a></code> directives take precedence
+        over the <code class="module"><a href="./mod/mod_authz_host.html">mod_authz_host</a></code> one in this configuration 
+        <a href="sections.html#merging">merge</a> scenario.</p>
+
+      <p>This example conversely works as expected:</p>
+
+      <div class="example"><h3>Mixing old and new directives: WORKING AS EXPECTED</h3><pre class="prettyprint lang-config">DocumentRoot "/var/www/html"
+
+&lt;Directory "/"&gt;
+    AllowOverride None
+    Require all denied
+&lt;/Directory&gt;
+
+&lt;Location "/server-status"&gt;
+    SetHandler server-status
+    Order deny,allow
+    Deny from all
+    Allow From 127.0.0.1
+&lt;/Location&gt;
+
+access.log - GET /server-status 200 127.0.0.1</pre>
+</div> 
+      <p>So even if mixing configuration is still
+        possible, please try to avoid it when upgrading: either keep old directives and then migrate
+        to the new ones on a later stage or just migrate everything in bulk.  
+      </p>
     
+
+     <p>In many configurations with authentication, where the value of the
+     <code class="directive">Satisfy</code> was the default of <em>ALL</em>, snippets
+     that simply disabled host-based access control are omitted:</p>
+
+      <div class="example"><h3>2.2 configuration:</h3><pre class="prettyprint lang-config">Order Deny,Allow
+Deny from all
+AuthBasicProvider File
+AuthUserFile /example.com/conf/users.passwd
+AuthName secure
+Require valid-user</pre>
+</div>
+      <div class="example"><h3>2.4 configuration:</h3><pre class="prettyprint lang-config"># No replacement needed
+AuthBasicProvider File
+AuthUserFile /example.com/conf/users.passwd
+AuthName secure
+Require valid-user</pre>
+</div>
+
+     <p>In configurations where both authentication and access control were meaningfully combined, the 
+        access control directives should be migrated. This example allows requests meeting <em>both</em> criteria:</p>
+      <div class="example"><h3>2.2 configuration:</h3><pre class="prettyprint lang-config">Order allow,deny
+Deny from all
+# Satisfy ALL is the default
+Satisfy ALL
+Allow from 127.0.0.1
+AuthBasicProvider File
+AuthUserFile /example.com/conf/users.passwd
+AuthName secure
+Require valid-user</pre>
+</div>
+      <div class="example"><h3>2.4 configuration:</h3><pre class="prettyprint lang-config">AuthBasicProvider File
+AuthUserFile /example.com/conf/users.passwd
+AuthName secure
+&lt;RequireAll&gt;
+  Require valid-user
+  Require ip 127.0.0.1
+&lt;/RequireAll&gt;</pre>
+</div>
+
+     <p>In configurations where both authentication and access control were meaningfully combined, the 
+        access control directives should be migrated. This example allows requests meeting <em>either</em> criteria:</p>
+      <div class="example"><h3>2.2 configuration:</h3><pre class="prettyprint lang-config">Order allow,deny
+Deny from all
+Satisfy any
+Allow from 127.0.0.1
+AuthBasicProvider File
+AuthUserFile /example.com/conf/users.passwd
+AuthName secure
+Require valid-user</pre>
+</div>
+      <div class="example"><h3>2.4 configuration:</h3><pre class="prettyprint lang-config">AuthBasicProvider File
+AuthUserFile /example.com/conf/users.passwd
+AuthName secure
+# Implicitly &lt;RequireAny&gt;
+Require valid-user
+Require ip 127.0.0.1</pre>
+</div>
 
     
 
@@ -260,6 +376,13 @@ Allow from example.org</pre>
         <li><code class="module"><a href="./mod/mod_ext_filter.html">mod_ext_filter</a></code>: The <code>DebugLevel</code>
         option has been removed in favour of per-module <code class="directive"><a href="./mod/core.html#loglevel">LogLevel</a></code> configuration.
         </li>
+
+        <li><code class="module"><a href="./mod/mod_proxy_scgi.html">mod_proxy_scgi</a></code>: The default setting for
+        <code>PATH_INFO</code> has changed from httpd 2.2, and
+        some web applications will no longer operate properly with
+        the new <code>PATH_INFO</code> setting.  The previous setting
+        can be restored by configuring the <code>proxy-scgi-pathinfo</code>
+        variable.</li>
 
         <li><code class="module"><a href="./mod/mod_ssl.html">mod_ssl</a></code>: CRL based revocation checking
         now needs to be explicitly configured through <code class="directive"><a href="./mod/mod_ssl.html#sslcarevocationcheck">SSLCARevocationCheck</a></code>.
@@ -398,7 +521,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/upgrading.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

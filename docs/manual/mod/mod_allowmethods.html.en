@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -17,7 +19,7 @@
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="../images/feather.gif" /></div>
+<img alt="" src="../images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Modules</a></div>
@@ -33,10 +35,10 @@
 <tr><th><a href="module-dict.html#SourceFile">Source File:</a></th><td>mod_allowmethods.c</td></tr></table>
 <h3>Summary</h3>
 
-<p>This module makes it easy to restrict what HTTP methods can
-used on an server. The most common configuration would be:</p>
+<p>This module makes it easy to restrict what HTTP methods can be
+used on a server. The most common configuration would be:</p>
 
-<pre class="prettyprint lang-config">&lt;Location /&gt;
+<pre class="prettyprint lang-config">&lt;Location "/"&gt;
    AllowMethods GET POST OPTIONS
 &lt;/Location&gt;</pre>
 
@@ -46,7 +48,9 @@ used on an server. The most common configuration would be:</p>
 <ul id="toc">
 <li><img alt="" src="../images/down.gif" /> <a href="#allowmethods">AllowMethods</a></li>
 </ul>
-<ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
+<h3>Bugfix checklist</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">httpd changelog</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mod_allowmethods">Known issues</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mod_allowmethods">Report a bug</a></li></ul><h3>See also</h3>
+<ul class="seealso">
+<li><a href="#comments_section">Comments</a></li></ul></div>
 
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="AllowMethods" id="AllowMethods">AllowMethods</a> <a name="allowmethods" id="allowmethods">Directive</a></h2>
@@ -60,18 +64,18 @@ used on an server. The most common configuration would be:</p>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_allowmethods</td></tr>
 </table>
 
-<p>The HTTP-methods are case sensitive, and are generally as per
-RFC given in upper case. The GET and HEAD methods are treated as
-equivalent. The <code>reset</code> keyword can be used
+<p>The HTTP-methods are case sensitive and are generally, as per
+RFC, given in upper case. The GET and HEAD methods are treated as
+equivalent. The <code>reset</code> keyword can be used to
 turn off <code class="module"><a href="../mod/mod_allowmethods.html">mod_allowmethods</a></code> in a deeper nested context:</p>
 
-<pre class="prettyprint lang-config">&lt;Location /svn&gt;
+<pre class="prettyprint lang-config">&lt;Location "/svn"&gt;
    AllowMethods reset
 &lt;/Location&gt;</pre>
 
 
 <div class="note"><h3>Caution</h3>
-  <p>The TRACE method can not be denied by this module,
+  <p>The TRACE method cannot be denied by this module;
   use <code class="directive"><a href="../mod/core.html#traceenable">TraceEnable</a></code> instead.</p>
 </div>
 
@@ -102,7 +106,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_allowmethods
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -103,7 +103,7 @@ static int cache_quick_handler(request_rec *r, int lookup)
     /*
      * Which cache module (if any) should handle this request?
      */
-    if (!(providers = cache_get_providers(r, conf, r->parsed_uri))) {
+    if (!(providers = cache_get_providers(r, conf))) {
         return DECLINED;
     }
 
@@ -234,6 +234,11 @@ static int cache_quick_handler(request_rec *r, int lookup)
                     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rv,
                             r, APLOGNO(00752) "Cache locked for url, not caching "
                             "response: %s", r->uri);
+                    /* cache_select() may have added conditional headers */
+                    if (cache->stale_headers) {
+                        r->headers_in = cache->stale_headers;
+                    }
+
                 }
             }
             else {
@@ -408,7 +413,7 @@ static int cache_handler(request_rec *r)
     /*
      * Which cache module (if any) should handle this request?
      */
-    if (!(providers = cache_get_providers(r, conf, r->parsed_uri))) {
+    if (!(providers = cache_get_providers(r, conf))) {
         return DECLINED;
     }
 
@@ -636,7 +641,6 @@ static int cache_handler(request_rec *r)
 static apr_status_t cache_out_filter(ap_filter_t *f, apr_bucket_brigade *in)
 {
     request_rec *r = f->r;
-    apr_bucket *e;
     cache_request_rec *cache = (cache_request_rec *)f->ctx;
 
     if (!cache) {
@@ -652,10 +656,8 @@ static apr_status_t cache_out_filter(ap_filter_t *f, apr_bucket_brigade *in)
             "cache: running CACHE_OUT filter");
 
     /* clean out any previous response up to EOS, if any */
-    for (e = APR_BRIGADE_FIRST(in);
-         e != APR_BRIGADE_SENTINEL(in);
-         e = APR_BUCKET_NEXT(e))
-    {
+    while (!APR_BRIGADE_EMPTY(in)) {
+        apr_bucket *e = APR_BRIGADE_FIRST(in);
         if (APR_BUCKET_IS_EOS(e)) {
             apr_bucket_brigade *bb = apr_brigade_create(r->pool,
                     r->connection->bucket_alloc);
@@ -971,12 +973,20 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
     /* Have we received a 304 response without any headers at all? Fall back to
      * the original headers in the original cached request.
      */
-    if (r->status == HTTP_NOT_MODIFIED && cache->stale_handle && !cc_out
-            && !pragma) {
-        cc_out = cache_table_getm(r->pool, cache->stale_handle->resp_hdrs,
-                "Cache-Control");
-        pragma = cache_table_getm(r->pool, cache->stale_handle->resp_hdrs,
-                "Pragma");
+    if (r->status == HTTP_NOT_MODIFIED && cache->stale_handle) {
+        if (!cc_out && !pragma) {
+            cc_out = cache_table_getm(r->pool, cache->stale_handle->resp_hdrs,
+                    "Cache-Control");
+            pragma = cache_table_getm(r->pool, cache->stale_handle->resp_hdrs,
+                    "Pragma");
+        }
+
+        /* 304 does not contain Content-Type and mod_mime regenerates the
+         * Content-Type based on the r->filename. This would lead to original
+         * Content-Type to be lost (overwriten by whatever mod_mime generates).
+         * We preserves the original Content-Type here. */
+        ap_set_content_type(r, apr_table_get(
+                cache->stale_handle->resp_hdrs, "Content-Type"));
     }
 
     /* Parse the cache control header */
@@ -1015,6 +1025,8 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
              * include the following: an Expires header (section 14.21); a
              * "max-age", "s-maxage",  "must-revalidate", "proxy-revalidate",
              * "public" or "private" cache-control directive (section 14.9).
+             *
+             * FIXME: Wrong if cc_out has just an extension we don't know about 
              */
         }
         else {
@@ -1029,9 +1041,12 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
         /* if a broken Expires header is present, don't cache it */
         reason = apr_pstrcat(p, "Broken expires header: ", exps, NULL);
     }
-    else if (!dconf->store_expired && exp != APR_DATE_BAD
+    else if (!control.s_maxage && !control.max_age
+            && !dconf->store_expired && exp != APR_DATE_BAD
             && exp < r->request_time) {
-        /* if a Expires header is in the past, don't cache it */
+        /* if a Expires header is in the past, don't cache it 
+         * Unless CC: s-maxage or max-age is present
+         */
         reason = "Expires header already expired; not cacheable";
     }
     else if (!dconf->store_expired && (control.must_revalidate
@@ -1175,8 +1190,8 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
 
         ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02473) 
                 "cache: %s responded with an uncacheable 304, " 
-                "retrying the request. Reason: %s", 
-                r->unparsed_uri, reason);
+                "retrying the request %s. Reason: %s", 
+                cache->key, r->unparsed_uri, reason);
 
         /* we've got a cache conditional miss! tell anyone who cares */
         cache_run_cache_status(cache->handle, r, r->headers_out, AP_CACHE_MISS,
@@ -1201,6 +1216,8 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
         apr_table_unset(r->headers_in, "If-Range");
         apr_table_unset(r->headers_in, "If-Unmodified-Since");
 
+        /* Currently HTTP_NOT_MODIFIED, and after the redirect, handlers won't think to set status to HTTP_OK */
+        r->status = HTTP_OK; 
         ap_internal_redirect(r->unparsed_uri, r);
 
         return APR_SUCCESS;
@@ -1208,8 +1225,8 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
 
     if (reason) {
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(00768)
-                "cache: %s not cached. Reason: %s", r->unparsed_uri,
-                reason);
+                "cache: %s not cached for request %s. Reason: %s",
+                cache->key, r->unparsed_uri, reason);
 
         /* we've got a cache miss! tell anyone who cares */
         cache_run_cache_status(cache->handle, r, r->headers_out, AP_CACHE_MISS,
@@ -1273,7 +1290,7 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
 
     /* It's safe to cache the response.
      *
-     * There are two possiblities at this point:
+     * There are two possibilities at this point:
      * - cache->handle == NULL. In this case there is no previously
      * cached entity anywhere on the system. We must create a brand
      * new entity and store the response in it.
@@ -1327,7 +1344,8 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
     }
 
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(00769)
-            "cache: Caching url: %s", r->unparsed_uri);
+            "cache: Caching url %s for request %s",
+            cache->key, r->unparsed_uri);
 
     /* We are actually caching this response. So it does not
      * make sense to remove this entity any more.
@@ -1383,7 +1401,26 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
                 "replacing with now");
     }
 
+
+    /* CC has priority over Expires.  */
+    if (control.s_maxage || control.max_age) {
+        apr_int64_t x;
+
+        x = control.s_maxage ? control.s_maxage_value : control.max_age_value;
+        x = x * MSEC_ONE_SEC;
+
+        if (x < dconf->minex) {
+            x = dconf->minex;
+        }
+        if (x > dconf->maxex) {
+            x = dconf->maxex;
+        }
+        exp = date + x;
+    }
+
     /* if no expiry date then
+     *   if Cache-Control: s-maxage
+     *      expiry date = date + smaxage
      *   if Cache-Control: max-age
      *      expiry date = date + max-age
      *   else if lastmod
@@ -1391,28 +1428,9 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
      *   else
      *      expire date = date + defaultexpire
      */
+
     if (exp == APR_DATE_BAD) {
-
-        if (control.max_age) {
-            apr_int64_t x;
-
-            errno = 0;
-            x = control.max_age_value;
-            if (errno) {
-                x = dconf->defex;
-            }
-            else {
-                x = x * MSEC_ONE_SEC;
-            }
-            if (x < dconf->minex) {
-                x = dconf->minex;
-            }
-            if (x > dconf->maxex) {
-                x = dconf->maxex;
-            }
-            exp = date + x;
-        }
-        else if ((lastmod != APR_DATE_BAD) && (lastmod < date)) {
+        if ((lastmod != APR_DATE_BAD) && (lastmod < date)) {
             /* if lastmod == date then you get 0*conf->factor which results in
              * an expiration time of now. This causes some problems with
              * freshness calculations, so we choose the else path...
@@ -1448,6 +1466,7 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
          * forward all of them to the client, including non-cacheable ones).
          */
         r->headers_out = cache_merge_headers_out(r);
+        apr_table_clear(r->err_headers_out);
 
         /* Merge in our cached headers.  However, keep any updated values. */
         /* take output, overlay on top of cached */
@@ -1552,6 +1571,9 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
 
         /* let someone else attempt to cache */
         cache_remove_lock(conf, cache, r, NULL);
+
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, r, APLOGNO(02971)
+                    "cache: serving %s (revalidated)", r->uri);
 
         return ap_pass_brigade(f->next, bb);
     }

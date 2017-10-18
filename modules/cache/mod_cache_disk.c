@@ -185,7 +185,8 @@ static apr_status_t file_cache_el_final(disk_cache_conf *conf, disk_cache_file_t
     return rv;
 }
 
-static apr_status_t file_cache_temp_cleanup(void *dummy) {
+static apr_status_t file_cache_temp_cleanup(void *dummy)
+{
     disk_cache_file_t *file = (disk_cache_file_t *)dummy;
 
     /* clean up the temporary file */
@@ -293,7 +294,7 @@ static const char* regen_key(apr_pool_t *p, apr_table_t *headers,
      *     quoted-string expectation-extensions.
      */
 
-    for(i=0, k=0; i < varray->nelts; i++) {
+    for (i=0, k=0; i < varray->nelts; i++) {
         header = apr_table_get(headers, elts[i]);
         if (!header) {
             header = "";
@@ -738,7 +739,7 @@ static apr_status_t read_array(request_rec *r, apr_array_header_t* arr,
             break;
         }
 
-       *((const char **) apr_array_push(arr)) = apr_pstrdup(r->pool, w);
+        *((const char **) apr_array_push(arr)) = apr_pstrdup(r->pool, w);
     }
 
     return APR_SUCCESS;
@@ -785,7 +786,7 @@ static apr_status_t read_table(cache_handle_t *handle, request_rec *r,
         /* ### What about APR_EOF? */
         rv = apr_file_gets(w, MAX_STRING_LEN - 1, file);
         if (rv != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00717)
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00717)
                           "Premature end of cache headers.");
             return rv;
         }
@@ -864,6 +865,7 @@ static apr_status_t read_table(cache_handle_t *handle, request_rec *r,
 static apr_status_t recall_headers(cache_handle_t *h, request_rec *r)
 {
     disk_cache_object_t *dobj = (disk_cache_object_t *) h->cache_obj->vobj;
+    apr_status_t rv;
 
     /* This case should not happen... */
     if (!dobj->hdrs.fd) {
@@ -876,8 +878,18 @@ static apr_status_t recall_headers(cache_handle_t *h, request_rec *r)
     h->resp_hdrs = apr_table_make(r->pool, 20);
 
     /* Call routine to read the header lines/status line */
-    read_table(h, r, h->resp_hdrs, dobj->hdrs.fd);
-    read_table(h, r, h->req_hdrs, dobj->hdrs.fd);
+    rv = read_table(h, r, h->resp_hdrs, dobj->hdrs.fd);
+    if (rv != APR_SUCCESS) { 
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02987) 
+                      "Error reading response headers from %s for %s",
+                      dobj->hdrs.file, dobj->name);
+    }
+    rv = read_table(h, r, h->req_hdrs, dobj->hdrs.fd);
+    if (rv != APR_SUCCESS) { 
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02988) 
+                      "Error reading request headers from %s for %s",
+                      dobj->hdrs.file, dobj->name);
+    }
 
     apr_file_close(dobj->hdrs.fd);
 
@@ -1045,7 +1057,7 @@ static apr_status_t write_headers(cache_handle_t *h, request_rec *r)
                          APR_BUFFERED | APR_EXCL, dobj->hdrs.pool);
 
     if (rv != APR_SUCCESS) {
-       ap_log_rerror(APLOG_MARK, APLOG_WARNING, rv, r, APLOGNO(00725)
+        ap_log_rerror(APLOG_MARK, APLOG_WARNING, rv, r, APLOGNO(00725)
                 "could not create header file %s",
                 dobj->hdrs.tempfile);
         return rv;
@@ -1332,7 +1344,7 @@ static apr_status_t commit_entity(cache_handle_t *h, request_rec *r)
         if (!dobj->disk_info.header_only) {
             rv = file_cache_el_final(conf, &dobj->data, r);
         }
-        else if (dobj->data.file){
+        else if (dobj->data.file) {
             rv = apr_file_remove(dobj->data.file, dobj->data.pool);
         }
     }
@@ -1382,7 +1394,8 @@ static void *create_dir_config(apr_pool_t *p, char *dummy)
     return dconf;
 }
 
-static void *merge_dir_config(apr_pool_t *p, void *basev, void *addv) {
+static void *merge_dir_config(apr_pool_t *p, void *basev, void *addv)
+{
     disk_cache_dir_conf *new = (disk_cache_dir_conf *) apr_pcalloc(p, sizeof(disk_cache_dir_conf));
     disk_cache_dir_conf *add = (disk_cache_dir_conf *) addv;
     disk_cache_dir_conf *base = (disk_cache_dir_conf *) basev;

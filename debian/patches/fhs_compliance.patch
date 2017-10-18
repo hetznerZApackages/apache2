@@ -6,7 +6,7 @@ Index: apache2/configure
 ===================================================================
 --- apache2.orig/configure
 +++ apache2/configure
-@@ -33031,17 +33031,17 @@ ap_prefix="${ap_cur}"
+@@ -36453,17 +36453,17 @@ ap_prefix="${ap_cur}"
  
  
  cat >>confdefs.h <<_ACEOF
@@ -31,7 +31,7 @@ Index: apache2/configure.in
 ===================================================================
 --- apache2.orig/configure.in
 +++ apache2/configure.in
-@@ -826,11 +826,11 @@ rm -f modules.c
+@@ -834,11 +834,11 @@ rm -f modules.c
  echo $MODLIST | $AWK -f $srcdir/build/build-modules-c.awk > modules.c
  
  APR_EXPAND_VAR(ap_prefix, $prefix)

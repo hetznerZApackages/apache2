@@ -2,9 +2,9 @@ Description: add suexec-custom to the build system
 Forwarded: not-needed
 Author: Stefan Fritsch <sf@debian.org>
 Last-Update: 2012-02-25
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -239,14 +239,16 @@
+--- apache2.orig/Makefile.in
++++ apache2/Makefile.in
+@@ -260,14 +260,16 @@ install-man:
  	fi
  
  install-suexec:
@@ -25,8 +25,8 @@ Last-Update: 2012-02-25
  
  x-local-distclean:
  	@rm -rf autom4te.cache
---- a/support/Makefile.in
-+++ b/support/Makefile.in
+--- apache2.orig/support/Makefile.in
++++ apache2/support/Makefile.in
 @@ -1,7 +1,7 @@
  DISTCLEAN_TARGETS = apxs apachectl dbmmanage log_server_status \
  	logresolve.pl phf_abuse_log.cgi split-logfile envvars-std
@@ -36,7 +36,7 @@ Last-Update: 2012-02-25
  
  bin_PROGRAMS = htpasswd htdigest htdbm ab logresolve httxt2dbm
  sbin_PROGRAMS = htcacheclean rotatelogs $(NONPORTABLE_SUPPORT)
-@@ -72,9 +72,13 @@
+@@ -72,9 +72,13 @@ checkgid_OBJECTS = checkgid.lo
  checkgid: $(checkgid_OBJECTS)
  	$(LINK) $(checkgid_LTFLAGS) $(checkgid_OBJECTS) $(PROGRAM_LDADD)
  
