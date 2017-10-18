@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u3+hetz1~exp6) jessie-hetz-experimental; urgency=high
+
+  * Add the modules to the control file 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Wed, 18 Oct 2017 16:56:59 +0200
+
 apache2 (2.4.25-3+deb9u3+hetz1~exp5) jessie-hetz-experimental; urgency=high
 
   * Add the mpm modules 
