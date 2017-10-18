@@ -1,0 +1,23 @@
+Index: apache2/support/suexec.c
+===================================================================
+--- apache2.orig/support/suexec.c
++++ apache2/support/suexec.c
+@@ -565,6 +565,8 @@ int main(int argc, char *argv[])
+         exit(119);
+     }
+ 
++#ifdef SUEXEC_ENFORCE_OWNER
++
+     /*
+      * Error out if the target name/group is different from
+      * the name/group of the cwd or the program.
+@@ -580,6 +582,9 @@ int main(int argc, char *argv[])
+                 (unsigned long)prg_info.st_uid, (unsigned long)prg_info.st_gid);
+         exit(120);
+     }
++
++#endif
++
+     /*
+      * Error out if the program is not executable for the user.
+      * Otherwise, she won't find any error in the logs except for

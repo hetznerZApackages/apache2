@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u3+hetz1~exp7) jessie-hetz-experimental; urgency=high
+
+  * Apply our hetz_relax_ownership_enforcement patch 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Wed, 18 Oct 2017 17:35:59 +0200
+
 apache2 (2.4.25-3+deb9u3+hetz1~exp6) jessie-hetz-experimental; urgency=high
 
   * Add the modules to the control file 
