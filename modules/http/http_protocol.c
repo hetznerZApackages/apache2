@@ -135,7 +135,7 @@ static const char * const status_lines[RESPONSE_CODES] =
     NULL, /* 418 */
     NULL, /* 419 */
     NULL, /* 420 */
-    "421 Misdirected Request",
+    NULL, /* 421 */
     "422 Unprocessable Entity",
     "423 Locked",
     "424 Failed Dependency",
@@ -146,27 +146,7 @@ static const char * const status_lines[RESPONSE_CODES] =
     "429 Too Many Requests",
     NULL, /* 430 */
     "431 Request Header Fields Too Large",
-    NULL, /* 432 */
-    NULL, /* 433 */
-    NULL, /* 434 */
-    NULL, /* 435 */
-    NULL, /* 436 */
-    NULL, /* 437 */
-    NULL, /* 438 */
-    NULL, /* 439 */
-    NULL, /* 440 */
-    NULL, /* 441 */
-    NULL, /* 442 */
-    NULL, /* 443 */
-    NULL, /* 444 */
-    NULL, /* 445 */
-    NULL, /* 446 */
-    NULL, /* 447 */
-    NULL, /* 448 */
-    NULL, /* 449 */
-    NULL, /* 450 */
-    "451 Unavailable For Legal Reasons",
-#define LEVEL_500 91
+#define LEVEL_500 71
     "500 Internal Server Error",
     "501 Not Implemented",
     "502 Bad Gateway",
@@ -336,8 +316,8 @@ AP_DECLARE(ap_condition_e) ap_condition_if_match(request_rec *r,
      */
     if ((if_match = apr_table_get(r->headers_in, "If-Match")) != NULL) {
         if (if_match[0] == '*'
-                || ((etag = apr_table_get(headers, "ETag")) != NULL
-                        && ap_find_etag_strong(r->pool, if_match, etag))) {
+                || ((etag = apr_table_get(headers, "ETag")) == NULL
+                        && !ap_find_etag_strong(r->pool, if_match, etag))) {
             return AP_CONDITION_STRONG;
         }
         else {
@@ -572,6 +552,9 @@ AP_DECLARE(int) ap_meets_conditions(request_rec *r)
      */
     cond = ap_condition_if_match(r, r->headers_out);
     if (AP_CONDITION_NOMATCH == cond) {
+        not_modified = 0;
+    }
+    else if (cond >= AP_CONDITION_WEAK) {
         return HTTP_PRECONDITION_FAILED;
     }
 
@@ -688,11 +671,8 @@ AP_DECLARE(void) ap_method_registry_init(apr_pool_t *p)
                               apr_pool_cleanup_null);
 
     /* put all the standard methods into the registry hash to ease the
-     * mapping operations between name and number
-     * HEAD is a special-instance of the GET method and shares the same ID
-     */
+       mapping operations between name and number */
     register_one_method(p, "GET", M_GET);
-    register_one_method(p, "HEAD", M_GET);
     register_one_method(p, "PUT", M_PUT);
     register_one_method(p, "POST", M_POST);
     register_one_method(p, "DELETE", M_DELETE);
@@ -1316,17 +1296,6 @@ static const char *get_canned_error_string(int status,
     case HTTP_NETWORK_AUTHENTICATION_REQUIRED:
         return("<p>The client needs to authenticate to gain\n"
                "network access.</p>\n");
-    case HTTP_MISDIRECTED_REQUEST:
-        return("<p>The client needs a new connection for this\n"
-               "request as the requested host name does not match\n"
-               "the Server Name Indication (SNI) in use for this\n"
-               "connection.</p>\n");
-    case HTTP_UNAVAILABLE_FOR_LEGAL_REASONS:
-        s1 = apr_pstrcat(p,
-                         "<p>Access to ", ap_escape_html(r->pool, r->uri),
-                         "\nhas been denied for legal reasons.<br />\n",
-                         NULL);
-        return(add_optional_notes(r, s1, "error-notes", "</p>\n"));
     default:                    /* HTTP_INTERNAL_SERVER_ERROR */
         /*
          * This comparison to expose error-notes could be modified to
@@ -1598,6 +1567,8 @@ AP_DECLARE(void) ap_copy_method_list(ap_method_list_t *dest,
 AP_DECLARE(int) ap_method_in_list(ap_method_list_t *l, const char *method)
 {
     int methnum;
+    int i;
+    char **methods;
 
     /*
      * If it's one of our known methods, use the shortcut and check the
@@ -1608,13 +1579,18 @@ AP_DECLARE(int) ap_method_in_list(ap_method_list_t *l, const char *method)
         return !!(l->method_mask & (AP_METHOD_BIT << methnum));
     }
     /*
-     * Otherwise, see if the method name is in the array of string names.
+     * Otherwise, see if the method name is in the array or string names
      */
     if ((l->method_list == NULL) || (l->method_list->nelts == 0)) {
         return 0;
     }
-
-    return ap_array_str_contains(l->method_list, method);
+    methods = (char **)l->method_list->elts;
+    for (i = 0; i < l->method_list->nelts; ++i) {
+        if (strcmp(method, methods[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 /*
@@ -1623,24 +1599,30 @@ AP_DECLARE(int) ap_method_in_list(ap_method_list_t *l, const char *method)
 AP_DECLARE(void) ap_method_list_add(ap_method_list_t *l, const char *method)
 {
     int methnum;
+    int i;
     const char **xmethod;
+    char **methods;
 
     /*
      * If it's one of our known methods, use the shortcut and use the
      * bitmask.
      */
     methnum = ap_method_number_of(method);
+    l->method_mask |= (AP_METHOD_BIT << methnum);
     if (methnum != M_INVALID) {
-        l->method_mask |= (AP_METHOD_BIT << methnum);
         return;
     }
     /*
      * Otherwise, see if the method name is in the array of string names.
      */
-    if (ap_array_str_contains(l->method_list, method)) {
-        return;
+    if (l->method_list->nelts != 0) {
+        methods = (char **)l->method_list->elts;
+        for (i = 0; i < l->method_list->nelts; ++i) {
+            if (strcmp(method, methods[i]) == 0) {
+                return;
+            }
+        }
     }
-
     xmethod = (const char **) apr_array_push(l->method_list);
     *xmethod = method;
 }
@@ -1659,15 +1641,15 @@ AP_DECLARE(void) ap_method_list_remove(ap_method_list_t *l,
      * by a module, use the bitmask.
      */
     methnum = ap_method_number_of(method);
+    l->method_mask |= ~(AP_METHOD_BIT << methnum);
     if (methnum != M_INVALID) {
-        l->method_mask &= ~(AP_METHOD_BIT << methnum);
         return;
     }
     /*
      * Otherwise, see if the method name is in the array of string names.
      */
     if (l->method_list->nelts != 0) {
-        int i, j, k;
+        register int i, j, k;
         methods = (char **)l->method_list->elts;
         for (i = 0; i < l->method_list->nelts; ) {
             if (strcmp(method, methods[i]) == 0) {

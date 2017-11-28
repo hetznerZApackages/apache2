@@ -31,9 +31,8 @@ extern module AP_MODULE_DECLARE_DATA cache_module;
  * in "filter". All but the path comparisons are case-insensitive.
  */
 static int uri_meets_conditions(const apr_uri_t *filter, const int pathlen,
-                                request_rec *r)
+                                const apr_uri_t *url)
 {
-    const apr_uri_t *url = &r->parsed_uri;
 
     /* Scheme, hostname port and local part. The filter URI and the
      * URI we test may have the following shapes:
@@ -56,7 +55,7 @@ static int uri_meets_conditions(const apr_uri_t *filter, const int pathlen,
     }
     else {
         /* The URI scheme must be present and identical except for case. */
-        if (!url->scheme || ap_cstr_casecmp(filter->scheme, url->scheme)) {
+        if (!url->scheme || strcasecmp(filter->scheme, url->scheme)) {
             return 0;
         }
 
@@ -114,7 +113,7 @@ static int uri_meets_conditions(const apr_uri_t *filter, const int pathlen,
     /* For HTTP caching purposes, an empty (NULL) path is equivalent to
      * a single "/" path. RFCs 3986/2396
      */
-    if (!r->uri) {
+    if (!url->path) {
         if (*filter->path == '/' && pathlen == 1) {
             return 1;
         }
@@ -126,7 +125,7 @@ static int uri_meets_conditions(const apr_uri_t *filter, const int pathlen,
     /* Url has met all of the filter conditions so far, determine
      * if the paths match.
      */
-    return !strncmp(filter->path, r->uri, pathlen);
+    return !strncmp(filter->path, url->path, pathlen);
 }
 
 static cache_provider_list *get_provider(request_rec *r, struct cache_enable *ent,
@@ -168,7 +167,8 @@ static cache_provider_list *get_provider(request_rec *r, struct cache_enable *en
 }
 
 cache_provider_list *cache_get_providers(request_rec *r,
-                                         cache_server_conf *conf)
+        cache_server_conf *conf,
+        apr_uri_t uri)
 {
     cache_dir_conf *dconf = ap_get_module_config(r->per_dir_config, &cache_module);
     cache_provider_list *providers = NULL;
@@ -183,7 +183,7 @@ cache_provider_list *cache_get_providers(request_rec *r,
     for (i = 0; i < conf->cachedisable->nelts; i++) {
         struct cache_disable *ent =
                                (struct cache_disable *)conf->cachedisable->elts;
-        if (uri_meets_conditions(&ent[i].url, ent[i].pathlen, r)) {
+        if (uri_meets_conditions(&ent[i].url, ent[i].pathlen, &uri)) {
             /* Stop searching now. */
             return NULL;
         }
@@ -200,7 +200,7 @@ cache_provider_list *cache_get_providers(request_rec *r,
     for (i = 0; i < conf->cacheenable->nelts; i++) {
         struct cache_enable *ent =
                                 (struct cache_enable *)conf->cacheenable->elts;
-        if (uri_meets_conditions(&ent[i].url, ent[i].pathlen, r)) {
+        if (uri_meets_conditions(&ent[i].url, ent[i].pathlen, &uri)) {
             providers = get_provider(r, &ent[i], providers);
         }
     }
@@ -284,25 +284,7 @@ apr_status_t cache_try_lock(cache_server_conf *conf, cache_request_rec *cache,
 
     /* create the key if it doesn't exist */
     if (!cache->key) {
-        cache_handle_t *h;
-        /*
-         * Try to use the key of a possible open but stale cache
-         * entry if we have one.
-         */
-        if (cache->handle != NULL) {
-            h = cache->handle;
-        }
-        else {
-            h = cache->stale_handle;
-        }
-        if ((h != NULL) &&
-            (h->cache_obj != NULL) &&
-            (h->cache_obj->key != NULL)) {
-            cache->key = apr_pstrdup(r->pool, h->cache_obj->key);
-        }
-        else {
-            cache_generate_key(r, r->pool, &cache->key);
-        }
+        cache_generate_key(r, r->pool, &cache->key);
     }
 
     /* create a hashed filename from the key, and save it for later */
@@ -333,7 +315,7 @@ apr_status_t cache_try_lock(cache_server_conf *conf, cache_request_rec *cache,
     status = apr_stat(&finfo, lockname,
                 APR_FINFO_MTIME | APR_FINFO_NLINK, r->pool);
     if (!(APR_STATUS_IS_ENOENT(status)) && APR_SUCCESS != status) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r, APLOGNO(00779)
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_EEXIST, r, APLOGNO(00779)
                 "Could not stat a cache lock file: %s",
                 lockname);
         return status;
@@ -461,7 +443,7 @@ int ap_cache_check_no_cache(cache_request_rec *cache, request_rec *r)
             return 0;
         }
         else {
-            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02657)
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
                     "Incoming request is asking for an uncached version of "
                     "%s, but we have been configured to ignore it and serve "
                     "cached content anyway", r->unparsed_uri);
@@ -501,7 +483,7 @@ int ap_cache_check_no_store(cache_request_rec *cache, request_rec *r)
             return 0;
         }
         else {
-            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02658)
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
                     "Incoming request is asking for a no-store version of "
                     "%s, but we have been configured to ignore it and serve "
                     "cached content anyway", r->unparsed_uri);
@@ -594,12 +576,7 @@ int cache_check_freshness(cache_handle_t *h, cache_request_rec *cache,
     }
 
     if ((agestr = apr_table_get(h->resp_hdrs, "Age"))) {
-        char *endp;
-        apr_off_t offt;
-        if (!apr_strtoff(&offt, agestr, &endp, 10)
-                && endp > agestr && !*endp) {
-            age_c = offt;
-        }
+        age_c = apr_atoi64(agestr);
     }
 
     /* calculate age of object */
@@ -999,7 +976,12 @@ int ap_cache_control(request_rec *r, cache_control_t *cc,
         char *header = apr_pstrdup(r->pool, pragma_header);
         const char *token = cache_strqtok(header, CACHE_SEPARATOR, &last);
         while (token) {
-            if (!ap_cstr_casecmp(token, "no-cache")) {
+            /* handle most common quickest case... */
+            if (!strcmp(token, "no-cache")) {
+                cc->no_cache = 1;
+            }
+            /* ...then try slowest case */
+            else if (!strcasecmp(token, "no-cache")) {
                 cc->no_cache = 1;
             }
             token = cache_strqtok(NULL, CACHE_SEPARATOR, &last);
@@ -1008,99 +990,117 @@ int ap_cache_control(request_rec *r, cache_control_t *cc,
     }
 
     if (cc_header) {
-        char *endp;
-        apr_off_t offt;
         char *header = apr_pstrdup(r->pool, cc_header);
         const char *token = cache_strqtok(header, CACHE_SEPARATOR, &last);
         while (token) {
             switch (token[0]) {
             case 'n':
             case 'N': {
-                if (!ap_cstr_casecmpn(token, "no-cache", 8)) {
+                /* handle most common quickest cases... */
+                if (!strcmp(token, "no-cache")) {
+                    cc->no_cache = 1;
+                }
+                else if (!strcmp(token, "no-store")) {
+                    cc->no_store = 1;
+                }
+                /* ...then try slowest cases */
+                else if (!strncasecmp(token, "no-cache", 8)) {
                     if (token[8] == '=') {
                         cc->no_cache_header = 1;
                     }
                     else if (!token[8]) {
                         cc->no_cache = 1;
                     }
+                    break;
                 }
-                else if (!ap_cstr_casecmp(token, "no-store")) {
+                else if (!strcasecmp(token, "no-store")) {
                     cc->no_store = 1;
                 }
-                else if (!ap_cstr_casecmp(token, "no-transform")) {
+                else if (!strcasecmp(token, "no-transform")) {
                     cc->no_transform = 1;
                 }
                 break;
             }
             case 'm':
             case 'M': {
-                if (!ap_cstr_casecmpn(token, "max-age", 7)) {
-                    if (token[7] == '='
-                            && !apr_strtoff(&offt, token + 8, &endp, 10)
-                            && endp > token + 8 && !*endp) {
-                        cc->max_age = 1;
-                        cc->max_age_value = offt;
-                    }
+                /* handle most common quickest cases... */
+                if (!strcmp(token, "max-age=0")) {
+                    cc->max_age = 1;
+                    cc->max_age_value = 0;
                 }
-                else if (!ap_cstr_casecmp(token, "must-revalidate")) {
+                else if (!strcmp(token, "must-revalidate")) {
                     cc->must_revalidate = 1;
                 }
-                else if (!ap_cstr_casecmpn(token, "max-stale", 9)) {
-                    if (token[9] == '='
-                            && !apr_strtoff(&offt, token + 10, &endp, 10)
-                            && endp > token + 10 && !*endp) {
-                        cc->max_stale = 1;
-                        cc->max_stale_value = offt;
+                /* ...then try slowest cases */
+                else if (!strncasecmp(token, "max-age", 7)) {
+                    if (token[7] == '=') {
+                        cc->max_age = 1;
+                        cc->max_age_value = apr_atoi64(token + 8);
                     }
-                    else if (!token[9]) {
+                    break;
+                }
+                else if (!strncasecmp(token, "max-stale", 9)) {
+                    if (token[9] == '=') {
+                        cc->max_stale = 1;
+                        cc->max_stale_value = apr_atoi64(token + 10);
+                    }
+                    else if (!token[10]) {
                         cc->max_stale = 1;
                         cc->max_stale_value = -1;
                     }
+                    break;
                 }
-                else if (!ap_cstr_casecmpn(token, "min-fresh", 9)) {
-                    if (token[9] == '='
-                            && !apr_strtoff(&offt, token + 10, &endp, 10)
-                            && endp > token + 10 && !*endp) {
+                else if (!strncasecmp(token, "min-fresh", 9)) {
+                    if (token[9] == '=') {
                         cc->min_fresh = 1;
-                        cc->min_fresh_value = offt;
+                        cc->min_fresh_value = apr_atoi64(token + 10);
                     }
+                    break;
+                }
+                else if (!strcasecmp(token, "must-revalidate")) {
+                    cc->must_revalidate = 1;
                 }
                 break;
             }
             case 'o':
             case 'O': {
-                if (!ap_cstr_casecmp(token, "only-if-cached")) {
+                if (!strcasecmp(token, "only-if-cached")) {
                     cc->only_if_cached = 1;
                 }
                 break;
             }
             case 'p':
             case 'P': {
-                if (!ap_cstr_casecmp(token, "public")) {
+                /* handle most common quickest cases... */
+                if (!strcmp(token, "private")) {
+                    cc->private = 1;
+                }
+                /* ...then try slowest cases */
+                else if (!strcasecmp(token, "public")) {
                     cc->public = 1;
                 }
-                else if (!ap_cstr_casecmpn(token, "private", 7)) {
+                else if (!strncasecmp(token, "private", 7)) {
                     if (token[7] == '=') {
                         cc->private_header = 1;
                     }
                     else if (!token[7]) {
                         cc->private = 1;
                     }
+                    break;
                 }
-                else if (!ap_cstr_casecmp(token, "proxy-revalidate")) {
+                else if (!strcasecmp(token, "proxy-revalidate")) {
                     cc->proxy_revalidate = 1;
                 }
                 break;
             }
             case 's':
             case 'S': {
-                if (!ap_cstr_casecmpn(token, "s-maxage", 8)) {
-                    if (token[8] == '='
-                            && !apr_strtoff(&offt, token + 9, &endp, 10)
-                            && endp > token + 9 && !*endp) {
+                if (!strncasecmp(token, "s-maxage", 8)) {
+                    if (token[8] == '=') {
                         cc->s_maxage = 1;
-                        cc->s_maxage_value = offt;
+                        cc->s_maxage_value = apr_atoi64(token + 9);
                     }
+                    break;
                 }
                 break;
             }
@@ -1130,7 +1130,8 @@ static int cache_control_remove(request_rec *r, const char *cc_header,
             switch (token[0]) {
             case 'n':
             case 'N': {
-                if (!ap_cstr_casecmpn(token, "no-cache", 8)) {
+                if (!strncmp(token, "no-cache", 8)
+                        || !strncasecmp(token, "no-cache", 8)) {
                     if (token[8] == '=') {
                         const char *header = cache_strqtok(token + 9,
                                 CACHE_SEPARATOR "\"", &slast);
@@ -1147,7 +1148,8 @@ static int cache_control_remove(request_rec *r, const char *cc_header,
             }
             case 'p':
             case 'P': {
-                if (!ap_cstr_casecmpn(token, "private", 7)) {
+                if (!strncmp(token, "private", 7)
+                        || !strncasecmp(token, "private", 7)) {
                     if (token[7] == '=') {
                         const char *header = cache_strqtok(token + 8,
                                 CACHE_SEPARATOR "\"", &slast);
@@ -1252,13 +1254,12 @@ apr_table_t *cache_merge_headers_out(request_rec *r)
 
     headers_out = apr_table_overlay(r->pool, r->headers_out,
                                     r->err_headers_out);
+    apr_table_clear(r->err_headers_out);
 
     if (r->content_type
             && !apr_table_get(headers_out, "Content-Type")) {
-        const char *ctype = ap_make_content_type(r, r->content_type);
-        if (ctype) {
-            apr_table_setn(headers_out, "Content-Type", ctype);
-        }
+        apr_table_setn(headers_out, "Content-Type",
+                       ap_make_content_type(r, r->content_type));
     }
 
     if (r->content_encoding

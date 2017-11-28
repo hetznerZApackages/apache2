@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
-<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -19,7 +17,7 @@
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="../images/feather.png" /></div>
+<img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Modules</a></div>
@@ -37,23 +35,17 @@
 <tr><th><a href="module-dict.html#Compatibility">Compatibility:</a></th><td>Available in version 2.1 and later</td></tr></table>
 <h3>Summary</h3>
 
-    <p>This module <em>requires</em> the service of <code class="module"><a href="../mod/mod_proxy.html">mod_proxy</a></code> and it provides load balancing for
-    all the supported protocols. The most important ones are:</p>
-    <ul>
-        <li>HTTP, using <code class="module"><a href="../mod/mod_proxy_http.html">mod_proxy_http</a></code></li>
-        <li>FTP, using <code class="module"><a href="../mod/mod_proxy_ftp.html">mod_proxy_ftp</a></code></li>
-        <li>AJP13, using <code class="module"><a href="../mod/mod_proxy_ajp.html">mod_proxy_ajp</a></code></li>
-        <li>WebSocket, using <code class="module"><a href="../mod/mod_proxy_wstunnel.html">mod_proxy_wstunnel</a></code></li>
-    </ul>
-    
-    <p>The Load balancing scheduler algorithm is not provided by this
-    module but from other ones such as:</p>
-    <ul>
-        <li><code class="module"><a href="../mod/mod_lbmethod_byrequests.html">mod_lbmethod_byrequests</a></code></li>
-        <li><code class="module"><a href="../mod/mod_lbmethod_bytraffic.html">mod_lbmethod_bytraffic</a></code></li>
-        <li><code class="module"><a href="../mod/mod_lbmethod_bybusyness.html">mod_lbmethod_bybusyness</a></code></li>
-        <li><code class="module"><a href="../mod/mod_lbmethod_heartbeat.html">mod_lbmethod_heartbeat</a></code></li>
-    </ul>
+    <p>This module <em>requires</em> the service of <code class="module"><a href="../mod/mod_proxy.html">mod_proxy</a></code>. It provides load balancing support for
+    <code>HTTP</code>, <code>FTP</code> and <code>AJP13</code> protocols
+    </p>
+
+    <p>Load balancing scheduler algorithm is provided by not this
+    module but other modules such as:
+    <code class="module"><a href="../mod/mod_lbmethod_byrequests.html">mod_lbmethod_byrequests</a></code>,
+    <code class="module"><a href="../mod/mod_lbmethod_bytraffic.html">mod_lbmethod_bytraffic</a></code>,
+    <code class="module"><a href="../mod/mod_lbmethod_bybusyness.html">mod_lbmethod_bybusyness</a></code> and
+    <code class="module"><a href="../mod/mod_lbmethod_heartbeat.html">mod_lbmethod_heartbeat</a></code>.
+    </p>
 
     <p>Thus, in order to get the ability of load balancing,
     <code class="module"><a href="../mod/mod_proxy.html">mod_proxy</a></code>, <code class="module"><a href="../mod/mod_proxy_balancer.html">mod_proxy_balancer</a></code>
@@ -66,7 +58,10 @@
       large.</p>
     </div>
 </div>
-<div id="quickview"><h3>Topics</h3>
+<div id="quickview"><h3 class="directives">Directives</h3>
+<p>This module provides no
+            directives.</p>
+<h3>Topics</h3>
 <ul id="topics">
 <li><img alt="" src="../images/down.gif" /> <a href="#scheduler">Load balancer scheduler algorithm</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#stickyness">Load balancer stickyness</a></li>
@@ -75,13 +70,10 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#balancer_manager">Enabling Balancer Manager Support</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#stickyness_implementation">Details on load balancer stickyness</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#stickyness_troubleshooting">Troubleshooting load balancer stickyness</a></li>
-</ul><h3 class="directives">Directives</h3>
-<p>This module provides no
-            directives.</p>
-<h3>Bugfix checklist</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">httpd changelog</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mod_proxy_balancer">Known issues</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mod_proxy_balancer">Report a bug</a></li></ul><h3>See also</h3>
+</ul><h3>See also</h3>
 <ul class="seealso">
 <li><code class="module"><a href="../mod/mod_proxy.html">mod_proxy</a></code></li>
-<li><a href="#comments_section">Comments</a></li></ul></div>
+</ul><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="scheduler" id="scheduler">Load balancer scheduler algorithm</a></h2>
@@ -118,12 +110,12 @@
     load balancing between two back-end servers:
     </p>
 
-    <pre class="prettyprint lang-config">&lt;Proxy "balancer://mycluster"&gt;
-    BalancerMember "http://192.168.1.50:80"
-    BalancerMember "http://192.168.1.51:80"
+    <pre class="prettyprint lang-config">&lt;Proxy balancer://mycluster&gt;
+    BalancerMember http://192.168.1.50:80
+    BalancerMember http://192.168.1.51:80
 &lt;/Proxy&gt;
-ProxyPass "/test" "balancer://mycluster"
-ProxyPassReverse "/test" "balancer://mycluster"</pre>
+ProxyPass /test balancer://mycluster
+ProxyPassReverse /test balancer://mycluster</pre>
 
 
     <p>Another example of how to provide load balancing with stickyness
@@ -132,13 +124,13 @@ ProxyPassReverse "/test" "balancer://mycluster"</pre>
     </p>
 
     <pre class="prettyprint lang-config">Header add Set-Cookie "ROUTEID=.%{BALANCER_WORKER_ROUTE}e; path=/" env=BALANCER_ROUTE_CHANGED
-&lt;Proxy "balancer://mycluster"&gt;
-    BalancerMember "http://192.168.1.50:80" route=1
-    BalancerMember "http://192.168.1.51:80" route=2
+&lt;Proxy balancer://mycluster&gt;
+    BalancerMember http://192.168.1.50:80 route=1
+    BalancerMember http://192.168.1.51:80 route=2
     ProxySet stickysession=ROUTEID
 &lt;/Proxy&gt;
-ProxyPass "/test" "balancer://mycluster"
-ProxyPassReverse "/test" "balancer://mycluster"</pre>
+ProxyPass /test balancer://mycluster
+ProxyPassReverse /test balancer://mycluster</pre>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -201,7 +193,7 @@ ProxyPassReverse "/test" "balancer://mycluster"</pre>
     <code class="module"><a href="../mod/mod_status.html">mod_status</a></code>.
     Balancer manager enables dynamic update of balancer
     members. You can use balancer manager to change the balance
-    factor of a particular member, or put it in the off line
+    factor or a particular member, or put it in the off line
     mode.
     </p>
 
@@ -212,7 +204,7 @@ ProxyPassReverse "/test" "balancer://mycluster"</pre>
     <p>To enable load balancer management for browsers from the example.com
     domain add this code to your <code>httpd.conf</code>
     configuration file</p>
-<pre class="prettyprint lang-config">&lt;Location "/balancer-manager"&gt;
+<pre class="prettyprint lang-config">&lt;Location /balancer-manager&gt;
     SetHandler balancer-manager
     Require host example.com
 &lt;/Location&gt;</pre>
@@ -272,10 +264,10 @@ ProxyPassReverse "/test" "balancer://mycluster"</pre>
     <p>Finally you can support cookies and URL encoding at the same time, by
     configuring the name of the cookie and the name of the URL parameter
     separated by a vertical bar (<code>|</code>) as in the following example:</p>
-    <pre class="prettyprint lang-config">ProxyPass "/test" "balancer://mycluster" stickysession=JSESSIONID|jsessionid scolonpathdelim=On
-&lt;Proxy "balancer://mycluster"&gt;
-    BalancerMember "http://192.168.1.50:80" route=node1
-    BalancerMember "http://192.168.1.51:80" route=node2
+    <pre class="prettyprint lang-config">ProxyPass /test balancer://mycluster stickysession=JSESSIONID|jsessionid scolonpathdelim=On
+&lt;Proxy balancer://mycluster&gt;
+    BalancerMember http://192.168.1.50:80 route=node1
+    BalancerMember http://192.168.1.51:80 route=node2
 &lt;/Proxy&gt;</pre>
 
     <p>If the cookie and the request parameter both provide routing information
@@ -347,7 +339,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_proxy_balanc
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

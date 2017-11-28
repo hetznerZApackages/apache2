@@ -119,7 +119,7 @@ static int allowed_port(connect_conf *conf, int port)
     int i;
     port_range *list = (port_range *) conf->allowed_connect_ports->elts;
 
-    if (apr_is_empty_array(conf->allowed_connect_ports)) {
+    if (apr_is_empty_array(conf->allowed_connect_ports)){
         return port == APR_URI_HTTPS_DEFAULT_PORT
                || port == APR_URI_SNEWS_DEFAULT_PORT;
     }
@@ -143,6 +143,53 @@ static int proxy_connect_canon(request_rec *r, char *url)
     return OK;
 }
 
+/* read available data (in blocks of CONN_BLKSZ) from c_i and copy to c_o */
+static int proxy_connect_transfer(request_rec *r, conn_rec *c_i, conn_rec *c_o,
+                                  apr_bucket_brigade *bb, char *name)
+{
+    int rv;
+#ifdef DEBUGGING
+    apr_off_t len;
+#endif
+
+    do {
+        apr_brigade_cleanup(bb);
+        rv = ap_get_brigade(c_i->input_filters, bb, AP_MODE_READBYTES,
+                            APR_NONBLOCK_READ, CONN_BLKSZ);
+        if (rv == APR_SUCCESS) {
+            if (c_o->aborted)
+                return APR_EPIPE;
+            if (APR_BRIGADE_EMPTY(bb))
+                break;
+#ifdef DEBUGGING
+            len = -1;
+            apr_brigade_length(bb, 0, &len);
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01016)
+                          "read %" APR_OFF_T_FMT
+                          " bytes from %s", len, name);
+#endif
+            rv = ap_pass_brigade(c_o->output_filters, bb);
+            if (rv == APR_SUCCESS) {
+                ap_fflush(c_o->output_filters, bb);
+            }
+            else {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01017)
+                              "error on %s - ap_pass_brigade",
+                              name);
+            }
+        } else if (!APR_STATUS_IS_EAGAIN(rv)) {
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rv, r, APLOGNO(01018)
+                          "error on %s - ap_get_brigade",
+                          name);
+        }
+    } while (rv == APR_SUCCESS);
+
+    if (APR_STATUS_IS_EAGAIN(rv)) {
+        rv = APR_SUCCESS;
+    }
+    return rv;
+}
+
 /* CONNECT handler */
 static int proxy_connect_handler(request_rec *r, proxy_worker *worker,
                                  proxy_server_conf *conf,
@@ -156,15 +203,14 @@ static int proxy_connect_handler(request_rec *r, proxy_worker *worker,
     apr_socket_t *sock;
     conn_rec *c = r->connection;
     conn_rec *backconn;
-    int done = 0;
 
-    apr_bucket_brigade *bb_front;
-    apr_bucket_brigade *bb_back;
+    apr_bucket_brigade *bb = apr_brigade_create(p, c->bucket_alloc);
     apr_status_t rv;
     apr_size_t nbytes;
     char buffer[HUGE_STRING_LEN];
     apr_socket_t *client_socket = ap_get_conn_socket(c);
     int failed, rc;
+    int client_error = 0;
     apr_pollset_t *pollset;
     apr_pollfd_t pollfd;
     const apr_pollfd_t *signalled;
@@ -227,9 +273,9 @@ static int proxy_connect_handler(request_rec *r, proxy_worker *worker,
                   connectname, connectport);
 
     /* Check if it is an allowed port */
-    if (!allowed_port(c_conf, uri.port)) {
-        return ap_proxyerror(r, HTTP_FORBIDDEN,
-                             "Connect to remote machine blocked");
+    if(!allowed_port(c_conf, uri.port)) {
+              return ap_proxyerror(r, HTTP_FORBIDDEN,
+                                   "Connect to remote machine blocked");
     }
 
     /*
@@ -274,7 +320,7 @@ static int proxy_connect_handler(request_rec *r, proxy_worker *worker,
     /* Add client side to the poll */
     pollfd.p = r->pool;
     pollfd.desc_type = APR_POLL_SOCKET;
-    pollfd.reqevents = APR_POLLIN | APR_POLLHUP;
+    pollfd.reqevents = APR_POLLIN;
     pollfd.desc.s = client_socket;
     pollfd.client_data = NULL;
     apr_pollset_add(pollset, &pollfd);
@@ -314,10 +360,6 @@ static int proxy_connect_handler(request_rec *r, proxy_worker *worker,
     apr_table_setn(r->notes, "proxy-source-port", apr_psprintf(r->pool, "%hu",
                    backconn->local_addr->port));
 
-
-    bb_front = apr_brigade_create(p, c->bucket_alloc);
-    bb_back = apr_brigade_create(p, backconn->bucket_alloc);
-
     /* If we are connecting through a remote proxy, we need to pass
      * the CONNECT request on to it.
      */
@@ -326,24 +368,24 @@ static int proxy_connect_handler(request_rec *r, proxy_worker *worker,
      */
         ap_log_rerror(APLOG_MARK, APLOG_TRACE2, 0, r,
                       "sending the CONNECT request to the remote proxy");
-        ap_fprintf(backconn->output_filters, bb_back,
+        ap_fprintf(backconn->output_filters, bb,
                    "CONNECT %s HTTP/1.0" CRLF, r->uri);
-        ap_fprintf(backconn->output_filters, bb_back,
+        ap_fprintf(backconn->output_filters, bb,
                    "Proxy-agent: %s" CRLF CRLF, ap_get_server_banner());
-        ap_fflush(backconn->output_filters, bb_back);
+        ap_fflush(backconn->output_filters, bb);
     }
     else {
         ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, "Returning 200 OK");
         nbytes = apr_snprintf(buffer, sizeof(buffer),
                               "HTTP/1.0 200 Connection Established" CRLF);
         ap_xlate_proto_to_ascii(buffer, nbytes);
-        ap_fwrite(c->output_filters, bb_front, buffer, nbytes);
+        ap_fwrite(c->output_filters, bb, buffer, nbytes);
         nbytes = apr_snprintf(buffer, sizeof(buffer),
                               "Proxy-agent: %s" CRLF CRLF,
                               ap_get_server_banner());
         ap_xlate_proto_to_ascii(buffer, nbytes);
-        ap_fwrite(c->output_filters, bb_front, buffer, nbytes);
-        ap_fflush(c->output_filters, bb_front);
+        ap_fwrite(c->output_filters, bb, buffer, nbytes);
+        ap_fflush(c->output_filters, bb);
 #if 0
         /* This is safer code, but it doesn't work yet.  I'm leaving it
          * here so that I can fix it later.
@@ -372,9 +414,9 @@ static int proxy_connect_handler(request_rec *r, proxy_worker *worker,
     r->proto_input_filters = c->input_filters;
 /*    r->sent_bodyct = 1;*/
 
-    do { /* Loop until done (one side closes the connection, or an error) */
-        rv = apr_pollset_poll(pollset, -1, &pollcnt, &signalled);
-        if (rv != APR_SUCCESS) {
+    while (1) { /* Infinite loop until error (one side closes the connection) */
+        if ((rv = apr_pollset_poll(pollset, -1, &pollcnt, &signalled))
+            != APR_SUCCESS) {
             if (APR_STATUS_IS_EINTR(rv)) {
                 continue;
             }
@@ -392,56 +434,43 @@ static int proxy_connect_handler(request_rec *r, proxy_worker *worker,
 
             if (cur->desc.s == sock) {
                 pollevent = cur->rtnevents;
-                if (pollevent & (APR_POLLIN | APR_POLLHUP)) {
+                if (pollevent & APR_POLLIN) {
 #ifdef DEBUGGING
                     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01025)
                                   "sock was readable");
 #endif
-                    done |= ap_proxy_transfer_between_connections(r, backconn,
-                                                                  c, bb_back,
-                                                                  bb_front,
-                                                                  "sock", NULL,
-                                                                  CONN_BLKSZ, 1)
-                                                                 != APR_SUCCESS;
+                    rv = proxy_connect_transfer(r, backconn, c, bb, "sock");
+                    }
+                else if ((pollevent & APR_POLLERR)
+                         || (pollevent & APR_POLLHUP)) {
+                         rv = APR_EPIPE;
+                         ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, APLOGNO(01026)
+                                       "err/hup on backconn");
                 }
-                else if (pollevent & APR_POLLERR) {
-                    ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, APLOGNO(01026)
-                                  "err on backconn");
-                    backconn->aborted = 1;
-                    done = 1;
-                }
+                if (rv != APR_SUCCESS)
+                    client_error = 1;
             }
             else if (cur->desc.s == client_socket) {
                 pollevent = cur->rtnevents;
-                if (pollevent & (APR_POLLIN | APR_POLLHUP)) {
+                if (pollevent & APR_POLLIN) {
 #ifdef DEBUGGING
                     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01027)
                                   "client was readable");
 #endif
-                    done |= ap_proxy_transfer_between_connections(r, c,
-                                                                  backconn,
-                                                                  bb_front,
-                                                                  bb_back,
-                                                                  "client",
-                                                                  NULL,
-                                                                  CONN_BLKSZ, 1)
-                                                                 != APR_SUCCESS;
-                }
-                else if (pollevent & APR_POLLERR) {
-                    ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, APLOGNO(02827)
-                                  "err on client");
-                    c->aborted = 1;
-                    done = 1;
+                    rv = proxy_connect_transfer(r, c, backconn, bb, "client");
                 }
             }
             else {
+                rv = APR_EBADF;
                 ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(01028)
                               "unknown socket in pollset");
-                done = 1;
             }
 
         }
-    } while (!done);
+        if (rv != APR_SUCCESS) {
+            break;
+        }
+    }
 
     ap_log_rerror(APLOG_MARK, APLOG_TRACE2, 0, r,
                   "finished with poll() - cleaning up");
@@ -452,11 +481,12 @@ static int proxy_connect_handler(request_rec *r, proxy_worker *worker,
      * Close the socket and clean up
      */
 
-    if (backconn->aborted)
+    if (client_error)
         apr_socket_close(sock);
     else
         ap_lingering_close(backconn);
 
+    c->aborted = 1;
     c->keepalive = AP_CONN_CLOSE;
 
     return OK;

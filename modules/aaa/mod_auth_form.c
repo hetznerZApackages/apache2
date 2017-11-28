@@ -683,7 +683,7 @@ static int get_form_auth(request_rec * r,
     /* a missing username or missing password means auth denied */
     if (!sent_user || !*sent_user) {
 
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02982)
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
                       "form parsed, but username field '%s' was missing or empty, unauthorized",
                       username);
 
@@ -691,7 +691,7 @@ static int get_form_auth(request_rec * r,
     }
     if (!sent_pw || !*sent_pw) {
 
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02983)
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
                       "form parsed, but password field '%s' was missing or empty, unauthorized",
                       password);
 
@@ -798,7 +798,7 @@ static int check_authn(request_rec * r, const char *sent_user, const char *sent_
 
         apr_table_unset(r->notes, AUTHN_PROVIDER_NAME_NOTE);
 
-        /* Something occurred. Stop checking. */
+        /* Something occured. Stop checking. */
         if (auth_result != AUTH_USER_NOT_FOUND) {
             break;
         }
@@ -903,16 +903,16 @@ static int authenticate_form_authn(request_rec * r)
      * never be secure. Abort the auth attempt in this case.
      */
     if (PROXYREQ_PROXY == r->proxyreq) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01809)
-                      "form auth cannot be used for proxy "
+        ap_log_rerror(APLOG_MARK, APLOG_ERR,
+                      0, r, APLOGNO(01809) "form auth cannot be used for proxy "
                       "requests due to XSS risk, access denied: %s", r->uri);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     /* We need an authentication realm. */
     if (!ap_auth_name(r)) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01810)
-                      "need AuthName: %s", r->uri);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR,
+                      0, r, APLOGNO(01810) "need AuthName: %s", r->uri);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 

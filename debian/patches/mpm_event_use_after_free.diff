@@ -1,0 +1,89 @@
+# Avoid using *cs after it is freed
+#
+# http://svn.apache.org/r1638879
+# http://svn.apache.org/r1640031
+--- apache2.orig/server/mpm/event/event.c
++++ apache2/server/mpm/event/event.c
+@@ -814,7 +814,6 @@ static int start_lingering_close_common(
+         TO_QUEUE_REMOVE(*q, cs);
+         apr_thread_mutex_unlock(timeout_mutex);
+         apr_socket_close(cs->pfd.desc.s);
+-        apr_pool_clear(cs->p);
+         ap_push_pool(worker_queue_info, cs->p);
+         return 0;
+     }
+@@ -832,7 +831,6 @@ static int start_lingering_close_common(
+ static int start_lingering_close_blocking(event_conn_state_t *cs)
+ {
+     if (ap_start_lingering_close(cs->c)) {
+-        apr_pool_clear(cs->p);
+         ap_push_pool(worker_queue_info, cs->p);
+         return 0;
+     }
+@@ -857,7 +855,6 @@ static int start_lingering_close_nonbloc
+     if (c->aborted
+         || apr_socket_shutdown(csd, APR_SHUTDOWN_WRITE) != APR_SUCCESS) {
+         apr_socket_close(csd);
+-        apr_pool_clear(cs->p);
+         ap_push_pool(worker_queue_info, cs->p);
+         return 0;
+     }
+@@ -881,7 +878,6 @@ static int stop_lingering_close(event_co
+         ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf, APLOGNO(00468) "error closing socket");
+         AP_DEBUG_ASSERT(0);
+     }
+-    apr_pool_clear(cs->p);
+     ap_push_pool(worker_queue_info, cs->p);
+     return 0;
+ }
+@@ -959,8 +955,6 @@ static void process_socket(apr_thread_t
+         c = ap_run_create_connection(p, ap_server_conf, sock,
+                                      conn_id, sbh, cs->bucket_alloc);
+         if (!c) {
+-            apr_bucket_alloc_destroy(cs->bucket_alloc);
+-            apr_pool_clear(p);
+             ap_push_pool(worker_queue_info, p);
+             return;
+         }
+@@ -1239,7 +1233,6 @@ static apr_status_t push2worker(const ap
+         apr_socket_close(cs->pfd.desc.s);
+         ap_log_error(APLOG_MARK, APLOG_CRIT, rc,
+                      ap_server_conf, APLOGNO(00471) "push2worker: ap_queue_push failed");
+-        apr_pool_clear(cs->p);
+         ap_push_pool(worker_queue_info, cs->p);
+     }
+ 
+@@ -1376,7 +1369,6 @@ static void process_lingering_close(even
+     apr_thread_mutex_unlock(timeout_mutex);
+     TO_QUEUE_ELEM_INIT(cs);
+ 
+-    apr_pool_clear(cs->p);
+     ap_push_pool(worker_queue_info, cs->p);
+ }
+ 
+@@ -1697,7 +1689,6 @@ static void * APR_THREAD_FUNC listener_t
+                             ap_log_error(APLOG_MARK, APLOG_CRIT, rc,
+                                          ap_server_conf,
+                                          "ap_queue_push failed");
+-                            apr_pool_clear(ptrans);
+                             ap_push_pool(worker_queue_info, ptrans);
+                         }
+                         else {
+@@ -1705,7 +1696,6 @@ static void * APR_THREAD_FUNC listener_t
+                         }
+                     }
+                     else {
+-                        apr_pool_clear(ptrans);
+                         ap_push_pool(worker_queue_info, ptrans);
+                     }
+                 }
+--- apache2.orig/server/mpm/event/fdqueue.c
++++ apache2/server/mpm/event/fdqueue.c
+@@ -231,6 +231,7 @@ void ap_push_pool(fd_queue_info_t * queu
+         apr_atomic_inc32(&queue_info->recycled_pools_count);
+     }
+ 
++    apr_pool_clear(pool_to_recycle);
+     new_recycle = (struct recycled_pool *) apr_palloc(pool_to_recycle,
+                                                       sizeof (*new_recycle));
+     new_recycle->pool = pool_to_recycle;

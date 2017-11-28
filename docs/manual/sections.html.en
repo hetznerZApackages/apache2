@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
-<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -18,7 +16,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="./images/feather.png" /></div>
+<img alt="" src="./images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.4</a></div><div id="page-content"><div id="preamble"><h1>Configuration Sections</h1>
@@ -41,7 +39,7 @@ to change the scope of other configuration directives.</p>
 <li><img alt="" src="./images/down.gif" /> <a href="#proxy">Proxy</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#whatwhere">What Directives are Allowed?</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#merging">How the sections are merged</a></li>
-</ul><h3>See also</h3><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
+</ul><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="types" id="types">Types of Configuration Section Containers</a></h2>
@@ -65,7 +63,7 @@ to another site only if the server is started using
 <code>httpd -DClosedForNow</code>:</p>
 
 <pre class="prettyprint lang-config">&lt;IfDefine ClosedForNow&gt;
-    Redirect "/" "http://otherserver.example.com/"
+    Redirect / http://otherserver.example.com/
 &lt;/IfDefine&gt;</pre>
 
 
@@ -84,7 +82,7 @@ about missing modules.</p>
 applied only if <code class="module"><a href="./mod/mod_mime_magic.html">mod_mime_magic</a></code> is available.</p>
 
 <pre class="prettyprint lang-config">&lt;IfModule mod_mime_magic.c&gt;
-    MimeMagicFile "conf/magic"
+    MimeMagicFile conf/magic
 &lt;/IfModule&gt;</pre>
 
 
@@ -140,7 +138,7 @@ The same effect can be obtained using <a href="howto/htaccess.html">.htaccess fi
 following configuration, directory indexes will be enabled for the
 <code>/var/web/dir1</code> directory and all subdirectories.</p>
 
-<pre class="prettyprint lang-config">&lt;Directory "/var/web/dir1"&gt;
+<pre class="prettyprint lang-config">&lt;Directory /var/web/dir1&gt;
     Options +Indexes
 &lt;/Directory&gt;</pre>
 
@@ -152,7 +150,7 @@ when placed in the main section of the configuration file,
 deny access to any file named <code>private.html</code> regardless
 of where it is found.</p>
 
-<pre class="prettyprint lang-config">&lt;Files "private.html"&gt;
+<pre class="prettyprint lang-config">&lt;Files private.html&gt;
     Require all denied
 &lt;/Files&gt;</pre>
 
@@ -167,8 +165,8 @@ access to <code>/var/web/dir1/private.html</code>,
 of <code>private.html</code> found under the <code>/var/web/dir1/</code>
 directory.</p>
 
-<pre class="prettyprint lang-config">&lt;Directory "/var/web/dir1"&gt;
-    &lt;Files "private.html"&gt;
+<pre class="prettyprint lang-config">&lt;Directory /var/web/dir1&gt;
+    &lt;Files private.html&gt;
         Require all denied
     &lt;/Files&gt;
 &lt;/Directory&gt;</pre>
@@ -188,7 +186,7 @@ In particular, it will apply to requests for
 <code>http://yoursite.example.com/private/dir/file.html</code> as well
 as any other requests starting with the <code>/private</code> string.</p>
 
-<pre class="prettyprint lang-config">&lt;LocationMatch "^/private"&gt;
+<pre class="prettyprint lang-config">&lt;LocationMatch ^/private&gt;
     Require all denied
 &lt;/LocationMatch&gt;</pre>
 
@@ -200,7 +198,7 @@ URL to an internal Apache HTTP Server handler provided by <code class="module"><
 No file called <code>server-status</code> needs to exist in the
 filesystem.</p>
 
-<pre class="prettyprint lang-config">&lt;Location "/server-status"&gt;
+<pre class="prettyprint lang-config">&lt;Location /server-status&gt;
     SetHandler server-status
 &lt;/Location&gt;</pre>
 
@@ -210,20 +208,20 @@ filesystem.</p>
 <p>In order to have two overlapping URLs one has to consider the order in which
 certain sections or directives are evaluated. For
 <code class="directive"><a href="./mod/core.html#location">&lt;Location&gt;</a></code> this would be:</p>
-<pre class="prettyprint lang-config">&lt;Location "/foo"&gt;
+<pre class="prettyprint lang-config">&lt;Location /foo&gt;
 &lt;/Location&gt;
-&lt;Location "/foo/bar"&gt;
+&lt;Location /foo/bar&gt;
 &lt;/Location&gt;</pre>
 
 <p><code class="directive"><a href="./mod/mod_alias.html#alias">&lt;Alias&gt;</a></code>es on the other hand,
 are mapped vice-versa:</p>
-<pre class="prettyprint lang-config">Alias "/foo/bar" "/srv/www/uncommon/bar"
-Alias "/foo" "/srv/www/common/foo"</pre>
+<pre class="prettyprint lang-config">Alias /foo/bar /srv/www/uncommon/bar
+Alias /foo /srv/www/common/foo</pre>
 
 <p>The same is true for the <code class="directive"><a href="./mod/mod_proxy.html#proxypass">ProxyPass</a></code>
 directives:</p>
-<pre class="prettyprint lang-config">ProxyPass "/special-area" "http://special.example.com" smax=5 max=10
-ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofailover=On</pre>
+<pre class="prettyprint lang-config">ProxyPass /special-area http://special.example.com smax=5 max=10
+ProxyPass / balancer://mycluster/ stickysession=JSESSIONID|jsessionid nofailover=On</pre>
 
 
 
@@ -250,14 +248,14 @@ how directives are applied.</p>
 <p>A non-regex wildcard section that changes the configuration of
 all user directories could look as follows:</p>
 
-<pre class="prettyprint lang-config">&lt;Directory "/home/*/public_html"&gt;
+<pre class="prettyprint lang-config">&lt;Directory /home/*/public_html&gt;
     Options Indexes
 &lt;/Directory&gt;</pre>
 
 
 <p>Using regex sections, we can deny access to many types of image files
 at once:</p>
-<pre class="prettyprint lang-config">&lt;FilesMatch "\.(?i:gif|jpe?g|png)$"&gt;
+<pre class="prettyprint lang-config">&lt;FilesMatch \.(?i:gif|jpe?g|png)$&gt;
     Require all denied
 &lt;/FilesMatch&gt;</pre>
 
@@ -268,8 +266,8 @@ corresponding name in uppercase. This allows elements of filename paths
 and URLs to be referenced from within <a href="expr.html">expressions</a>
 and modules like <code class="module"><a href="./mod/mod_rewrite.html">mod_rewrite</a></code>.</p>
 
-<pre class="prettyprint lang-config">&lt;DirectoryMatch "^/var/www/combined/(?&lt;SITENAME&gt;[^/]+)"&gt;
-    require ldap-group "cn=%{env:MATCH_SITENAME},ou=combined,o=Example"
+<pre class="prettyprint lang-config">&lt;DirectoryMatch ^/var/www/combined/(?&lt;SITENAME&gt;[^/]+)&gt;
+    require ldap-group cn=%{env:SITENAME},ou=combined,o=Example
 &lt;/DirectoryMatch&gt;</pre>
 
 
@@ -302,7 +300,7 @@ different webspace locations (URLs) could map to the same filesystem
 location, allowing your restrictions to be circumvented.
 For example, consider the following configuration:</p>
 
-<pre class="prettyprint lang-config">&lt;Location "/dir/"&gt;
+<pre class="prettyprint lang-config">&lt;Location /dir/&gt;
     Require all denied
 &lt;/Location&gt;</pre>
 
@@ -326,7 +324,7 @@ many other ways to map multiple webspace locations to the same
 filesystem location.  Therefore you should always use the filesystem
 containers when you can.  There is, however, one exception to this
 rule.  Putting configuration restrictions in a <code>&lt;Location
-"/"&gt;</code> section is perfectly safe because this section will apply
+/&gt;</code> section is perfectly safe because this section will apply
 to all requests regardless of the specific URL.</p>
 
 
@@ -361,12 +359,12 @@ see the <a href="vhosts/">Virtual Host Documentation</a>.</p>
 and <code class="directive"><a href="./mod/mod_proxy.html#proxymatch">&lt;ProxyMatch&gt;</a></code>
 containers apply enclosed configuration directives only
 to sites accessed through <code class="module"><a href="./mod/mod_proxy.html">mod_proxy</a></code>'s proxy server
-that match the specified URL. For example, the following configuration
-will allow only a subset of clients to access the
-<code>www.example.com</code> website using the proxy server:</p>
+that match the specified URL.  For example, the following configuration
+will prevent the proxy server from being used to access the
+<code>www.example.com</code> website.</p>
 
-<pre class="prettyprint lang-config">&lt;Proxy "http://www.example.com/*"&gt;
-    Require host yournetwork.example.com
+<pre class="prettyprint lang-config">&lt;Proxy http://www.example.com/*&gt;
+    Require all granted
 &lt;/Proxy&gt;</pre>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
@@ -418,7 +416,7 @@ are interpreted, it is important to understand how this works.</p>
       <code class="directive"><a href="./mod/core.html#directory">&lt;Directory&gt;</a></code>)</li>
 
       <li><code class="directive"><a href="./mod/core.html#directorymatch">&lt;DirectoryMatch&gt;</a></code>
-      (and <code>&lt;Directory "~"&gt;</code>)</li>
+      (and <code>&lt;Directory ~&gt;</code>)</li>
 
       <li><code class="directive"><a href="./mod/core.html#files">&lt;Files&gt;</a></code> and <code class="directive"><a href="./mod/core.html#filesmatch">&lt;FilesMatch&gt;</a></code> done
       simultaneously</li>
@@ -434,9 +432,9 @@ are interpreted, it is important to understand how this works.</p>
     <p>Apart from <code class="directive"><a href="./mod/core.html#directory">&lt;Directory&gt;</a></code>, each group is processed in
     the order that they appear in the configuration files.  <code class="directive"><a href="./mod/core.html#directory">&lt;Directory&gt;</a></code> (group 1 above)
     is processed in the order shortest directory component to longest.
-    So for example, <code>&lt;Directory "/var/web/dir"&gt;</code> will
+    So for example, <code>&lt;Directory /var/web/dir&gt;</code> will
     be processed before <code>&lt;Directory
-    "/var/web/dir/subdir"&gt;</code>.  If multiple <code class="directive"><a href="./mod/core.html#directory">&lt;Directory&gt;</a></code> sections apply
+    /var/web/dir/subdir&gt;</code>.  If multiple <code class="directive"><a href="./mod/core.html#directory">&lt;Directory&gt;</a></code> sections apply
     to the same directory they are processed in the configuration file
     order. Configurations included via the <code class="directive"><a href="./mod/core.html#include">Include</a></code> directive will be treated as if
     they were inside the including file at the location of the
@@ -452,7 +450,14 @@ are interpreted, it is important to understand how this works.</p>
     container takes the place of the <code class="directive"><a href="./mod/core.html#directory">&lt;Directory&gt;</a></code> container in the processing
     order.</p>
 
-    <div class="note"><h3>Technical Note</h3>
+    <p>Later sections override earlier ones, however each module is responsible
+    for interpreting what form this override takes.  A later configuration section 
+    with directives from a given module might cause a conceptual "merge" of some
+    directives, all directives, or a complete replacement of the modules 
+    configuration with the module defaults and directives explicitly listed in 
+    the later context.</p>
+
+<div class="note"><h3>Technical Note</h3>
       There is actually a
       <code>&lt;Location&gt;</code>/<code>&lt;LocationMatch&gt;</code>
       sequence performed just before the name translation phase
@@ -460,66 +465,25 @@ are interpreted, it is important to understand how this works.</p>
       are used to map URLs to filenames). The results of this
       sequence are completely thrown away after the translation has
       completed.
-    </div>
+</div>
 
-<h3><a name="relationship-module-configuration" id="relationship-module-configuration">Relationship between modules and configuration sections</a></h3>
-    <p>One question that often arises after reading how configuration sections are
-    merged is related to how and when directives of specific modules like <code class="module"><a href="./mod/mod_rewrite.html">mod_rewrite</a></code>
-    are processed. The answer is not trivial and needs a bit of background. 
-    Each httpd module manages its own configuration, and each of its directives in httpd.conf specify one piece 
-    of configuration in a particular context. httpd does not execute a command as it is read.</p>
-    <p>At runtime, the core of httpd iterates over the defined configuration sections in the order
-    described above to determine which ones apply to the current request. When the first section matches, 
-    it is considered the current configuration for this request. If a subsequent section matches too, 
-    then each module with a directive in either of the sections is given a chance to merge its configuration between the two sections. The result is a third configuration, and the process goes on until all the configuration sections
-    are evaluated.</p>
-    <p>After the above step, the "real" processing of the HTTP request begins: each module has a chance to run 
-    and perform whatever tasks they like. They can retrieve their own final merged configuration from the core
-    of the httpd to determine how they should act.</p>
-    <p>An example can help to visualize the whole process. The following configuration uses the 
-        <code class="directive"><a href="./mod/mod_headers.html#header">Header</a></code> directive of <code class="module"><a href="./mod/mod_headers.html">mod_headers</a></code> to set
-        a specific HTTP header. What value will httpd set in the <code>CustomHeaderName</code> header for a request to
-        <code>/example/index.html</code> ?
-    </p>
-    <pre class="prettyprint lang-config">&lt;Directory "/"&gt;
-    Header set CustomHeaderName one
-    &lt;FilesMatch ".*"&gt;
-        Header set CustomHeaderName three
-    &lt;/FilesMatch&gt;
-&lt;/Directory&gt;
-
-&lt;Directory "/example"&gt;
-    Header set CustomHeaderName two
-&lt;/Directory&gt;</pre>
-    
-    <ul>
-        <li><code class="directive">Directory</code> "/" matches and an initial configuration to set the <code>CustomHeaderName</code> header with the value <code>one</code> is created.</li>
-        <li><code class="directive">Directory</code> "/example" matches, and since <code class="module"><a href="./mod/mod_headers.html">mod_headers</a></code> specifies in its code to override in case of a merge, a new configuration is created to set the <code>CustomHeaderName</code> header with the value <code>two</code>.</li>
-        <li><code class="directive">FilesMatch</code> ".*" matches and another merge opportunity arises, causing the <code>CustomHeaderName</code> header to be set with the value <code>three</code>.</li>
-        <li>Eventually during the next steps of the HTTP request processing <code class="module"><a href="./mod/mod_headers.html">mod_headers</a></code> will be called and it will receive the configuration to set the <code>CustomHeaderName</code> header with the value <code>three</code>. <code class="module"><a href="./mod/mod_headers.html">mod_headers</a></code> normally uses this configuration to perfom its job, namely setting the foo header. This does not mean that a module can't perform a more complex action like discarding directives because not needed or deprecated, etc..</li>
-    </ul>
-
-    <p>This is true for .htaccess too since they have the same priority as <code class="directive">Directory</code> in the merge order. The important concept to understand is that configuration sections like  <code class="directive">Directory</code> and <code class="directive">FilesMatch</code> are not comparable to module specific directives like <code class="directive"><a href="./mod/mod_headers.html#header">Header</a></code> or <code class="directive"><a href="./mod/mod_rewrite.html#rewriterule">RewriteRule</a></code> because they operate on different levels.
-    </p>
-
-
-<h3><a name="merge-examples" id="merge-examples">Some useful examples</a></h3>
+<h3><a name="merge-examples" id="merge-examples">Some Examples</a></h3>
 
 <p>Below is an artificial example to show the order of
 merging. Assuming they all apply to the request, the directives in
 this example will be applied in the order A &gt; B &gt; C &gt; D &gt;
 E.</p>
 
-<pre class="prettyprint lang-config">&lt;Location "/"&gt;
+<pre class="prettyprint lang-config">&lt;Location /&gt;
     E
 &lt;/Location&gt;
 
-&lt;Files "f.html"&gt;
+&lt;Files f.html&gt;
     D
 &lt;/Files&gt;
 
 &lt;VirtualHost *&gt;
-&lt;Directory "/a/b"&gt;
+&lt;Directory /a/b&gt;
     B
 &lt;/Directory&gt;
 &lt;/VirtualHost&gt;
@@ -528,10 +492,9 @@ E.</p>
     C
 &lt;/DirectoryMatch&gt;
 
-&lt;Directory "/a/b"&gt;
+&lt;Directory /a/b&gt;
     A
 &lt;/Directory&gt;</pre>
-
 
 
 <p>For a more concrete example, consider the following.  Regardless of
@@ -539,12 +502,12 @@ any access restrictions placed in <code class="directive"><a href="./mod/core.ht
 evaluated last and will allow unrestricted access to the server.  In
 other words, order of merging is important, so be careful!</p>
 
-<pre class="prettyprint lang-config">&lt;Location "/"&gt;
+<pre class="prettyprint lang-config">&lt;Location /&gt;
     Require all granted
 &lt;/Location&gt;
 
-# Whoops!  This &lt;Directory&gt; section will have no effect
-&lt;Directory "/"&gt;
+# Woops!  This &lt;Directory&gt; section will have no effect
+&lt;Directory /&gt;
     &lt;RequireAll&gt;
         Require all granted
         Require not host badguy.example.com
@@ -579,7 +542,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/sections.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

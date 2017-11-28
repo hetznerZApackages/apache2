@@ -68,6 +68,9 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name mod_example_ipc
     End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name mod_lbmethod_rr
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -280,9 +283,6 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_proxy_ftp
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name mod_proxy_hcheck
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_proxy_http
@@ -1723,24 +1723,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "mod_http2"=.\modules\http2\mod_http2.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name libapr
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name libhttpd
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "mod_headers"=.\modules\metadata\mod_headers.dsp - Package Owner=<4>
 
 Package=<5>
@@ -1964,6 +1946,30 @@ Package=<4>
 ###############################################################################
 
 Project: "mod_lbmethod_heartbeat"=.\modules\proxy\balancers\mod_lbmethod_heartbeat.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name mod_proxy
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name mod_proxy_balancer
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "mod_lbmethod_rr"=.\modules\proxy\examples\mod_lbmethod_rr.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -2312,28 +2318,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "mod_proxy_hcheck"=.\modules\proxy\mod_proxy_hcheck.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name libapr
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name libhttpd
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name mod_proxy
-    End Project Dependency
-}}}
-
-###############################################################################
-###############################################################################
-
 Project: "mod_proxy_html"=.\modules\filters\mod_proxy_html.dsp - Package Owner=<4>
 
 Package=<5>
@@ -2365,30 +2349,6 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name libhttpd
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name mod_proxy
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "mod_proxy_http2"=.\modules\http2\mod_proxy_http2.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name libapr
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name libhttpd
-    End Project Dependency
-    Begin Project Dependency
-    Project_Dep_Name mod_http2
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_proxy

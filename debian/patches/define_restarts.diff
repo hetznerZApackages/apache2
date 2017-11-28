@@ -1,0 +1,24 @@
+# https://svn.apache.org/r1651083
+# https://bz.apache.org/bugzilla/show_bug.cgi?id=57268
+# https://bz.apache.org/bugzilla/show_bug.cgi?id=56008
+#
+#   Merge r1643825 from trunk:
+#   
+#   * core: Fix -D[efined] or <Define>[d] variables lifetime accross restarts.
+#           PR 57328.
+#   
+#   Submitted-by: Armin Abfalterer <a.abfalterer gmail.com>
+#   Reviewed/Committed-by: ylavic
+#   
+#   Submitted by: ylavic
+#   Reviewed/backported by: jim
+--- apache2.orig/server/core.c
++++ apache2/server/core.c
+@@ -1271,6 +1271,7 @@ AP_DECLARE(const char *) ap_resolve_env(
+ static int reset_config_defines(void *dummy)
+ {
+     ap_server_config_defines = saved_server_config_defines;
++    saved_server_config_defines = NULL;
+     server_config_defined_vars = NULL;
+     return OK;
+ }

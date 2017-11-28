@@ -116,8 +116,14 @@ static int reflector_handler(request_rec * r)
                                     APR_BLOCK_READ, HUGE_STRING_LEN);
 
             if (status != APR_SUCCESS) {
-                apr_brigade_destroy(bbin);
-                return ap_map_http_request_error(status, HTTP_BAD_REQUEST);
+                if (status == AP_FILTER_ERROR) {
+                    apr_brigade_destroy(bbin);
+                    return status;
+                }
+                else {
+                    apr_brigade_destroy(bbin);
+                    return HTTP_BAD_REQUEST;
+                }
             }
 
             for (bucket = APR_BRIGADE_FIRST(bbin);
@@ -154,7 +160,7 @@ static int reflector_handler(request_rec * r)
                     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, status, r, APLOGNO(01410)
                              "reflector_handler: ap_pass_brigade returned %i",
                                   status);
-                    return AP_FILTER_ERROR;
+                    return HTTP_INTERNAL_SERVER_ERROR;
                 }
 
             }

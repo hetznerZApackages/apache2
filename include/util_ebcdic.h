@@ -35,43 +35,35 @@ extern "C" {
 #include "httpd.h"
 #include "util_charset.h"
 
-#if APR_CHARSET_EBCDIC || defined(DOXYGEN)
+#if APR_CHARSET_EBCDIC
 
 /**
- * Setup all of the global translation handlers.
- * @param   pool    The pool to allocate out of.
- * @note On non-EBCDIC system, this function does <b>not</b> exist.
- * So, its use should be guarded by \#if APR_CHARSET_EBCDIC.
+ * Setup all of the global translation handlers
+ * @param pool pool to allocate out of
  */
 apr_status_t ap_init_ebcdic(apr_pool_t *pool);
 
 /**
  * Convert protocol data from the implementation character
  * set to ASCII.
- * @param   buffer  Buffer to translate.
- * @param   len     Number of bytes to translate.
- * @note On non-EBCDIC system, this function is replaced by an 
- * empty macro.
+ * @param buffer buffer to translate
+ * @param len number of bytes to translate
  */
 void ap_xlate_proto_to_ascii(char *buffer, apr_size_t len);
 
 /**
  * Convert protocol data to the implementation character
  * set from ASCII.
- * @param   buffer  Buffer to translate.
- * @param   len     Number of bytes to translate.
- * @note On non-EBCDIC system, this function is replaced by an 
- * empty macro.
+ * @param buffer buffer to translate
+ * @param len number of bytes to translate
  */
 void ap_xlate_proto_from_ascii(char *buffer, apr_size_t len);
 
 /**
- * Convert protocol data from the implementation character
+ * Convert protocol data from the implementation charater
  * set to ASCII, then send it.
- * @param   r       The current request.
- * @param   ...     The strings to write, followed by a NULL pointer.
- * @note On non-EBCDIC system, this function is replaced by a call to
- * #ap_rvputs.
+ * @param r   the current request
+ * @param ... the strings to write, followed by a NULL pointer
  */
 int ap_rvputs_proto_in_ascii(request_rec *r, ...);
 

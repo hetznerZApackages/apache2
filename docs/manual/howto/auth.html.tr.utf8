@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head>
-<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -18,7 +16,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p>
 <p class="apache">Apache HTTP Sunucusu Sürüm 2.4</p>
-<img alt="" src="../images/feather.png" /></div>
+<img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Sunucusu</a> &gt; <a href="http://httpd.apache.org/docs/">Belgeleme</a> &gt; <a href="../">Sürüm 2.4</a> &gt; <a href="./">Nasıllar ve Öğreticiler</a></div><div id="page-content"><div id="preamble"><h1>Kimlik Doğrulama ve Yetkilendirme</h1>
@@ -48,7 +46,7 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#beyond">Yetkilendirmenin biraz ötesi</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#socache">Kimlik Doğrulama Arabelleği</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#moreinformation">Daha fazla bilgi</a></li>
-</ul><h3>Ayrıca bakınız:</h3><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
+</ul><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="related" id="related">İlgili modüller ve Yönergeler</a></h2>
@@ -212,13 +210,13 @@
     amaçlıyorsanız, şu yönergeleri kullanabilirsiniz. Bu yönergeleri
     <code>/usr/local/apache/htdocs/secret/.htaccess</code> dosyası içine
     veya <code>httpd.conf</code> içindeki &lt;Directory
-    "/usr/local/apache/htdocs/secret"&gt; bölümüne koyabilirsiniz.</p>
+    /usr/local/apache/htdocs/secret&gt; bölümüne koyabilirsiniz.</p>
 
     <pre class="prettyprint lang-config">AuthType Basic
 AuthName "Gizli Dosyalar"
 # (Aşağıdaki satırın kullanımı isteğe bağlıdır)
 AuthBasicProvider file
-AuthUserFile "/usr/local/apache/passwd/passwords"
+AuthUserFile /usr/local/apache/passwd/passwords
 Require user umut</pre>
 
 
@@ -323,8 +321,8 @@ Require user umut</pre>
 AuthName "Davete Binaen"
 # Satır isteğe bağlıdır:
 AuthBasicProvider file
-AuthUserFile "/usr/local/apache/passwd/passwords"
-AuthGroupFile "/usr/local/apache/passwd/groups"
+AuthUserFile /usr/local/apache/passwd/passwords
+AuthGroupFile /usr/local/apache/passwd/groups
 Require group Grupismi</pre>
 
 
@@ -378,11 +376,11 @@ Require group Grupismi</pre>
 
     <p>Bir metin dosyası yerine bir dbm dosyası kullanım örneği:</p>
 
-    <pre class="prettyprint lang-config">&lt;Directory "/www/docs/private"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory /www/docs/private&gt;
     AuthName "Private"
     AuthType Basic
     AuthBasicProvider dbm
-    AuthDBMUserFile "/www/passwords/passwd.dbm"
+    AuthDBMUserFile /www/passwords/passwd.dbm
     Require valid-user
 &lt;/Directory&gt;</pre>
 
@@ -401,11 +399,11 @@ Require group Grupismi</pre>
     örnekte dosya ve LDAP tabanlı kimlik doğrulama tedarikçileri bir
     arada kullanılmıştır.</p>
 
-    <pre class="prettyprint lang-config">&lt;Directory "/www/docs/private"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory /www/docs/private&gt;
     AuthName "Private"
     AuthType Basic
     AuthBasicProvider file ldap
-    AuthUserFile "/usr/local/apache/passwd/passwords"
+    AuthUserFile /usr/local/apache/passwd/passwords
     AuthLDAPURL ldap://ldaphost/o=yourorg
     Require valid-user
 &lt;/Directory&gt;</pre>
@@ -424,13 +422,13 @@ Require group Grupismi</pre>
     dosya için hem dosyalı hem de LDAP grup kimlik doğrulaması
     kullanılmıştır.</p>
 
-    <pre class="prettyprint lang-config">&lt;Directory "/www/docs/private"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory /www/docs/private&gt;
     AuthName "Private"
     AuthType Basic
     AuthBasicProvider file
-    AuthUserFile "/usr/local/apache/passwd/passwords"
+    AuthUserFile /usr/local/apache/passwd/passwords
     AuthLDAPURL ldap://ldaphost/o=yourorg
-    AuthGroupFile "/usr/local/apache/passwd/groups"
+    AuthGroupFile /usr/local/apache/passwd/groups
     Require group GroupName
     Require ldap-group cn=mygroup,o=yourorg
 &lt;/Directory&gt;</pre>
@@ -565,18 +563,6 @@ Require group Grupismi</pre>
       yapılandırmalarla uyumluluğu sağlamak için bu yönergeler
       <code class="module"><a href="../mod/mod_access_compat.html">mod_access_compat</a></code> modülüne taşınmıştır.</p>
 
-      <div class="warning"><h3>Note</h3>
-        <p><code class="module"><a href="../mod/mod_access_compat.html">mod_access_compat</a></code> ile sağlanan yönergelerin 
-        kullanımı artık önerilmemekte, <code class="module"><a href="../mod/mod_authz_host.html">mod_authz_host</a></code> 
-        modülündeki yönergeler önerilmektedir. <code class="directive"><a href="../mod/mod_access_compat.html#order">Order</a></code>, <code class="directive"><a href="../mod/mod_access_compat.html#allow">Allow</a></code> veya <code class="directive"><a href="../mod/mod_access_compat.html#deny">Deny</a></code> ile
-        <code class="directive"><a href="../mod/mod_authz_core.html#require">Require</a></code> gibi daha yeni 
-        olanlarının yenilerle karışık kullanımı teknik olarak mümkünse de 
-        önerilmemektedir. <code class="module"><a href="../mod/mod_access_compat.html">mod_access_compat</a></code> modülü, 2.4 
-        yükseltmesini kolaylaştırmak için sadece eski yönergeleri içeren 
-        yapılandırmaları desteklemek üzere oluşturulmuştur.  Daha ayrıntılı 
-        bilgi için <a href="../upgrading.html">yükseltme</a> belgesine bakınız.
-        </p>
-      </div>
     
 
   </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -627,7 +613,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/howto/auth.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

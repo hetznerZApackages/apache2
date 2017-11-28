@@ -1627,7 +1627,7 @@ static const char *set_bind_pattern(cmd_parms *cmd, void *_cfg, const char *exp,
     }
 
     sec->bind_regex = regexp;
-    sec->bind_subst = subst;
+    sec->bind_subst = apr_pstrdup(cmd->pool, subst);
 
     return NULL;
 }
@@ -1655,7 +1655,7 @@ static const char *set_bind_password(cmd_parms *cmd, void *_cfg, const char *arg
         result = ap_get_exec_line(cmd->pool,
                                   (const char*)argv[0], (const char * const *)argv);
 
-        if (!result) {
+        if(!result) {
             return apr_pstrcat(cmd->pool,
                                "Unable to get bind password from exec of ",
                                arg+5, NULL);
@@ -1796,8 +1796,8 @@ static int authnz_ldap_post_config(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *
     {
         if (!util_ldap_ssl_supported(s))
         {
-            ap_log_error(APLOG_MARK, APLOG_CRIT, 0, s, APLOGNO(03159)
-                         "LDAP: SSL connections (ldaps://) not supported by utilLDAP");
+            ap_log_error(APLOG_MARK, APLOG_CRIT, 0, s,
+                     "LDAP: SSL connections (ldaps://) not supported by utilLDAP");
             return(!OK);
         }
     }
