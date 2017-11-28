@@ -24,7 +24,7 @@
  * spawning children as required to ensure there are always ap_daemons_to_start
  * processes accepting connections.
  *
- * Each child process consists of a pool of worker threads and a
+ * Each child process consists of a a pool of worker threads and a
  * main thread that accepts connections & passes them to the workers via
  * a work queue. The worker thread pool is dynamic, managed by a maintanence
  * thread so that the number of idle threads is kept between
@@ -102,7 +102,7 @@ typedef struct {
     listen_socket_t listeners[1];
 } parent_info_t;
 
-static int master_main();
+static char master_main();
 static void spawn_child(int slot);
 void ap_mpm_child_main(apr_pool_t *pconf);
 static void set_signals();
@@ -153,35 +153,34 @@ static int mpmt_os2_run(apr_pool_t *_pconf, apr_pool_t *plog, server_rec *s )
         ap_mpm_child_main(pconf);
 
         /* Outta here */
-        return DONE;
+        return 1;
     }
     else {
         /* Parent process */
-        int rc;
+        char restart;
         is_parent_process = TRUE;
 
         if (ap_setup_listeners(ap_server_conf) < 1) {
             ap_log_error(APLOG_MARK, APLOG_ALERT, 0, s, APLOGNO(00200)
                          "no listening sockets available, shutting down");
-            return !OK;
+            return 1;
         }
 
         ap_log_pid(pconf, ap_pid_fname);
 
-        rc = master_main();
+        restart = master_main();
         ++ap_my_generation;
         ap_scoreboard_image->global->running_generation = ap_my_generation;
 
-        if (rc != OK) {
+        if (!restart) {
             ap_remove_pid(pconf, ap_pid_fname);
             ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, ap_server_conf, APLOGNO(00201)
-                         "caught %s, shutting down",
-                         (rc == DONE) ? "SIGTERM" : "error");
-            return rc;
+                         "caught SIGTERM, shutting down");
+            return 1;
         }
     }  /* Parent process */
 
-    return OK; /* Restart */
+    return 0; /* Restart */
 }
 
 
@@ -189,7 +188,7 @@ static int mpmt_os2_run(apr_pool_t *_pconf, apr_pool_t *plog, server_rec *s )
 /* Main processing of the parent process
  * returns TRUE if restarting
  */
-static int master_main()
+static char master_main()
 {
     server_rec *s = ap_server_conf;
     ap_listen_rec *lr;
@@ -204,7 +203,7 @@ static int master_main()
     if (ap_setup_listeners(ap_server_conf) < 1) {
         ap_log_error(APLOG_MARK, APLOG_ALERT, 0, s, APLOGNO(00202)
                      "no listening sockets available, shutting down");
-        return !OK;
+        return FALSE;
     }
 
     /* Allocate a shared memory block for the array of listeners */
@@ -220,7 +219,7 @@ static int master_main()
     if (rc) {
         ap_log_error(APLOG_MARK, APLOG_ALERT, APR_FROM_OS_ERROR(rc), s, APLOGNO(00203)
                      "failure allocating shared memory, shutting down");
-        return !OK;
+        return FALSE;
     }
 
     /* Store the listener sockets in the shared memory area for our children to see */
@@ -237,7 +236,7 @@ static int master_main()
     if (rc) {
         ap_log_error(APLOG_MARK, APLOG_ALERT, APR_FROM_OS_ERROR(rc), s, APLOGNO(00204)
                      "failure creating accept mutex, shutting down");
-        return !OK;
+        return FALSE;
     }
 
     parent_info->accept_mutex = ap_mpm_accept_mutex;
@@ -252,7 +251,7 @@ static int master_main()
         if (rc) {
             ap_log_error(APLOG_MARK, APLOG_ERR, APR_FROM_OS_ERROR(rc), ap_server_conf, APLOGNO(00205)
                          "unable to allocate shared memory for scoreboard , exiting");
-            return !OK;
+            return FALSE;
         }
 
         ap_init_scoreboard(sb_mem);
@@ -267,7 +266,7 @@ static int master_main()
     if (one_process) {
         ap_scoreboard_image->parent[0].pid = getpid();
         ap_mpm_child_main(pconf);
-        return DONE;
+        return FALSE;
     }
 
     while (!restart_pending && !shutdown_pending) {
@@ -319,7 +318,7 @@ static int master_main()
     }
 
     DosFreeMem(parent_info);
-    return restart_pending ? OK : DONE;
+    return restart_pending;
 }
 
 
@@ -508,8 +507,11 @@ static int mpmt_os2_check_config(apr_pool_t *p, apr_pool_t *plog,
         if (startup) {
             ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL, APLOGNO(00215)
                          "WARNING: MinSpareThreads of %d not allowed, "
-                         "increasing to 1 to avoid almost certain server failure. "
-                         "Please read the documentation.", ap_min_spare_threads);
+                         "increasing to 1", ap_min_spare_threads);
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL,
+                         " to avoid almost certain server failure.");
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL,
+                         " Please read the documentation.");
         } else {
             ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(00216)
                          "MinSpareThreads of %d not allowed, increasing to 1",

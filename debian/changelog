@@ -1,399 +1,228 @@
-apache2 (2.4.25-3+deb9u3+hetz1~exp7) jessie-hetz-experimental; urgency=high
+apache2 (2.4.10-10+deb8u11+hetz2~exp1) jessie-hetz-experimental; urgency=high
 
-  * Apply our hetz_relax_ownership_enforcement patch 
+  * Bump because we reverted apache 2.4.25 
 
- -- Geoff Robertson <gr@hetzner.co.za>  Wed, 18 Oct 2017 17:35:59 +0200
+ -- Shaun Bugler <sb@hetzner.co.za>  Tue, 28 Nov 2017 10:26:11 +0200
 
-apache2 (2.4.25-3+deb9u3+hetz1~exp6) jessie-hetz-experimental; urgency=high
+apache2 (2.4.10-10+deb8u11+hetz1) jessie-hetz; urgency=high
 
-  * Add the modules to the control file 
+  * Released 2.4.10-10+deb8u11+hetz1~exp2 as 2.4.10-10+deb8u11+hetz1
 
- -- Geoff Robertson <gr@hetzner.co.za>  Wed, 18 Oct 2017 16:56:59 +0200
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Thu, 21 Sep 2017 11:25:44 +0200
 
-apache2 (2.4.25-3+deb9u3+hetz1~exp5) jessie-hetz-experimental; urgency=high
+apache2 (2.4.10-10+deb8u11+hetz1~exp2) jessie-hetz-experimental; urgency=high
 
-  * Add the mpm modules 
+  * Ensure we are building 64bit only
 
- -- Geoff Robertson <gr@hetzner.co.za>  Wed, 18 Oct 2017 16:36:39 +0200
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Thu, 21 Sep 2017 10:22:27 +0200
 
-apache2 (2.4.25-3+deb9u3+hetz1~exp4) jessie-hetz-experimental; urgency=high
+apache2 (2.4.10-10+deb8u11+hetz1~exp1) jessie-hetz-experimental; urgency=high
 
-  * Remove proxy_http2 module 
+  * Update to apply upstream patch
 
- -- Geoff Robertson <gr@hetzner.co.za>  Wed, 18 Oct 2017 16:20:09 +0200
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Thu, 21 Sep 2017 10:00:16 +0200
 
-apache2 (2.4.25-3+deb9u3+hetz1~exp3) jessie-hetz-experimental; urgency=high
-
-  * still backporting
-
- -- Willem Basson <willem.basson@hetzner.co.za>  Wed, 18 Oct 2017 16:16:14 +0200
-
-apache2 (2.4.25-3+deb9u3+hetz1~exp2) jessie-hetz-experimental; urgency=high
-
-  * Attempting to backport to Jessie 
-
- -- Willem Basson <willem.basson@hetzner.co.za>  Wed, 18 Oct 2017 15:53:10 +0200
-
-apache2 (2.4.25-3+deb9u3) stretch-security; urgency=high
+apache2 (2.4.10-10+deb8u11) jessie-security; urgency=high
 
   * Non-maintainer upload by the Security Team.
   * CVE-2017-9798: Use-after-free by limiting unregistered HTTP method
     (Closes: #876109)
 
- -- Salvatore Bonaccorso <carnil@debian.org>  Tue, 19 Sep 2017 20:58:57 +0200
+ -- Salvatore Bonaccorso <carnil@debian.org>  Tue, 19 Sep 2017 21:08:12 +0200
 
-apache2 (2.4.25-3+deb9u2) stretch-security; urgency=medium
+apache2 (2.4.10-10+deb8u10+hetz1) jessie-hetz; urgency=medium
+
+  * Released 2.4.10-10+deb8u10+hetz1~exp1 as 2.4.10-10+deb8u10+hetz1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Wed, 19 Jul 2017 11:48:43 +0200
+
+apache2 (2.4.10-10+deb8u10+hetz1~exp1) jessie-hetz-experimental; urgency=medium
+
+  * Update to upstream to patch: CVE-2017-9788
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Wed, 19 Jul 2017 11:43:00 +0200
+
+apache2 (2.4.10-10+deb8u10) jessie-security; urgency=medium
 
   * CVE-2017-9788: mod_auth_digest: Fix leak of uninitialized memory
 
- -- Stefan Fritsch <sf@debian.org>  Tue, 18 Jul 2017 20:37:33 +0200
+ -- Stefan Fritsch <sf@debian.org>  Tue, 18 Jul 2017 20:29:16 +0200
 
-apache2 (2.4.25-3+deb9u1) stretch-security; urgency=high
+apache2 (2.4.10-10+deb8u9+hetz1~exp1) jessie-hetz-experimental; urgency=medium
 
-  * Backport security fixes from 2.4.26:
+  * Update Jessie package with latest security patches
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Tue, 11 Jul 2017 08:39:41 +0200
+
+apache2 (2.4.10-10+deb8u9) jessie-security; urgency=medium
+
   * CVE-2017-3167: Authentication bypass with ap_get_basic_auth_pw()
   * CVE-2017-3169: mod_ssl NULL pointer dereference
   * CVE-2017-7668: Buffer overrun in ap_find_token()
   * CVE-2017-7679: mod_mime buffer overread
-  * CVE-2017-7659: mod_http2 NULL pointer dereference
 
- -- Stefan Fritsch <sf@debian.org>  Tue, 20 Jun 2017 21:29:11 +0200
+ -- Stefan Fritsch <sf@debian.org>  Tue, 20 Jun 2017 21:02:39 +0200
 
-apache2 (2.4.25-3) unstable; urgency=medium
+apache2 (2.4.10-10+deb8u8) jessie-security; urgency=medium
 
-  * Fix detection of systemd to fix 'apache2ctl start' on sysv-init.
-    Closes: #852543
-  * Compile mod_bucketeer mod_case_filter mod_case_filter_in for benefit of
-    the test suite, but don't add *.load files because they don't have any
-    real-world use.
-  * Include the upstream test suite and a corresponding autopkgtest. This
-    is quite a hack but it may help quite a bit with security updates,
-    especially if stretch gets LTS support, too.
-
- -- Stefan Fritsch <sf@debian.org>  Wed, 25 Jan 2017 23:59:26 +0100
-
-apache2 (2.4.25-2) unstable; urgency=medium
-
+  * CVE-2016-8743: Enforce more HTTP conformance for request lines and
+    request headers, to prevent response splitting and cache pollution
+    by malicious clients or downstream proxies.
+    If this causes problems with non-conforming clients, some checks can
+    be relaxed by adding the new directive 'HttpProtocolOptions unsafe'
+    to the configuration.
+    Differently than the upstream 2.4.25 release which will also be in the
+    Debian 9 (stretch) release, this update for Debian 8 (jessie) accepts
+    underscores in host and domain names even while 'HttpProtocolOptions
+    strict' is in effect.
+    More information is available at
+    http://httpd.apache.org/docs/2.4/mod/core.html#httpprotocoloptions
+  * CVE-2016-0736: mod_session_crypto: Prevent padding oracle attack.
+  * CVE-2016-2161: mod_auth_digest: Prevent segfaults when the shared memory
+    space is exhausted.
   * Activate mod_reqtimeout in new installs and during updates from
-    before 2.4.25-2. It was wrongly not activated in new installs since
-    jessie. This made the default installation vulnerable to some DoS
-    attacks.
-  * Restart htcacheclean on updates and tighten dependency on apache2-utils
-    to ensure that apache2-utils cannot be upgraded without apache2.
-    Closes: #851122
-  * When running on systems with systemd, make 'apache2ctl start' invoke
-    systemctl instead. Otherwise systemd will think apache2 is not running
-    and ignore further commands like reload. Closes: #839227
-  * Avoid segfault in mpm_event if a signal is received too soon after start.
-    PR 60487
-  * Add test for some modules to be enabled.
-  * Remove mention of CVE-2016-5387 in 2.4.25-1 changelog. It was already
-    fixed in 2.4.23-2.
+    before 2.4.10-10+deb8u8. It was wrongly not activated in new installs
+    since jessie. This made the default installation vulnerable to some
+    DoS attacks.
+  * Don't run 2.2 to 2.4 upgrade logic again when upgrading from
+    2.4.10-10+deb8u*. Closes: #836818
 
- -- Stefan Fritsch <sf@debian.org>  Sat, 14 Jan 2017 19:27:34 +0100
+ -- Stefan Fritsch <sf@debian.org>  Fri, 24 Feb 2017 19:36:41 +0100
 
-apache2 (2.4.25-1) unstable; urgency=medium
+apache2 (2.4.10-10+deb8u7) jessie; urgency=medium
 
-  [ New upstream release ]
-  * Security: CVE-2016-0736:
-    mod_session_crypto: Authenticate the session data/cookie with a MAC to
-    prevent deciphering or tampering with a padding oracle attack.
-  * Security: CVE-2016-2161:
-    mod_auth_digest: Prevent segfaults during client entry allocation when the
-    shared memory space is exhausted.
-  * Security: CVE-2016-8740:
-    mod_http2: Mitigate DoS memory exhaustion via endless CONTINUATION frames.
-    Closes: #847124
-  * Security: CVE-2016-8743:
-    Enforce HTTP request grammar corresponding to RFC7230 for request lines
-    and request headers, to prevent response splitting and cache pollution by
-    malicious clients or downstream proxies.
-  * The stricter HTTP enforcement may cause compatibility problems with
-    non-conforming clients. Fine-tuning is possible with the new
-    HttpProtocolOptions directive.
-  * mpm_event: Fix "scoreboard full" errors. Closes: #834708 LP: #1466926
-  * mod_http2: Many fixes and support for early pushes using the new
-    H2PushResource directive.
+  * Fix installation of /lib/systemd/system/apache2.service.d/forking.conf.
 
-  [ Stefan Fritsch ]
-  * Switch to debhelper compatibility level 9.
+ -- Julien Cristau <jcristau@debian.org>  Thu, 15 Sep 2016 22:42:19 +0200
 
- -- Stefan Fritsch <sf@debian.org>  Wed, 21 Dec 2016 23:46:06 +0100
+apache2 (2.4.10-10+deb8u6) jessie; urgency=medium
 
-apache2 (2.4.23-8) unstable; urgency=medium
-
-  * Move the mod_ssl_openssl.h header and the dependency on libssl-dev to a
-    new package apache2-ssl-dev.  Packages that interface with openssl
-    state from mod_ssl must build-depend on this new package.
-    This will help to disentangle the build-deps in the openssl transition.
-    Closes: #845033
-
- -- Stefan Fritsch <sf@debian.org>  Sun, 20 Nov 2016 00:33:13 +0100
-
-apache2 (2.4.23-7) unstable; urgency=medium
-
-  * Make apache2-dev depend on openssl 1.0, too. Closes: #844160
-  * Move DefaultRuntimeDir and pid file for multi-instances to
-    /var/run/apache2-xxx. Thanks to Horst Platz for the debugging.
-    Closes: #838932 LP: #1627339
-  * Fix systemd unit naming for multi-instances.
-  * Tweak embedded .tar.gz some more to build reproducibly.
-
- -- Stefan Fritsch <sf@debian.org>  Sun, 13 Nov 2016 13:08:28 +0100
-
-apache2 (2.4.23-6) unstable; urgency=medium
-
-  * One more tweak for reproducible build. Thanks to Daniel Shahaf for the
-    patch. Closes: #839977
-  * Avoid building with openssl 1.1 for now. See #828236
-
- -- Stefan Fritsch <sf@debian.org>  Wed, 09 Nov 2016 23:51:25 +0100
-
-apache2 (2.4.23-5) unstable; urgency=low
-
-  * Team upload.
-
-  [ Stefan Fritsch ]
-  * Tweak creation of .tar.gz embedded in preinst to get reproducible
-    build.
-
-  [ Raphaël Hertzog ]
-  * Add systemd unit files. Closes: #798430
-  * Improve a2enmod to enable apache-htcacheclean with systemctl and let
-    it enable 'apache-htcacheclean@instance.service' for multi-instance
-    support.
-  * Improve setup-instance to rely on the systemd apache2@instance.service for
-    multi-instance support.
-  * Drop /lib/systemd/system/apache2.service.d/forking.conf now that we have
-    proper native systemd support.
-  * Modify handling of /etc/init.d/apache-htcacheclean to have a usual
-    Default-Start value but instead we disable it manually in the postinst.
-    That way "systemctl enable apache-htcacheclean" works.
-  * Add some lintian overrides for non-problems (two update-rc.d calls in
-    postinst, and a .js file with a very long line).
-
- -- Raphaël Hertzog <hertzog@debian.org>  Thu, 29 Sep 2016 12:03:31 +0200
-
-apache2 (2.4.23-4) unstable; urgency=medium
-
-  * Fix pre-inst script for new installations. Closes: #834169
-
- -- Stefan Fritsch <sf@debian.org>  Fri, 12 Aug 2016 21:44:31 +0200
-
-apache2 (2.4.23-3) unstable; urgency=low
-
-  * Fix conffiles that may have got the wrong content during upgrade from
-    wheezy to early jessie versions. Closes: #794933
-  * Also restore re-introduced *.load files for mod_ident, mod_imagemap, and
-    mod_cern_meta. These may have gone missing due to dpkg thinking they still
-    belong to apache2.2-common. Reported by Markus Waldeck.
-  * apache2-maintscript-helper: Make apache2_switch_mpm do nothing if the
-    local admin has disabled the requested mpm manually.
-    Closes: #827446, #799630
-  * Make mod_proxy_html depend on mod_xml2enc.
-  * dh_apache2: Make versioned recommends on apache2 less strict. There is
-    no advantage in recommending the current version. Closes: #784290
-
- -- Stefan Fritsch <sf@debian.org>  Thu, 11 Aug 2016 21:40:35 +0200
-
-apache2 (2.4.23-2) unstable; urgency=high
-
-  * CVE-2016-5387: Sets environmental variable based on user supplied Proxy
-    request header.
-    Don't pass through HTTP_PROXY in server/util_script.c
-
- -- Stefan Fritsch <sf@debian.org>  Thu, 21 Jul 2016 23:21:37 +0200
-
-apache2 (2.4.23-1) unstable; urgency=high
-
-  * New upstream release
-    - Security: CVE-2016-4979: Fix bypass of TLS client certificate
-      verification in mod_http2.
-    - new modules mod_proxy_http2 (experimental) and mod_proxy_hcheck
-  * Re-introduce mod_imagemap and mod_cern_meta. Closes: #786657
-  * Set SHELL=/bin/bash during configure to get reproducible builds regardless
-    of where /bin/sh points to.
-  * Use 'Require method' instead of Limit/LimitExcept in userdir.conf.
-
- -- Stefan Fritsch <sf@debian.org>  Tue, 05 Jul 2016 23:57:25 +0200
-
-apache2 (2.4.20-2) unstable; urgency=medium
-
-  * Fix crash in ap_get_useragent_host() triggered by mod_perl test.
-    Closes: #820824
   * Fix race condition and logical error in init script. Thanks to Thomas
     Stangner for the patch. Closes: #822144
   * Remove links to manpages.debian.org in default index.html to avoid
     broken robots doing a DoS on the site. Closes: #821313
-  * Fix a2enmod to run on perl 5.14 to simplify backports. Closes: #821956
-  * Bump Standards-Version (no changes necessary).
-  * Fix segfault with logresolve -c. Closes: #823259
-
- -- Stefan Fritsch <sf@debian.org>  Sat, 28 May 2016 16:14:09 +0200
-
-apache2 (2.4.20-1) unstable; urgency=medium
-
-  * New upstream release
-    - mostly bugfixes and HTTP/2 improvements
-  * Build against lua 5.2 instead of 5.1. Closes: #820243
+  * mod_socache_memcache: Increase idle timeout to 15s to allow keep-alive
+    connections. Closes: #803035
+  * mod_proxy_fcgi: Fix wrong behavior with 304 responses. Closes: #827472
   * Correct systemd-sysv-generator behavior by customizing some parameters.
-    This fixes 'systemctl status' returning incorrect results. Thanks to
-    Pierre-André MOREY for the patch. LP: #1488962
-  * On Linux, use pthread mutexes. On kfreebsd/hurd, continue using fctnl
-    because they lack robust pthred mutexes. LP: #1565744, #1527044
+    This fixes 'systemctl status' returning incorrect results.
+    Closes: #827444
+  * mod_proxy_html: Add missing config file mods-available/proxy_html.conf.
+    This is intentionally not enabled during upgrade, to make it less
+    likely to break existing setups. It will be enabled by a a2dismod/a2enmod
+    cycle, though. Closes: #827258
 
- -- Stefan Fritsch <sf@debian.org>  Sun, 10 Apr 2016 14:03:41 +0200
+ -- Stefan Fritsch <sf@debian.org>  Sun, 07 Aug 2016 12:58:11 +0200
 
-apache2 (2.4.18-2) unstable; urgency=low
+apache2 (2.4.10-10+deb8u5+hetz1) jessie-hetz; urgency=high
 
-  * htcacheclean:
-    - split starting/stopping into separate init script 'apache-htcacheclean'
-    - move config from /etc/default/apache2 to /etc/default/apache-htcacheclean
-    - make a2enmod/a2dismod enable/disable htcacheclean with mod_cache_disk
-    - start htcacheclean as the apache2 run user/group
-  * Fix a2query -M not returning output if apache2 config is broken.
-    Fix missing quotes in apache2-maintscript-helper. Closes: #810500
-  * README.backtrace: Note that coredump directory needs to be owned by
-    www-data. Closes: #806697
-  * Remove ssl work-arounds for MSIE. Newer versions of IE work without them
-    and older versions are no longer supported by MS. Closes: #815852
-  * Give a hint about systemd in README.multiple-instances. Closes: #818904
-  * Don't treat mod_access_compat as essential. It's essentially broken,
-    anyway.
-  * Merge cross-compile tweaks for debian/rules from ubuntu.
-  * Merge autopkgtests from Ubuntu. Many thanks to Robie Basak.
-    Closes: #719245
-  * Fix duplicate-module-load test and make sure it fails if it cannot execute
-    apache2ctl.
-  * Bump Standards-Version (no changes necessary).
+  * Released 2.4.10-10+deb8u5+hetz1~exp1 as 2.4.10-10+deb8u5+hetz1
 
- -- Stefan Fritsch <sf@debian.org>  Mon, 28 Mar 2016 21:58:54 +0200
+ -- Johan Basson <johan.basson@hetzner.co.za>  Tue, 26 Jul 2016 14:41:56 +0200
 
-apache2 (2.4.18-1) unstable; urgency=medium
+apache2 (2.4.10-10+deb8u5+hetz1~exp1) jessie-hetz-experimental; urgency=high
 
-  * New upstream release:
-    - mostly HTTP/2 improvements
+  * Import from upstream 
 
- -- Stefan Fritsch <sf@debian.org>  Sat, 19 Dec 2015 09:26:14 +0100
+ -- Johan Basson <johan.basson@hetzner.co.za>  Tue, 26 Jul 2016 13:37:57 +0200
 
-apache2 (2.4.17-3) unstable; urgency=medium
+apache2 (2.4.10-10+deb8u5) jessie-security; urgency=high
 
-  * mpm_prefork: Fix segfault if started with -X. Closes: #805737
+  * Non-maintainer upload by the Security Team.
+  * CVE-2016-5387: Sets environmental variable based on user supplied Proxy
+    request header.
+    Don't pass through HTTP_PROXY in server/util_script.c
 
- -- Stefan Fritsch <sf@debian.org>  Mon, 23 Nov 2015 19:52:09 +0100
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 20 Jul 2016 06:50:37 +0200
 
-apache2 (2.4.17-2) unstable; urgency=medium
+apache2 (2.4.10-10+deb8u4) jessie; urgency=medium
 
-  * Revert REDIRECT_URL to pre-2.4.17 behavior for now. The change broke
-    lots of web-apps. Closes: #803353
+  * Add versioned replaces/breaks for libapache2-mod-macro to apache2,
+    for the config files in /etc. Closes: #806326
+  * Fix split-logfile to work with current perl. Closes: #803472
+  * Fix tests on deferred mpm switch. Add special casing for mpm_itk,
+    which is not an mpm anymore, despite the name. Closes: #789914
+    Closes: #791902
   * Fix secondary-init-script to not source the main init script with 'set -e'.
     Closes: #803177
-  * mod_http2: Write HTTP/2 into THE_REQUEST and the access log.
 
- -- Stefan Fritsch <sf@debian.org>  Sat, 31 Oct 2015 23:17:11 +0100
+ -- Stefan Fritsch <sf@debian.org>  Sat, 28 Nov 2015 15:02:23 +0100
 
-apache2 (2.4.17-1) unstable; urgency=medium
+apache2 (2.4.10-10+deb8u3+hetz2) jessie-hetz; urgency=medium
 
-  [ Stefan Fritsch ]
-  * New upstream release:
-    - New experimental http2 module
-  * reproducible build: Make symbol sorting consistent over different locales
-  * Conflict with apache2.2-common and apache2.2-bin to get the transitional
-    packages removed. Closes: #768815
-  * Don't treat mpm_itk as MPM module in a2query. Closes: #791902
-  * Don't treat mpm_itk as MPM module in deferred actions in postinst.
-    Hopefully really closes: #789914
-  * Don't treat mpm_itk as MPM module in a2enmod.
+  * Released 2.4.10-10+deb8u3+hetz2~exp4 as 2.4.10-10+deb8u3+hetz2
 
-  [ Jean-Michel Vourgère ]
-  * Updated upstream keyring used to check source authenticity.
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Thu, 07 Jan 2016 16:39:35 +0200
 
- -- Stefan Fritsch <sf@debian.org>  Sat, 24 Oct 2015 22:14:32 +0200
+apache2 (2.4.10-10+deb8u3+hetz2~exp4) jessie-hetz-experimental; urgency=medium
 
-apache2 (2.4.16-3) unstable; urgency=medium
+  * Build only i386 
 
-  [ Jean-Michel Vourgère ]
-  * Have apache2.postrm removes content of /var/lib/apache2, not the
-    directory itself. Closes: #793862
-  * d/p/reproducible_builds.diff: Sort exported symbols list.
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Thu, 07 Jan 2016 14:50:43 +0200
 
-  [ Stefan Fritsch ]
-  * apxs: Don't pass --silent to libtool. Closes: #795820
-  * Remove default /var/www/html/index.html on package purge.
+apache2 (2.4.10-10+deb8u3+hetz2~exp1) jessie-hetz-experimental; urgency=medium
 
- -- Stefan Fritsch <sf@debian.org>  Tue, 18 Aug 2015 13:49:09 +0200
+  * Rerelease for jessie 
 
-apache2 (2.4.16-2) unstable; urgency=medium
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Thu, 07 Jan 2016 14:33:57 +0200
 
-  * Make dh_apache2 add a versioned dependency on apache2-bin, for the
-    new symbols required for the CVE-2015-3185 fix.
+apache2 (2.4.10-10+deb8u3+hetz1) jessie-hetz; urgency=medium
 
- -- Stefan Fritsch <sf@debian.org>  Fri, 07 Aug 2015 23:43:16 +0200
+  * Released 2.4.10-10+deb8u3+hetz1~exp8 as 2.4.10-10+deb8u3+hetz1
 
-apache2 (2.4.16-1) unstable; urgency=medium
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Thu, 05 Nov 2015 11:19:06 +0200
 
-  [ Stefan Fritsch ]
-  * New upstream version, fixing the following security issues:
-    + CVE-2015-3183: Fix chunk header parsing defect.
-    + CVE-2015-3185: ap_some_auth_required() broken in apache 2.4 in an
-      unfixable way. Add a new replacement API ap_some_authn_required()
-      and ap_force_authn hook.
+apache2 (2.4.10-10+deb8u3+hetz1~exp8) jessie-hetz-experimental; urgency=medium
 
-  [ Jean-Michel Vourgère ]
-  * Allow "triggers-awaited" and "triggers-pending" states in addition to
-    "installed" when determining whether to defer actions or process
-    deferred actions. Thanks Colin Watson. Closes: #787103
-  * Allow a2dismod cgi on threaded mpms. Thanks Raul Dias. Closes:
-    #733979
-  * Remove pre-Jessie transition scripts, and remaining breaks.
-  * Made builds reproducible: d/rules set the date from the changelog in
-    CPPFLAGS, new reproducible_builds.diff patch to use it.
-  * Moved bash_completion from /etc to /usr/share/bash_completion. Added
-    links there for dynamic loading.
-  * Upgrade security.conf comments to 2.4 auth format. Thanks Werner
-    Detter. Closes: #789788
-  * apache2.postinst: Fixed tests on deferred mpm switch. Closes:
-    #789914
+  * Suexec docroot is now /usr 
 
- -- Stefan Fritsch <sf@debian.org>  Sun, 02 Aug 2015 00:44:07 +0200
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Mon, 02 Nov 2015 15:12:59 +0200
 
-apache2 (2.4.12-2) unstable; urgency=medium
+apache2 (2.4.10-10+deb8u3+hetz1~exp7) jessie-hetz-experimental; urgency=medium
 
-  [ Jean-Michel Nirgal Vourgère ]
-  * d/control:
-    + Update Vcs-Browser.
-  * d/copyright:
-    + Change d/debhelper/dh_apache2 to dh_apache2.in.
-    + Drop paragraph about inexistant itk patches.
+  * Apply hetzner patches for sylink protection and to relax owner enforment in suexec
+
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Mon, 02 Nov 2015 14:37:22 +0200
+
+apache2 (2.4.10-10+deb8u3+hetz1~exp3) jessie-hetz-experimental; urgency=medium
+
+  * Import for jessie 
+
+ -- Shaun Bugler - Hetzner (Pty) Ltd <sb@hetzner.co.za>  Mon, 02 Nov 2015 11:31:29 +0200
+
+apache2 (2.4.10-10+deb8u3) jessie; urgency=medium
+
+  * Revert fix for deferred mpm switch for now, because it is at least not
+    complete or maybe causes regressions (see #791902). Re-opens #789914
+
+ -- Stefan Fritsch <sf@debian.org>  Fri, 28 Aug 2015 18:24:17 +0200
+
+apache2 (2.4.10-10+deb8u2) jessie; urgency=medium
 
   [ Stefan Fritsch ]
-  * Remove all the transitional packages:
-    apache2-mpm-worker, apache2-mpm-prefork, apache2-mpm-event,
-    apache2-mpm-itk, apache2.2-bin, apache2.2-common,
-    libapache2-mod-proxy-html, libapache2-mod-macro, apache2-suexec
-    This also fixes the dependency problems caused by a recent version
-    of debhelper (see #784803).
-
- -- Stefan Fritsch <sf@debian.org>  Mon, 11 May 2015 22:07:26 +0200
-
-apache2 (2.4.12-1) unstable; urgency=medium
-
-  * New upstream version
-  * Add a patch for CVE-2015-0253 which was introduced in 2.4.11 which
-    was never shipped in Debian.
-  * Ship mod_proxy_html's default config file. Closes: #782022
-  * Fix typo in dh_apache2 man page. Closes: #781032
-
- -- Stefan Fritsch <sf@debian.org>  Tue, 28 Apr 2015 22:54:41 +0200
-
-apache2 (2.4.10-11) unstable; urgency=medium
-
+  * Fix upgrade logic: When upgrading from wheezy with apache2.2-common
+    but without apache2 installed to jessie, part of the conffile handling
+    logic would not run, causing outdated conffile content to be kept.
+    This is part of the solution for bug #794933. The other part will be
+    included in the upgrade to Debian 9 (stretch).
   * core: Fix -D[efined] or <Define>[d] variables lifetime accross restarts.
     This could cause all kinds of strange behavior. PR 56008. PR 57328
   * mpm_event: Fix process deadlock when shutting down a worker. PR 56960
   * mpm_event: Fix crashes due to various race conditions. Closes: #779078
 
- -- Stefan Fritsch <sf@debian.org>  Tue, 31 Mar 2015 22:27:16 +0200
+  [ Jean-Michel Vourgère ]
+  * apache2.postinst: Fixed tests on deferred mpm switch. Closes: #789914
+
+ -- Stefan Fritsch <sf@debian.org>  Thu, 27 Aug 2015 19:52:37 +0200
+
+apache2 (2.4.10-10+deb8u1) jessie-security; urgency=medium
+
+  * CVE-2015-3183: Fix chunk header parsing defect.
+  * CVE-2015-3185: ap_some_auth_required() broken in apache 2.4 in an
+    unfixable way. Add a new replacement API ap_some_authn_required()
+    and ap_force_authn hook.
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 01 Aug 2015 22:42:35 +0200
 
 apache2 (2.4.10-10) unstable; urgency=medium
 

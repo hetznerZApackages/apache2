@@ -1,2 +1,2 @@
-# Depends: proxy xml2enc
+# Depends: proxy
 LoadModule proxy_html_module /usr/lib/apache2/modules/mod_proxy_html.so

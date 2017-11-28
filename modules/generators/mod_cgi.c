@@ -21,10 +21,10 @@
  *
  * Adapted by rst from original NCSA code by Rob McCool
  *
- * This modules uses a httpd core function (ap_add_common_vars) to add some new env vars, 
- * like REDIRECT_URL and REDIRECT_QUERY_STRING for custom error responses and DOCUMENT_ROOT.
- * It also adds SERVER_ADMIN - useful for scripts to know who to mail when they fail.
- * 
+ * Apache adds some new env vars; REDIRECT_URL and REDIRECT_QUERY_STRING for
+ * custom error responses, and DOCUMENT_ROOT because we found it useful.
+ * It also adds SERVER_ADMIN - useful for scripts to know who to mail when
+ * they fail.
  */
 
 #include "apr.h"
@@ -162,17 +162,15 @@ AP_INIT_TAKE1("ScriptLogBuffer", set_scriptlog_buffer, NULL, RSRC_CONF,
 };
 
 static int log_scripterror(request_rec *r, cgi_server_conf * conf, int ret,
-                           apr_status_t rv, char *logno, char *error)
+                           apr_status_t rv, char *error)
 {
     apr_file_t *f = NULL;
     apr_finfo_t finfo;
     char time_str[APR_CTIME_LEN];
     int log_flags = rv ? APLOG_ERR : APLOG_ERR;
 
-    /* Intentional no APLOGNO */
-    /* Callee provides APLOGNO in error text */
     ap_log_rerror(APLOG_MARK, log_flags, rv, r,
-                  "%s%s: %s", logno ? logno : "", error, r->filename);
+                  "%s: %s", error, r->filename);
 
     /* XXX Very expensive mainline case! Open, then getfileinfo! */
     if (!conf->logname ||
@@ -205,7 +203,6 @@ static apr_status_t log_script_err(request_rec *r, apr_file_t *script_err)
     char argsbuffer[HUGE_STRING_LEN];
     char *newline;
     apr_status_t rv;
-    cgi_server_conf *conf = ap_get_module_config(r->server->module_config, &cgi_module);
 
     while ((rv = apr_file_gets(argsbuffer, HUGE_STRING_LEN,
                                script_err)) == APR_SUCCESS) {
@@ -213,7 +210,8 @@ static apr_status_t log_script_err(request_rec *r, apr_file_t *script_err)
         if (newline) {
             *newline = '\0';
         }
-        log_scripterror(r, conf, r->status, 0, APLOGNO(01215), argsbuffer);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01215)
+                      "%s", argsbuffer);
     }
 
     return rv;
@@ -460,7 +458,6 @@ static apr_status_t run_cgi_child(apr_file_t **script_out,
 
         if (rc != APR_SUCCESS) {
             /* Bad things happened. Everyone should have cleaned up. */
-            /* Intentional no APLOGNO */
             ap_log_rerror(APLOG_MARK, APLOG_ERR|APLOG_TOCLIENT, rc, r,
                           "couldn't create child process: %d: %s", rc,
                           apr_filepath_name_get(r->filename));
@@ -777,30 +774,30 @@ static int cgi_handler(request_rec *r)
     conf = ap_get_module_config(r->server->module_config, &cgi_module);
 
     if (!(ap_allow_options(r) & OPT_EXECCGI) && !is_scriptaliased(r))
-        return log_scripterror(r, conf, HTTP_FORBIDDEN, 0, APLOGNO(02809),
+        return log_scripterror(r, conf, HTTP_FORBIDDEN, 0,
                                "Options ExecCGI is off in this directory");
     if (nph && is_included)
-        return log_scripterror(r, conf, HTTP_FORBIDDEN, 0, APLOGNO(02810),
+        return log_scripterror(r, conf, HTTP_FORBIDDEN, 0,
                                "attempt to include NPH CGI script");
 
     if (r->finfo.filetype == APR_NOFILE)
-        return log_scripterror(r, conf, HTTP_NOT_FOUND, 0, APLOGNO(02811),
+        return log_scripterror(r, conf, HTTP_NOT_FOUND, 0,
                                "script not found or unable to stat");
     if (r->finfo.filetype == APR_DIR)
-        return log_scripterror(r, conf, HTTP_FORBIDDEN, 0, APLOGNO(02812),
+        return log_scripterror(r, conf, HTTP_FORBIDDEN, 0,
                                "attempt to invoke directory as script");
 
     if ((r->used_path_info == AP_REQ_REJECT_PATH_INFO) &&
         r->path_info && *r->path_info)
     {
         /* default to accept */
-        return log_scripterror(r, conf, HTTP_NOT_FOUND, 0, APLOGNO(02813),
+        return log_scripterror(r, conf, HTTP_NOT_FOUND, 0,
                                "AcceptPathInfo off disallows user's path");
     }
 /*
     if (!ap_suexec_enabled) {
         if (!ap_can_exec(&r->finfo))
-            return log_scripterror(r, conf, HTTP_FORBIDDEN, 0, APLOGNO(03194)
+            return log_scripterror(r, conf, HTTP_FORBIDDEN, 0,
                                    "file permissions deny server execution");
     }
 
@@ -860,7 +857,7 @@ static int cgi_handler(request_rec *r)
             }
             ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01225)
                           "Error reading request entity data");
-            return ap_map_http_request_error(rv, HTTP_BAD_REQUEST);
+            return HTTP_INTERNAL_SERVER_ERROR;
         }
 
         for (bucket = APR_BRIGADE_FIRST(bb);
@@ -923,6 +920,8 @@ static int cgi_handler(request_rec *r)
     apr_file_close(script_out);
 
     AP_DEBUG_ASSERT(script_in != NULL);
+
+    apr_brigade_cleanup(bb);
 
 #if APR_FILES_AS_SOCKETS
     apr_file_pipe_timeout_set(script_in, 0);
@@ -1169,8 +1168,8 @@ static apr_status_t handle_exec(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, APLOGNO(03195)
-                      "missing argument for exec element in %s", r->filename);
+                      0, r, "missing argument for exec element in %s",
+                      r->filename);
     }
 
     if (!(ctx->flags & SSI_FLAG_PRINTING)) {

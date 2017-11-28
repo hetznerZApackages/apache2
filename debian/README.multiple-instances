@@ -14,17 +14,11 @@ Adjust the configuration in /etc/apache2-xxx, especially the listen ports in
 ports.conf and in the virtual host directives in
 /etc/apache2-xxx/sites-enabled/*.
 
-You can then use a2enmod-xxx, apache2ctl-xxx, ... as usual, and they
+You can then use a2enmod-xxx, /etc/init.d/apache2-xxx, ... as usual, and they
 will affect the new instance of apache2.
 
-If you use systemd, the service name of your new instance is
-"apache2@xxx.service". Otherwise the script installed an init script
-named /etc/init.d/apache2-xxx.
-
 To start the new apache2 instance on boot, use
-- if you use systemd, run:
-	systemctl enable apache2@xxx
-- if you use sysv-init with dependency based boot sequence (the default):
+- if you use dependency based boot sequence (the default):
   If you don't have ssl keys with passphrases, you may want to set
   'X-Interactive: false' in /etc/init.d/apache2-xxx to reduce boot time.
   Then execute:
@@ -61,24 +55,13 @@ The Apache 2 package will only remove the default configuration files and
 directories.
 
 
-htcacheclean service
-====================
+Configuration
+=============
 
-The apache-htcacheclean service can be handled in the same way as the
-main apache2 script. You can create an
-'apache-htcacheclean@instance.service' service under systemd or you can
-copy /etc/init.d/apache-htcacheclean as
-/etc/init.d/apache-htcacheclean-xxx under SystemV.
+The init script will try to read /etc/defaults/apache2-xxx. If that does not
+exist, it will use /etc/defaults/apache2 instead.
 
-The parameters of the service can be customized with
-/etc/default/apache-htcacheclean-xxx (that is created by the
-setup-instance helper script).
-
-
-Environment variables
-=====================
-
-The following environment variables can be used to influence many scripts.  The
+The following environment variables can be used to influence the scripts.  The
 default apache2 configuration will make use of them, too. Most can be set in
 /etc/apache2-xxx/envvars. Variables set in /etc/apache2-xxx/envvars must be
 exported.
@@ -94,7 +77,7 @@ APACHE_ARGUMENTS	empty if $APACHE_CONFDIR = /etc/apache2
 APACHE_RUN_USER		www-data
 APACHE_RUN_GROUP	www-data
 
-APACHE_PID_FILE         /var/run/apache2/apache2.pid or /var/run/apache2-xxx/apache2.pid
+APACHE_PID_FILE         /var/run/apache2.pid or /var/run/apachd2-xxx.pid
 APACHE_RUN_DIR		/var/run/apache2     or /var/run/apache2-xxx
 APACHE_LOCK_DIR		/var/lock/apache2    or /var/lock/apache2-xxx
 APACHE_LOG_DIR		/var/log/apache2     or /var/log/apache2-xxx
@@ -106,3 +89,4 @@ APACHE_SITES_ENABLED	$APACHE_CONFDIR/sites-enabled
 
 APACHE_LYNX		www-browser -dump
 APACHE_STATUSURL	http://localhost:80/server-status
+

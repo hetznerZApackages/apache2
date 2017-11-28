@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head>
-<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -18,7 +16,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modüller</a> | <a href="./mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="./glossary.html">Terimler</a> | <a href="./sitemap.html">Site Haritası</a></p>
 <p class="apache">Apache HTTP Sunucusu Sürüm 2.4</p>
-<img alt="" src="./images/feather.png" /></div>
+<img alt="" src="./images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Sunucusu</a> &gt; <a href="http://httpd.apache.org/docs/">Belgeleme</a> &gt; <a href="./">Sürüm 2.4</a></div><div id="page-content"><div id="preamble"><h1>Yapılandırma Bölümleri</h1>
@@ -44,7 +42,7 @@
 <li><img alt="" src="./images/down.gif" /> <a href="#proxy">Vekil</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#whatwhere">Hangi Yönergelere İzin Veriliyor?</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#merging">Bölümler Nasıl Katıştırılır?</a></li>
-</ul><h3>Ayrıca bakınız:</h3><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
+</ul><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="types" id="types">Yapılandırma Bölümü Taşıyıcılarının Türleri</a></h2>
@@ -70,7 +68,7 @@
       takdirde mümkün olur:</p>
 
     <pre class="prettyprint lang-config">&lt;IfDefine ClosedForNow&gt;
-  Redirect "/" "http://otherserver.example.com/"
+  Redirect / http://otherserver.example.com/
 &lt;/IfDefine&gt;</pre>
 
 
@@ -89,7 +87,7 @@
       <code class="module"><a href="./mod/mod_mime_magic.html">mod_mime_magic</a></code> modülü mevcutsa uygulanacaktır.</p>
 
     <pre class="prettyprint lang-config">&lt;IfModule mod_mime_magic.c&gt;
-  MimeMagicFile "conf/magic"
+  MimeMagicFile conf/magic
 &lt;/IfModule&gt;</pre>
 
 
@@ -148,7 +146,7 @@
       yapılandırmada, <code>/var/web/dir1</code> dizini ve alt dizinlerinde
       dizin içeriğinin listelenmesi etkin kılınmaktadır.</p>
 
-    <pre class="prettyprint lang-config">&lt;Directory "/var/web/dir1"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory /var/web/dir1&gt;
   Options +Indexes
 &lt;/Directory&gt;</pre>
 
@@ -160,7 +158,7 @@
       <code>gizli.html</code> isimli dosyalara nerede bulunursa bulunsun
       erişime izin vermeyecektir.</p>
 
-    <pre class="prettyprint lang-config">&lt;Files "gizli.html"&gt;
+    <pre class="prettyprint lang-config">&lt;Files gizli.html&gt;
   Require all denied
 &lt;/Files&gt;</pre>
 
@@ -175,8 +173,8 @@
       <code>/var/web/dir1/</code> altında bulunabilecek diğer tüm
       <code>gizli.html</code> dosyalarına erişimi yasaklar.</p>
 
-    <pre class="prettyprint lang-config">&lt;Directory "/var/web/dir1"&gt;<br />
-  &lt;Files "gizli.html"&gt;<br />
+    <pre class="prettyprint lang-config">&lt;Directory /var/web/dir1&gt;<br />
+  &lt;Files gizli.html&gt;<br />
     Require all denied
   &lt;/Files&gt;<br />
 &lt;/Directory&gt;</pre>
@@ -195,7 +193,7 @@
       istekleri yanında <code>/gizli</code> ile başlayan diğer isteklere de
       uygulanır.</p>
 
-    <pre class="prettyprint lang-config">&lt;LocationMatch "^/gizli"&gt;
+    <pre class="prettyprint lang-config">&lt;LocationMatch ^/gizli&gt;
     Require all denied
 &lt;/LocationMatch&gt;</pre>
 
@@ -208,7 +206,7 @@
       için dosya sisteminde <code>server-status</code> adında bir dosya
       veya dizin bulunması gerekli değildir.</p>
 
-    <pre class="prettyprint lang-config">&lt;Location "/server-status"&gt;
+    <pre class="prettyprint lang-config">&lt;Location /server-status&gt;
     SetHandler server-status
 &lt;/Location&gt;</pre>
 
@@ -218,24 +216,24 @@
     <p>Belli bölümler ve yönergeler değerlendirilirken çakışan iki URL bir URL
     olarak dikkate alınır. <code class="directive"><a href="./mod/core.html#location">&lt;Location&gt;</a></code> yönergesi için bu şöyle olurdu:</p>
 
-    <pre class="prettyprint lang-config">&lt;Location "/foo"&gt;
+    <pre class="prettyprint lang-config">&lt;Location /foo&gt;
 &lt;/Location&gt;
-&lt;Location "/foo/bar"&gt;
+&lt;Location /foo/bar&gt;
 &lt;/Location&gt;</pre>
 
 
     <p>Diğer yandan <code class="directive"><a href="./mod/mod_alias.html#takma adlar">&lt;Takma
       adlar&gt;</a></code> tam tersi eşlenir:</p>
 
-    <pre class="prettyprint lang-config">Alias "/foo/bar" "/srv/www/uncommon/bar"
-Alias "/foo" "/srv/www/common/foo"</pre>
+    <pre class="prettyprint lang-config">Alias /foo/bar /srv/www/uncommon/bar
+Alias /foo /srv/www/common/foo</pre>
 
 
     <p>Aynısı <code class="directive"><a href="./mod/mod_proxy.html#proxypass">ProxyPass</a></code>
       yönergeleri için de geçerlidir:</p>
 
-    <pre class="prettyprint lang-config">ProxyPass "/special-area" "http://special.example.com" smax=5 max=10
-ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofailover=On</pre>
+    <pre class="prettyprint lang-config">ProxyPass /special-area http://special.example.com smax=5 max=10
+ProxyPass / balancer://mycluster/ stickysession=JSESSIONID|jsessionid nofailover=On</pre>
 
   
 
@@ -263,7 +261,7 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
     <p>Tüm kullanıcı dizinlerine ilişkin yapılandırmayı değiştirmek için dosya
       ismi kalıpları şöyle kullanılabilirdi:</p>
 
-    <pre class="prettyprint lang-config">&lt;Directory "/home/*/public_html"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory /home/*/public_html&gt;
     Options Indexes
 &lt;/Directory&gt;</pre>
 
@@ -271,7 +269,7 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
     <p>Düzenli ifade bölümleri kullanarak çeşitli türlerdeki resim dosyalarına
       erişimi bir defada yasaklayabiliriz:</p>
 
-    <pre class="prettyprint lang-config">&lt;FilesMatch "\.(?i:gif|jpe?g|png)$"&gt;
+    <pre class="prettyprint lang-config">&lt;FilesMatch \.(?i:gif|jpe?g|png)$&gt;
     Require all denied
 &lt;/FilesMatch&gt;</pre>
 
@@ -282,8 +280,8 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
       içinden</a> ve <code class="module"><a href="./mod/mod_rewrite.html">mod_rewrite</a></code> gibi modüllerden başvurmak
       mümkün olur.</p>
 
-<pre class="prettyprint lang-config">&lt;DirectoryMatch "^/var/www/combined/(?&lt;SITENAME&gt;[^/]+)"&gt;
-    require ldap-group "cn=%{env:MATCH_SITENAME},ou=combined,o=Example"
+<pre class="prettyprint lang-config">&lt;DirectoryMatch ^/var/www/combined/(?&lt;SITENAME&gt;[^/]+)&gt;
+    require ldap-group cn=%{env:SITENAME},ou=combined,o=Example
 &lt;/DirectoryMatch&gt;</pre>
 
   
@@ -315,7 +313,7 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
       kısıtlamalarınızın etrafından dolaşılabilmesine izin vermesidir.
       Örneğin, aşağıdaki yapılandırmayı ele alalım:</p>
 
-    <pre class="prettyprint lang-config">&lt;Location "/dir/"&gt;
+    <pre class="prettyprint lang-config">&lt;Location /dir/&gt;
     Require all denied
 &lt;/Location&gt;</pre>
 
@@ -339,7 +337,7 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
       eşleyecek daha bir sürü yol bulunduğunu unutmayınız. Bu bakımdan dosya
       sisteminde yapacağınız kısıtlamalarda daima dosya sistemi taşıyıcılarını
       kullanmalısınız. Bununla birlikte bu kuralın da bir istisnası vardır.
-      Yapılandırma kısıtlamalarının bir <code>&lt;Location "/"&gt;</code> bölümü
+      Yapılandırma kısıtlamalarının bir <code>&lt;Location/&gt;</code> bölümü
       içine koyulması, bu bölüme konan yönergelerin etki alanının belli bir URL
       ile sınırlı olmaması nedeniyle mükemmelen güvenlidir.</p>
   
@@ -373,10 +371,10 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
       vekil sunucusu üzerinden erişilen sitelere uygulanan yapılandırma
       yönergelerini bulundururlar. Örneğin aşağıdaki yapılandırma
       <code>example.com</code> sitesine erişim için vekil sunucunun
-      sadece ağdaki bazı kullanıcılar tarafından kullanılabilmesini sağlayacaktır.</p>
+      kullanılmasını engelleyecektir.</p>
 
-    <pre class="prettyprint lang-config">&lt;Proxy "http://www.example.com/*"&gt;
-    Require host bizimki.example.com
+    <pre class="prettyprint lang-config">&lt;Proxy http://www.example.com/*&gt;
+    Require all granted
 &lt;/Proxy&gt;</pre>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
@@ -427,7 +425,7 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
       yönergeler geçersiz kılınabileceği için).</li>
 
       <li><code class="directive"><a href="./mod/core.html#directorymatch">&lt;DirectoryMatch&gt;</a></code>
-      (ve <code>&lt;Directory "~"&gt;</code>).</li>
+      (ve <code>&lt;Directory ~&gt;</code>).</li>
 
       <li><code class="directive"><a href="./mod/core.html#files">&lt;Files&gt;</a></code> ve
       <code class="directive"><a href="./mod/core.html#filesmatch">&lt;FilesMatch&gt;</a></code> aynı anda
@@ -445,8 +443,8 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
       bölümündekiler hariç, her grup, yapılandırma dosyasında bulundukları
       sıraya göre işleme sokulurlar. Yukarıda 1. grup olan <code class="directive"><a href="./mod/core.html#directory">&lt;Directory&gt;</a></code> bölümü en kısa dizin
       elemanından en uzun dizin elemanına doğru işleme sokulur. Yani, örneğin,
-      <code>&lt;Directory "/var/web/dir"&gt;</code> bölümü <code>&lt;Directory
-      "/var/web/dir/subdir"&gt;</code> bölümünden önce işleme sokulacaktır. Eğer
+      <code>&lt;Directory /var/web/dir&gt;</code> bölümü <code>&lt;Directory
+      /var/web/dir/subdir&gt;</code> bölümünden önce işleme sokulacaktır. Eğer
       aynı uzunlukta çok sayıda dizin varsa <code class="directive"><a href="./mod/core.html#directory">&lt;Directory&gt;</a></code> bölümleri yapılandırma dosyasında
       bulundukları sıraya göre işleme sokulurlar. <code class="directive"><a href="./mod/core.html#include">Include</a></code> yönergeleri ile yapılandırmaya dahil
       edilen dosyaların içerikleri <code class="directive"><a href="./mod/core.html#include">Include</a></code>
@@ -460,6 +458,13 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
       <code class="directive"><a href="./mod/mod_proxy.html#proxy">&lt;Proxy&gt;</a></code> taşıyıcısı
       işlem sırasında <code class="directive"><a href="./mod/core.html#directory">&lt;Directory&gt;</a></code> taşıyıcısının yerini alır.</p>
 
+    <p>Sonraki bölümler öncekileri geçersiz kılmak üzere işleme alınırlarsa da
+      her modül bu geçersiz kılmaya sebep olan formu yorumlamaktan sorumludur.
+      Belli bir modülülün yönergeleri bulunan sonraki yapılandırma bölümleri,
+      bazı yönergelerin, tüm yönergelerin veya modül yapılandırmasının
+      tamamının sonraki bağlamda açıkça listelenmiş modül öntanımlıları ve
+      yönergelerle bir kavramsal "katıştırmasına" sebep olabilir.</p>
+
     <div class="note"><h3>Bazı Teknik Bilgiler</h3>
       Aslında, isim dönüşüm aşamasından (<code>Aliases</code> ve
       <code>DocumentRoots</code>, URL’leri dosya isimlerine eşlemek için
@@ -469,98 +474,22 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
       tamamen elden çıkarılır.
     </div>
 
-  <h3><a name="relationship-module-configuration" id="relationship-module-configuration">Modüllerle 
-    yapılandırma bölümleri arasındaki ilişki</a></h3>
-  
-    <p>Yapılandırma bölümlerini okurken örneğin <code class="module"><a href="./mod/mod_rewrite.html">mod_rewrite</a></code>  
-      gibi belli modüllerin yönergelerinin bu bölümlere nasıl katılacağı ve  
-      ne zaman nasıl işleneceği gibi sorular sıkça aklımızdan geçer. Bunun 
-      belli bir yanıtı yoktur ve biraz temel bilgi gerektirir. Her httpd 
-      modülü yapılandırmasını kendi yönetir ve httpd.conf içindeki 
-      yönergelerinin her biri belli bir bağlamdaki bir yapılandırmayı 
-      belirtir. httpd bir komutu okunduğu sırada çalıştırmaz.</p>
-    
-    <p>Çalışma anında, httpd çekirdeği geçerli isteğe hangilerinin 
-      uygulanacağını belirlemek için yukarıda açıklanan sırada tanımlı 
-      yapılandırma bölümlerini tekrar tekrar okur. Eşleşen ilk bölümün bu 
-      istek için geçerli yapılandırmayı içerdiği varsayılır. Eğer alt 
-      bölümlerden biri de eşleşmişse bu bölümlerde yönergeleri bulunan her 
-      modüle yapılandırmasını iki bölüm arasında katıştırma şansı verilir. 
-      Sonuç üçüncü bir yapılandırma olup işlem bütün yapılandırma bölümleri 
-      değerlendirilene kadar sürer.</p>
-    
-    <p>Yukarıdaki adımların ardından HTTP isteğiyle ilgili "asıl" işlem 
-      başlar: her modül ondan istenen görevleri gerçekleştirme şansına sahip 
-      olur. Nasıl davranacaklarını belirlemek için kendilerinin katıştırılmış 
-      son yapılandırmalarını http çekirdeğinden alabilirler.</p>
-    
-    <p>Sürecin tamamı bir örnekle görselleştirilebilir. Aşağıdaki örnekte 
-      belli bir HTTP başlığını ayarlamak için <code class="module"><a href="./mod/mod_headers.html">mod_headers</a></code> 
-      modülünün <code class="directive"><a href="./mod/mod_headers.html#header">Header</a></code> yönergesi 
-      kullanılmıştır. <code>/example/index.html</code> isteği için httpd 
-      <code>CustomHeaderName</code> başlığına hangi değeri atayacaktır?
-    </p>
-    <pre class="prettyprint lang-config">&lt;Directory "/"&gt;
-    Header set CustomHeaderName bir
-    &lt;FilesMatch ".*"&gt;
-        Header set CustomHeaderName yedi
-    &lt;/FilesMatch&gt;
-&lt;/Directory&gt;
-
-&lt;Directory "/example"&gt;
-    Header set CustomHeaderName iki
-&lt;/Directory&gt;</pre>
-    
-    <ul>
-        <li><code class="directive">Directory</code> "/" eşleşir ve ilk yapılandırma 
-          olarak <code>CustomHeaderName</code> başlığı <code>bir</code> 
-          değeriyle oluşturulur.</li>
-        
-        <li><code class="directive">Directory</code> "/example" eşleşir ve 
-          <code class="module"><a href="./mod/mod_headers.html">mod_headers</a></code> modülünün koduna göre bir katıştırma 
-          durumundan yeni değer eskiyi geçersiz kılacağından yeni bir 
-          yapılandırma ile <code>CustomHeaderName</code> başlığının değeri 
-          <code>iki</code> yapılır.</li>
-        
-        <li><code class="directive">FilesMatch</code> ".*" eşleşir ve başka bir 
-          katıştırma fırsatı doğar: <code>CustomHeaderName</code> başlığının 
-          değeri <code>yedi</code> yapılır.</li>
-        
-        <li>Neticede HHP isteğinin sonraki adımlarında 
-          <code class="module"><a href="./mod/mod_headers.html">mod_headers</a></code> çağrılıp <code>yedi</code> değeri 
-          atanmış <code>CustomHeaderName</code> başlığını işleme sokması 
-          istenecektir. <code class="module"><a href="./mod/mod_headers.html">mod_headers</a></code> normalde işini yapmak 
-          için bu yapılandırmayı kullanacaktır. Fakat bundan, bir yönergenin  
-          gerekli olmaması veya kullanımdan kaldırılması ve benzeri nedenlerle 
-          yapılandırmada iptal edilmesi gibi daha karmaşık bir eylemi bir 
-          modülün gerçekleştiremeyeceği anlamı çıkarılmamalıdır.</li>
-    </ul>
-
-    <p><code class="directive">Directory</code> ile aynı katıştırma sırasından dolayı 
-      bu durum .htaccess için de geçerlidir. Burada anlaşılması gereken husus, 
-      <code class="directive">Directory</code> ve <code class="directive">FilesMatch</code> 
-      gibi yapılandırma bölümlerinin <code class="directive"><a href="./mod/mod_headers.html#header">Header</a></code> veya <code class="directive"><a href="./mod/mod_rewrite.html#rewriterule">RewriteRule</a></code> gibi modüle özgü 
-      yönergelerle karşılaştırılmamasıdır, çünkü bunlar farklı seviyelerde 
-      işlem görür.
-    </p>
-  
-
   <h3><a name="merge-examples" id="merge-examples">Bazı Örnekler</a></h3>
 
     <p>Aşağıdaki yapay örnekte katıştırma sırası gösterilmiştir. Hepsinin aynı
       isteğe uygulandığı varsayımıyla, bu örnekteki yönergeler A &gt; B &gt; C
       &gt; D &gt; E sırasıyla uygulanacaktır.</p>
 
-    <pre class="prettyprint lang-config">&lt;Location "/"&gt;
+    <pre class="prettyprint lang-config">&lt;Location /&gt;
     E
 &lt;/Location&gt;
 
-&lt;Files "f.html"&gt;
+&lt;Files f.html&gt;
     D
 &lt;/Files&gt;
 
 &lt;VirtualHost *&gt;
-&lt;Directory "/a/b"&gt;
+&lt;Directory /a/b&gt;
     B
 &lt;/Directory&gt;
 &lt;/VirtualHost&gt;
@@ -569,7 +498,7 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
     C
 &lt;/DirectoryMatch&gt;
 
-&lt;Directory "/a/b"&gt;
+&lt;Directory /a/b&gt;
     A
 &lt;/Directory&gt;</pre>
 
@@ -581,12 +510,12 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
       Başka bir deyişle, katıştırma sırası önemlidir, bu nedenle dikkatli
       olmalısınız!</p>
 
-    <pre class="prettyprint lang-config">&lt;Location "/"&gt;
+    <pre class="prettyprint lang-config">&lt;Location /&gt;
     Require all granted
 &lt;/Location&gt;
 
 # Alooo!  Bu &lt;Directory&gt; bölümünün hiçbir hükmü yok.
-&lt;Directory "/"&gt;
+&lt;Directory /&gt;
     &lt;RequireAll&gt;
         Require all granted
         Require not host kkadam.example.com
@@ -621,7 +550,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/sections.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="./mod/">Modüller</a> | <a href="./mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="./glossary.html">Terimler</a> | <a href="./sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

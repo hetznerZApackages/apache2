@@ -22,8 +22,8 @@ module AP_MODULE_DECLARE_DATA proxy_express_module;
 static int proxy_available = 0;
 
 typedef struct {
-    const char *dbmfile;
-    const char *dbmtype;
+    char *dbmfile;
+    char *dbmtype;
     int enabled;
 } express_server_conf;
 
@@ -48,14 +48,13 @@ static const char *set_dbmtype(cmd_parms *cmd,
     express_server_conf *sconf;
     sconf = ap_get_module_config(cmd->server->module_config, &proxy_express_module);
 
-    sconf->dbmtype = arg;
-
+    sconf->dbmtype = apr_pstrdup(cmd->pool, arg);
     return NULL;
 }
 
 static const char *set_enabled(cmd_parms *cmd,
-                               void *dconf,
-                               int flag)
+                              void *dconf,
+                              int flag)
 {
     express_server_conf *sconf;
     sconf = ap_get_module_config(cmd->server->module_config, &proxy_express_module);
@@ -145,11 +144,13 @@ static int xlate_name(request_rec *r)
     key.dsize = strlen(key.dptr);
 
     rv = apr_dbm_fetch(db, key, &val);
-    if (rv == APR_SUCCESS) {
-        backend = apr_pstrmemdup(r->pool, val.dptr, val.dsize);
-    }
     apr_dbm_close(db);
-    if (rv != APR_SUCCESS || !backend) {
+    if (rv != APR_SUCCESS) {
+        return DECLINED;
+    }
+
+    backend = apr_pstrmemdup(r->pool, val.dptr, val.dsize);
+    if (!backend) {
         return DECLINED;
     }
 
@@ -168,7 +169,7 @@ static int xlate_name(request_rec *r)
      * for this host... If so, don't do it again.
      */
     /*
-     * NOTE: dconf is process specific so this will only
+     * NOTE: dconf is process specific so this wil only
      *       work as long as we maintain that this process
      *       or thread is handling the backend
      */
@@ -219,3 +220,4 @@ AP_DECLARE_MODULE(proxy_express) =
     command_table,  /* table of config file commands */
     register_hooks  /* register hooks */
 };
+

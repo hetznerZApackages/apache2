@@ -99,7 +99,7 @@ extern "C" {
 #define CACHE_LOCKNAME_KEY "mod_cache-lockname"
 #define CACHE_LOCKFILE_KEY "mod_cache-lockfile"
 #define CACHE_CTX_KEY "mod_cache-ctx"
-#define CACHE_SEPARATOR ", \t"
+#define CACHE_SEPARATOR ",   "
 
 /**
  * cache_util.c
@@ -264,7 +264,7 @@ int cache_check_freshness(cache_handle_t *h, cache_request_rec *cache,
  * Try obtain a cache wide lock on the given cache key.
  *
  * If we return APR_SUCCESS, we obtained the lock, and we are clear to
- * proceed to the backend. If we return APR_EEXISTS, then the lock is
+ * proceed to the backend. If we return APR_EEXISTS, the the lock is
  * already locked, someone else has gone to refresh the backend data
  * already, so we must return stale data with a warning in the mean
  * time. If we return anything else, then something has gone pear
@@ -300,7 +300,7 @@ apr_status_t cache_remove_lock(cache_server_conf *conf,
         cache_request_rec *cache, request_rec *r, apr_bucket_brigade *bb);
 
 cache_provider_list *cache_get_providers(request_rec *r,
-                                         cache_server_conf *conf);
+        cache_server_conf *conf, apr_uri_t uri);
 
 /**
  * Get a value from a table, where the table may contain multiple

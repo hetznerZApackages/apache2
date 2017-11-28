@@ -1,0 +1,11 @@
+--- apache2.orig/modules/cache/mod_socache_memcache.c
++++ apache2/modules/cache/mod_socache_memcache.c
+@@ -51,7 +51,7 @@
+ #endif
+ 
+ #ifndef MC_DEFAULT_SERVER_TTL
+-#define MC_DEFAULT_SERVER_TTL 600
++#define MC_DEFAULT_SERVER_TTL (15*1000*1000)        /* 15 seconds */
+ #endif
+ 
+ struct ap_socache_instance_t {

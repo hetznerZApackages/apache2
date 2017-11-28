@@ -404,7 +404,7 @@ static int SSLize_Socket(SOCKET socketHnd, char *key, request_rec *r)
     ulFlag = SO_TLS_ENABLE;
     rcode = WSAIoctl(socketHnd, SO_TLS_SET_FLAGS, &ulFlag,
                      sizeof(unsigned long), NULL, 0, NULL, NULL, NULL);
-    if (rcode) {
+    if(rcode) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, APLOGNO(02126)
                      "Error: %d with WSAIoctl(SO_TLS_SET_FLAGS, SO_TLS_ENABLE)",
                      WSAGetLastError());
@@ -635,7 +635,7 @@ static const char *set_trusted_certs(cmd_parms *cmd, void *dummy, char *arg)
 {
     char **ptr = (char **)apr_array_push(certlist);
 
-    *ptr = arg;
+    *ptr = apr_pstrdup(cmd->pool, arg);
     return NULL;
 }
 
@@ -778,7 +778,7 @@ static int nwssl_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 
     for (sl = ap_seclisteners; sl != NULL; sl = sl->next) {
         /* If we find a pre-existing listen socket and it has already been
-           created, then no need to go any further, just reuse it. */
+           created, then no neeed to go any further, just reuse it. */
         if (((sl->fd = find_secure_listener(sl)) >= 0) && (sl->used)) {
             continue;
         }
@@ -1020,7 +1020,8 @@ char *ssl_var_lookup(apr_pool_t *p, server_rec *s, conn_rec *c, request_rec *r, 
             else if (strcEQ(var, "REMOTE_ADDR"))
                 result = r->useragent_ip;
             else if (strcEQ(var, "REMOTE_HOST"))
-                result = ap_get_useragent_host(r, REMOTE_NAME, NULL);
+                result = ap_get_remote_host(r->connection, r->per_dir_config,
+                                            REMOTE_NAME, NULL);
             else if (strcEQ(var, "REMOTE_IDENT"))
                 result = ap_get_remote_logname(r);
             else if (strcEQ(var, "REMOTE_USER"))
@@ -1085,7 +1086,7 @@ char *ssl_var_lookup(apr_pool_t *p, server_rec *s, conn_rec *c, request_rec *r, 
         else if (strcEQ(var, "SERVER_SOFTWARE"))
             result = ap_get_server_banner();
         else if (strcEQ(var, "API_VERSION")) {
-            result = apr_itoa(p, MODULE_MAGIC_NUMBER_MAJOR);
+            result = apr_itoa(p, MODULE_MAGIC_NUMBER);
             resdup = FALSE;
         }
         else if (strcEQ(var, "TIME_YEAR")) {
@@ -1191,8 +1192,8 @@ static apr_status_t ssl_io_filter_Upgrade(ap_filter_t *f,
     /* Send the interim 101 response. */
     upgradebb = apr_brigade_create(r->pool, f->c->bucket_alloc);
 
-    ap_fputs(f->next, upgradebb, SWITCH_STATUS_LINE CRLF
-             UPGRADE_HEADER CRLF CONNECTION_HEADER CRLF CRLF);
+    ap_fputstrs(f->next, upgradebb, SWITCH_STATUS_LINE, CRLF,
+                UPGRADE_HEADER, CRLF, CONNECTION_HEADER, CRLF, CRLF, NULL);
 
     b = apr_bucket_flush_create(f->c->bucket_alloc);
     APR_BRIGADE_INSERT_TAIL(upgradebb, b);

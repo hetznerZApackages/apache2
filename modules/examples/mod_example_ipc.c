@@ -91,8 +91,7 @@ typedef struct exipc_data {
  * on restarts. It assures that the new children will not talk to a stale
  * shared memory segment.
  */
-static apr_status_t shm_cleanup_wrapper(void *unused)
-{
+static apr_status_t shm_cleanup_wrapper(void *unused) {
     if (exipc_shm)
         return apr_shm_destroy(exipc_shm);
     return OK;
@@ -142,7 +141,7 @@ static int exipc_post_config(apr_pool_t *pconf, apr_pool_t *plog,
      */
     rs = apr_temp_dir_get(&tempdir, pconf);
     if (APR_SUCCESS != rs) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, rs, s, APLOGNO(02992)
+        ap_log_error(APLOG_MARK, APLOG_ERR, rs, s,
                      "Failed to find temporary directory");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -160,7 +159,7 @@ static int exipc_post_config(apr_pool_t *pconf, apr_pool_t *plog,
     rs = apr_shm_create(&exipc_shm, sizeof(exipc_data),
                         (const char *) shmfilename, pconf);
     if (APR_SUCCESS != rs) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, rs, s, APLOGNO(02993)
+        ap_log_error(APLOG_MARK, APLOG_ERR, rs, s,
                      "Failed to create shared memory segment on file %s",
                      shmfilename);
         return HTTP_INTERNAL_SERVER_ERROR;
@@ -205,7 +204,7 @@ static void exipc_child_init(apr_pool_t *p, server_rec *s)
                                      apr_global_mutex_lockfile(exipc_mutex),
                                      p);
     if (APR_SUCCESS != rs) {
-        ap_log_error(APLOG_MARK, APLOG_CRIT, rs, s, APLOGNO(02994)
+        ap_log_error(APLOG_MARK, APLOG_CRIT, rs, s,
                      "Failed to reopen mutex %s in child",
                      exipc_mutex_type);
         /* There's really nothing else we can do here, since This
@@ -249,12 +248,10 @@ static int exipc_handler(request_rec *r)
         rs = apr_global_mutex_trylock(exipc_mutex);
         if (APR_STATUS_IS_EBUSY(rs)) {
             apr_sleep(CAMPOUT);
-        }
-        else if (APR_SUCCESS == rs) {
+        } else if (APR_SUCCESS == rs) {
             gotlock = 1;
             break; /* Get out of the loop */
-        }
-        else if (APR_STATUS_IS_ENOTIMPL(rs)) {
+        } else if (APR_STATUS_IS_ENOTIMPL(rs)) {
             /* If it's not implemented, just hang in the mutex. */
             startcamp = apr_time_now();
             rs = apr_global_mutex_lock(exipc_mutex);
@@ -262,29 +259,27 @@ static int exipc_handler(request_rec *r)
             if (APR_SUCCESS == rs) {
                 gotlock = 1;
                 break; /* Out of the loop */
-            }
-            else {
+            } else {
                 /* Some error, log and bail */
-                ap_log_error(APLOG_MARK, APLOG_ERR, rs, r->server, APLOGNO(02995)
+                ap_log_error(APLOG_MARK, APLOG_ERR, rs, r->server,
                              "Child %ld failed to acquire lock",
                              (long int)getpid());
                 break; /* Out of the loop without having the lock */
             }
-        }
-        else {
+        } else {
             /* Some other error, log and bail */
-            ap_log_error(APLOG_MARK, APLOG_ERR, rs, r->server, APLOGNO(02996)
+            ap_log_error(APLOG_MARK, APLOG_ERR, rs, r->server,
                          "Child %ld failed to try and acquire lock",
                          (long int)getpid());
             break; /* Out of the loop without having the lock */
-        }
 
+        }
         /*
          * The only way to get to this point is if the trylock worked
          * and returned BUSY. So, bump the time and try again
          */
         timecamped += CAMPOUT;
-        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, r->server, APLOGNO(03187)
+        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, r->server,
                      "Child %ld camping out on mutex for %" APR_INT64_T_FMT
                      " microseconds",
                      (long int) getpid(), timecamped);
@@ -312,8 +307,7 @@ static int exipc_handler(request_rec *r)
             ap_rprintf(r, "<tr><td>Counter:</td><td>%u</td></tr>\n",
                        (unsigned int)base->counter);
             ap_rputs("</table>\n", r);
-        }
-        else {
+        } else {
             /*
              * Send a page saying that we couldn't get the lock. Don't say
              * what the counter is, because without the lock the value could
@@ -354,3 +348,4 @@ AP_DECLARE_MODULE(example_ipc) = {
     NULL,                  /* table of config file commands       */
     exipc_register_hooks   /* register hooks                      */
 };
+

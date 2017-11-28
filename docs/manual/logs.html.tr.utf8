@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head>
-<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -18,7 +16,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modüller</a> | <a href="./mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="./glossary.html">Terimler</a> | <a href="./sitemap.html">Site Haritası</a></p>
 <p class="apache">Apache HTTP Sunucusu Sürüm 2.4</p>
-<img alt="" src="./images/feather.png" /></div>
+<img alt="" src="./images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Sunucusu</a> &gt; <a href="http://httpd.apache.org/docs/">Belgeleme</a> &gt; <a href="./">Sürüm 2.4</a></div><div id="page-content"><div id="preamble"><h1>Günlük Dosyaları</h1>
@@ -46,7 +44,7 @@
 <li><img alt="" src="./images/down.gif" /> <a href="#piped">Borulu Günlükler</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#virtualhost">Sanal Konaklar</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#other">Diğer Günlük Dosyaları</a></li>
-</ul><h3>Ayrıca bakınız:</h3><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
+</ul><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="overview" id="overview">Giriş</a></h2>
@@ -184,7 +182,7 @@
       bilgiyi incelemektir. Günlük incelemesi bu belgenin kapsamına dahil
       değildir ve aslında bu işlem sunucunun yaptığı işlerden biri değildir.
       Bu konu ve günlük incelemesi yapan uygulamalar hakkında daha ayrıntılı
-      bilgi edinmek için <a href="http://dmoz.org/Computers/Software/Internet/Site_Management/Log_Analysis/">dmoz.org</a>'a bakınız.</p>
+      bilgi edinmek için <a href="http://dmoz.org/Computers/Software/Internet/Site_Management/Log_analysis/">dmoz.org</a> veya <a href="http://dir.yahoo.com/Computers_and_Internet/Software/Internet/World_Wide_Web/Servers/Log_Analysis_Tools/">Yahoo</a>’ya bakınız.</p>
 
     <p>Apache httpd’nin çeşitli sürümlerinde erişim günlüklerini denetlemek
       için kullanılan diğer modüller ve yönergeler arasında mod_log_referer,
@@ -449,7 +447,7 @@ LogFormat "%!200,304,302{Referer}i" refererlog</pre>
         <strong>değilse</strong> (durum kodlarının öncesindeki "!" imine
         dikkat) <code>Referer</code> başlığı günlüklenecektir.</p>
 
-      <p>Koşula bağlı günlük kaydının çok esnek ve güçlü olabileceğini
+      <p>Koşulaa bağlı günlük kaydının çok esnek ve güçlü olabileceğini
         göstermiş olsak da günlük içeriğini denetlemenin tek yolu bu değildir.
         Günlük dosyaları sunucu etkinliğini eksiksiz olarak kaydedebildikleri
         takdirde daha yararlı olurlar. Günlük dosyalarını sonradan işleme tabi
@@ -549,18 +547,6 @@ CustomLog "|$/usr/local/apache/bin/rotatelogs /var/log/access_log 86400" common<
       gösterimi de desteklenmekte olup "<code>|</code>" kullanımına
       eşdeğerdir.</p>
 
-    <div class="note"><h3>Windows'ta yığın alanı</h3>
-    <p>Windows'ta çok sayıda borulu günlükleme süreci çalışırken ve özellikle
-      HTTPD bir hizmet olarak çalışıyorsa sorunlar baş gösterebilir. Bunun
-      başlıca sebebi masaüstü yığın alanının (heap) dışına taşılmasıdır. Her
-      hizmete ayrılan masüstü yığın alanı, kayıt defterindeki
-      HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SessionManager\SubSystems\Windows
-      kaydındaki üçüncü değiştirge olan <code>SharedSection</code>
-      değeridir. <strong>Bu değeri değiştirirken çok dikkatli olun</strong>;
-      bu, Windows kayıt defterini değiştirirken verilen normal
-      uyarılardandır, fakat eğer bu değer çok yüksek olursa masaüstü yığın
-      alanının tükenebileceği dikkate alınmalıdır.</p>
-    </div>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="virtualhost" id="virtualhost">Sanal Konaklar</a></h2>
@@ -598,7 +584,7 @@ CustomLog logs/access_log ortaksankon</pre>
 
 
     <p><code>%v</code> belirteci isteği sunan sanal konağın ismini günlüğe
-      yazmak için kullanılır. Daha sonra <a href="programs/split-logfile.html">split-logfile</a> gibi bir program
+      yazmak için kullanılır. Daha sonra <a href="programs/other.html">split-logfile</a> gibi bir program
       kullanarak, bu dosyadan her sanal konak için ayrı birer dosya elde
       edilebilir.</p>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
@@ -676,7 +662,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/logs.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="./mod/">Modüller</a> | <a href="./mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="./glossary.html">Terimler</a> | <a href="./sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
