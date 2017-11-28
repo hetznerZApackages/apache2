@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
-<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -18,7 +16,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
 <p class="apache">Serveur Apache HTTP Version 2.4</p>
-<img alt="" src="../images/feather.png" /></div>
+<img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Documentations diverses</a></div><div id="page-content"><div id="preamble"><h1>Optimisation des performances d'Apache</h1>
@@ -53,7 +51,7 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#runtime">Optimisation de la configuration à l'exécution</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#compiletime">Optimisation de la configuration à la compilation</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#trace">Appendice : Analyse détaillée d'une trace</a></li>
-</ul><h3>Voir aussi</h3><ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
+</ul><ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="hardware" id="hardware">Problèmes matériels et relatifs au système d'exploitation</a></h2>
@@ -148,7 +146,7 @@
 
       <p>Notez qu'il est possible de modifier la portée des directives, en les
       plaçant par exemple à l'intérieur d'une section
-      <code>&lt;Location "/server-status"&gt;</code>. Les recherches DNS ne
+      <code>&lt;Location /server-status&gt;</code>. Les recherches DNS ne
       seront alors effectuées que pour les requêtes qui satisfont aux critères.
       Voici un exemple qui désactive les recherches DNS sauf pour les fichiers
       <code>.html</code> et <code>.cgi</code> :</p>
@@ -176,8 +174,8 @@
       symboliques. Un appel supplémentaire par élément du chemin du fichier.
       Par exemple, si vous avez :</p>
 
-      <pre class="prettyprint lang-config">DocumentRoot "/www/htdocs"
-&lt;Directory "/"&gt;
+      <pre class="prettyprint lang-config">DocumentRoot /www/htdocs
+&lt;Directory /&gt;
   Options SymLinksIfOwnerMatch
 &lt;/Directory&gt;</pre>
 
@@ -191,12 +189,12 @@
       vérifier la sécurité des liens symboliques, vous pouvez utiliser une
       configuration du style :</p>
 
-      <pre class="prettyprint lang-config">DocumentRoot "/www/htdocs"
-&lt;Directory "/"&gt;
+      <pre class="prettyprint lang-config">DocumentRoot /www/htdocs
+&lt;Directory /&gt;
   Options FollowSymLinks
 &lt;/Directory&gt;
 
-&lt;Directory "/www/htdocs"&gt;
+&lt;Directory /www/htdocs&gt;
   Options -FollowSymLinks +SymLinksIfOwnerMatch
 &lt;/Directory&gt;</pre>
 
@@ -224,8 +222,8 @@
       pour chaque élément du chemin du fichier demandé. Par exemple, si vous
       avez : </p>
 
-      <pre class="prettyprint lang-config">DocumentRoot "/www/htdocs"
-&lt;Directory "/"&gt;
+      <pre class="prettyprint lang-config">DocumentRoot /www/htdocs
+&lt;Directory /&gt;
   AllowOverride all
 &lt;/Directory&gt;</pre>
 
@@ -1049,7 +1047,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/misc/perf-tuning.htm
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

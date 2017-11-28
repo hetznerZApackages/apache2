@@ -71,8 +71,7 @@ SSLModConfigRec *ssl_config_global_create(server_rec *s)
 #endif
 #ifdef HAVE_OCSP_STAPLING
     mc->stapling_cache         = NULL;
-    mc->stapling_cache_mutex   = NULL;
-    mc->stapling_refresh_mutex = NULL;
+    mc->stapling_mutex         = NULL;
 #endif
 
     apr_pool_userdata_set(mc, SSL_MOD_CONFIG_KEY,
@@ -111,8 +110,7 @@ static void modssl_ctx_init(modssl_ctx_t *mctx, apr_pool_t *p)
     mctx->ticket_key          = NULL;
 #endif
 
-    mctx->protocol            = SSL_PROTOCOL_DEFAULT;
-    mctx->protocol_set        = 0;
+    mctx->protocol            = SSL_PROTOCOL_ALL;
 
     mctx->pphrase_dialog_type = SSL_PPTYPE_UNSET;
     mctx->pphrase_dialog_path = NULL;
@@ -121,7 +119,7 @@ static void modssl_ctx_init(modssl_ctx_t *mctx, apr_pool_t *p)
 
     mctx->crl_path            = NULL;
     mctx->crl_file            = NULL;
-    mctx->crl_check_mask      = UNSET;
+    mctx->crl_check_mode      = SSL_CRLCHECK_UNSET;
 
     mctx->auth.ca_cert_path   = NULL;
     mctx->auth.ca_cert_file   = NULL;
@@ -136,7 +134,6 @@ static void modssl_ctx_init(modssl_ctx_t *mctx, apr_pool_t *p)
     mctx->ocsp_resp_maxage    = UNSET;
     mctx->ocsp_responder_timeout = UNSET;
     mctx->ocsp_use_request_nonce = UNSET;
-    mctx->proxy_uri              = NULL;
 
 #ifdef HAVE_OCSP_STAPLING
     mctx->stapling_enabled           = UNSET;
@@ -225,7 +222,6 @@ static SSLSrvConfigRec *ssl_config_server_new(apr_pool_t *p)
 #ifndef OPENSSL_NO_COMP
     sc->compression            = UNSET;
 #endif
-    sc->session_tickets        = UNSET;
 
     modssl_ctx_init_proxy(sc, p);
 
@@ -257,12 +253,7 @@ static void modssl_ctx_cfg_merge(apr_pool_t *p,
                                  modssl_ctx_t *add,
                                  modssl_ctx_t *mrg)
 {
-    if (add->protocol_set) {
-        mrg->protocol = add->protocol;
-    }
-    else {
-        mrg->protocol = base->protocol;
-    }
+    cfgMerge(protocol, SSL_PROTOCOL_ALL);
 
     cfgMerge(pphrase_dialog_type, SSL_PPTYPE_UNSET);
     cfgMergeString(pphrase_dialog_path);
@@ -271,7 +262,7 @@ static void modssl_ctx_cfg_merge(apr_pool_t *p,
 
     cfgMerge(crl_path, NULL);
     cfgMerge(crl_file, NULL);
-    cfgMergeInt(crl_check_mask);
+    cfgMerge(crl_check_mode, SSL_CRLCHECK_UNSET);
 
     cfgMergeString(auth.ca_cert_path);
     cfgMergeString(auth.ca_cert_file);
@@ -286,7 +277,6 @@ static void modssl_ctx_cfg_merge(apr_pool_t *p,
     cfgMergeInt(ocsp_resp_maxage);
     cfgMergeInt(ocsp_responder_timeout);
     cfgMergeBool(ocsp_use_request_nonce);
-    cfgMerge(proxy_uri, NULL);
 #ifdef HAVE_OCSP_STAPLING
     cfgMergeBool(stapling_enabled);
     cfgMergeInt(stapling_resptime_skew);
@@ -404,7 +394,6 @@ void *ssl_config_server_merge(apr_pool_t *p, void *basev, void *addv)
 #ifndef OPENSSL_NO_COMP
     cfgMergeBool(compression);
 #endif
-    cfgMergeBool(session_tickets);
 
     modssl_ctx_cfg_merge_proxy(p, base->proxy, add->proxy, mrg->proxy);
 
@@ -609,15 +598,8 @@ const char *ssl_cmd_SSLRandomSeed(cmd_parms *cmd,
         seed->cpPath = ap_server_root_relative(mc->pPool, arg2+5);
     }
     else if ((arg2len > 4) && strEQn(arg2, "egd:", 4)) {
-#ifdef HAVE_RAND_EGD
         seed->nSrc   = SSL_RSSRC_EGD;
         seed->cpPath = ap_server_root_relative(mc->pPool, arg2+4);
-#else
-        return apr_pstrcat(cmd->pool, "Invalid SSLRandomSeed entropy source `",
-                           arg2, "': This version of " MODSSL_LIBRARY_NAME
-                           " does not support the Entropy Gathering Daemon "
-                           "(EGD).", NULL);
-#endif
     }
     else if (strcEQ(arg2, "builtin")) {
         seed->nSrc   = SSL_RSSRC_BUILTIN;
@@ -711,7 +693,7 @@ const char *ssl_cmd_SSLCipherSuite(cmd_parms *cmd,
     SSLDirConfigRec *dc = (SSLDirConfigRec *)dcfg;
 
     /* always disable null and export ciphers */
-    arg = apr_pstrcat(cmd->pool, arg, ":!aNULL:!eNULL:!EXP", NULL);
+    arg = apr_pstrcat(cmd->pool, "!aNULL:!eNULL:!EXP:", arg, NULL);
 
     if (cmd->path) {
         dc->szCipherSuite = arg;
@@ -778,17 +760,6 @@ const char *ssl_cmd_SSLHonorCipherOrder(cmd_parms *cmd, void *dcfg, int flag)
 #endif
 }
 
-const char *ssl_cmd_SSLSessionTickets(cmd_parms *cmd, void *dcfg, int flag)
-{
-    SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
-#ifndef SSL_OP_NO_TICKET
-    return "This version of OpenSSL does not support using "
-           "SSLSessionTickets.";
-#endif
-    sc->session_tickets = flag ? TRUE : FALSE;
-    return NULL;
-}
-
 const char *ssl_cmd_SSLInsecureRenegotiation(cmd_parms *cmd, void *dcfg, int flag)
 {
 #ifdef SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION
@@ -834,7 +805,8 @@ const char *ssl_cmd_SSLCertificateFile(cmd_parms *cmd,
         return err;
     }
 
-    *(const char **)apr_array_push(sc->server->pks->cert_files) = arg;
+    *(const char **)apr_array_push(sc->server->pks->cert_files) =
+        apr_pstrdup(cmd->pool, arg);
     
     return NULL;
 }
@@ -850,7 +822,8 @@ const char *ssl_cmd_SSLCertificateKeyFile(cmd_parms *cmd,
         return err;
     }
 
-    *(const char **)apr_array_push(sc->server->pks->key_files) = arg;
+    *(const char **)apr_array_push(sc->server->pks->key_files) =
+        apr_pstrdup(cmd->pool, arg);
 
     return NULL;
 }
@@ -861,6 +834,12 @@ const char *ssl_cmd_SSLCertificateChainFile(cmd_parms *cmd,
 {
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
     const char *err;
+
+    ap_log_error(APLOG_MARK, APLOG_WARNING|APLOG_STARTUP, 0, cmd->server,
+                 APLOGNO(02559)
+                 "The SSLCertificateChainFile directive (%s:%d) is deprecated, "
+                 "SSLCertificateFile should be used instead",
+                 cmd->directive->filename, cmd->directive->line_num);
 
     if ((err = ssl_cmd_check_file(cmd, &arg))) {
         return err;
@@ -1000,36 +979,21 @@ const char *ssl_cmd_SSLCARevocationFile(cmd_parms *cmd,
 
 static const char *ssl_cmd_crlcheck_parse(cmd_parms *parms,
                                           const char *arg,
-                                          int *mask)
+                                          ssl_crlcheck_t *mode)
 {
-    const char *w;
-
-    w = ap_getword_conf(parms->temp_pool, &arg);
-    if (strcEQ(w, "none")) {
-        *mask = SSL_CRLCHECK_NONE;
+    if (strcEQ(arg, "none")) {
+        *mode = SSL_CRLCHECK_NONE;
     }
-    else if (strcEQ(w, "leaf")) {
-        *mask = SSL_CRLCHECK_LEAF;
+    else if (strcEQ(arg, "leaf")) {
+        *mode = SSL_CRLCHECK_LEAF;
     }
-    else if (strcEQ(w, "chain")) {
-        *mask = SSL_CRLCHECK_CHAIN;
+    else if (strcEQ(arg, "chain")) {
+        *mode = SSL_CRLCHECK_CHAIN;
     }
     else {
         return apr_pstrcat(parms->temp_pool, parms->cmd->name,
-                           ": Invalid argument '", w, "'",
+                           ": Invalid argument '", arg, "'",
                            NULL);
-    }
-
-    while (*arg) {
-        w = ap_getword_conf(parms->temp_pool, &arg);
-        if (strcEQ(w, "no_crl_for_cert_ok")) {
-            *mask |= SSL_CRLCHECK_NO_CRL_FOR_CERT_OK;
-        }
-        else {
-            return apr_pstrcat(parms->temp_pool, parms->cmd->name,
-                               ": Invalid argument '", w, "'",
-                               NULL);
-        }
     }
 
     return NULL;
@@ -1041,7 +1005,7 @@ const char *ssl_cmd_SSLCARevocationCheck(cmd_parms *cmd,
 {
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
 
-    return ssl_cmd_crlcheck_parse(cmd, arg, &sc->server->crl_check_mask);
+    return ssl_cmd_crlcheck_parse(cmd, arg, &sc->server->crl_check_mode);
 }
 
 static const char *ssl_cmd_verify_parse(cmd_parms *parms,
@@ -1312,7 +1276,7 @@ const char *ssl_cmd_SSLRequire(cmd_parms *cmd,
     }
 
     require = apr_array_push(dc->aRequirement);
-    require->cpExpr = arg;
+    require->cpExpr = apr_pstrdup(cmd->pool, arg);
     require->mpExpr = info;
 
     return NULL;
@@ -1358,15 +1322,7 @@ static const char *ssl_cmd_protocol_parse(cmd_parms *parms,
             }
         }
         else if (strcEQ(w, "SSLv3")) {
-#ifdef OPENSSL_NO_SSL3
-            if (action != '-') {
-                return "SSLv3 not supported by this version of OpenSSL";
-            }
-            /* Nothing to do, the flag is not present to be toggled */
-            continue;
-#else
             thisopt = SSL_PROTOCOL_SSLV3;
-#endif
         }
         else if (strcEQ(w, "TLSv1")) {
             thisopt = SSL_PROTOCOL_TLSV1;
@@ -1385,7 +1341,8 @@ static const char *ssl_cmd_protocol_parse(cmd_parms *parms,
         else {
             return apr_pstrcat(parms->temp_pool,
                                parms->cmd->name,
-                               ": Illegal protocol '", w, "'", NULL);
+                               ": Illegal protocol '",
+                               w, "'", NULL);
         }
 
         if (action == '-') {
@@ -1395,12 +1352,6 @@ static const char *ssl_cmd_protocol_parse(cmd_parms *parms,
             *options |= thisopt;
         }
         else {
-            if (*options != SSL_PROTOCOL_NONE) {
-                ap_log_error(APLOG_MARK, APLOG_WARNING, 0, parms->server, APLOGNO(02532)
-                             "%s: Protocol '%s' overrides already set parameter(s). "
-                             "Check if a +/- prefix is missing.",
-                             parms->cmd->name, w);
-            }
             *options = thisopt;
         }
     }
@@ -1414,7 +1365,6 @@ const char *ssl_cmd_SSLProtocol(cmd_parms *cmd,
 {
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
 
-    sc->server->protocol_set = 1;
     return ssl_cmd_protocol_parse(cmd, arg, &sc->server->protocol);
 }
 
@@ -1433,7 +1383,6 @@ const char *ssl_cmd_SSLProxyProtocol(cmd_parms *cmd,
 {
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
 
-    sc->proxy->protocol_set = 1;
     return ssl_cmd_protocol_parse(cmd, arg, &sc->proxy->protocol);
 }
 
@@ -1444,7 +1393,7 @@ const char *ssl_cmd_SSLProxyCipherSuite(cmd_parms *cmd,
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
 
     /* always disable null and export ciphers */
-    arg = apr_pstrcat(cmd->pool, arg, ":!aNULL:!eNULL:!EXP", NULL);
+    arg = apr_pstrcat(cmd->pool, "!aNULL:!eNULL:!EXP:", arg, NULL);
 
     sc->proxy->auth.cipher_suite = arg;
 
@@ -1555,7 +1504,7 @@ const char *ssl_cmd_SSLProxyCARevocationCheck(cmd_parms *cmd,
 {
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
 
-    return ssl_cmd_crlcheck_parse(cmd, arg, &sc->proxy->crl_check_mask);
+    return ssl_cmd_crlcheck_parse(cmd, arg, &sc->proxy->crl_check_mode);
 }
 
 const char *ssl_cmd_SSLProxyMachineCertificateFile(cmd_parms *cmd,
@@ -1684,18 +1633,6 @@ const char *ssl_cmd_SSLOCSPUseRequestNonce(cmd_parms *cmd, void *dcfg, int flag)
 
     sc->server->ocsp_use_request_nonce = flag ? TRUE : FALSE;
 
-    return NULL;
-}
-
-const char *ssl_cmd_SSLOCSPProxyURL(cmd_parms *cmd, void *dcfg,
-                                    const char *arg)
-{
-    SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
-    sc->server->proxy_uri = apr_palloc(cmd->pool, sizeof(apr_uri_t));
-    if (apr_uri_parse(cmd->pool, arg, sc->server->proxy_uri) != APR_SUCCESS) {
-        return apr_psprintf(cmd->pool,
-                            "SSLOCSPProxyURL: Cannot parse URL %s", arg);
-    }
     return NULL;
 }
 
@@ -1910,11 +1847,6 @@ const char *ssl_cmd_SSLOpenSSLConfCmd(cmd_parms *cmd, void *dcfg,
     else if (value_type == SSL_CONF_TYPE_DIR) {
         if ((err = ssl_cmd_check_dir(cmd, &arg2)))
             return err;
-    }
-
-    if (strcEQ(arg1, "CipherString")) {
-        /* always disable null and export ciphers */
-        arg2 = apr_pstrcat(cmd->pool, arg2, ":!aNULL:!eNULL:!EXP", NULL);
     }
 
     param = apr_array_push(sc->server->ssl_ctx_param);

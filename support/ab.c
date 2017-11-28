@@ -170,14 +170,6 @@
 #define SK_VALUE(x,y) sk_X509_value(x,y)
 typedef STACK_OF(X509) X509_STACK_TYPE;
 
-#if defined(_MSC_VER)
-/* The following logic ensures we correctly glue FILE* within one CRT used
- * by the OpenSSL library build to another CRT used by the ab.exe build.
- * This became especially problematic with Visual Studio 2015.
- */
-#include <openssl/applink.c>
-#endif
-
 #endif
 
 #if defined(USE_SSL)
@@ -193,9 +185,6 @@ typedef STACK_OF(X509) X509_STACK_TYPE;
 #endif
 #ifdef SSL_OP_NO_TLSv1_2
 #define HAVE_TLSV1_X
-#endif
-#if !defined(OPENSSL_NO_TLSEXT) && defined(SSL_set_tlsext_host_name)
-#define HAVE_TLSEXT
 #endif
 #endif
 
@@ -231,7 +220,7 @@ typedef enum {
     STATE_READ
 } connect_state_e;
 
-#define CBUFFSIZE (8192)
+#define CBUFFSIZE (2048)
 
 struct connection {
     apr_pool_t *ctx;
@@ -313,7 +302,7 @@ int isproxy = 0;
 apr_interval_time_t aprtimeout = apr_time_from_sec(30); /* timeout value */
 
 /* overrides for ab-generated common headers */
-const char *opt_host;   /* which optional "Host:" header specified, if any */
+int opt_host = 0;       /* was an optional "Host:" header specified? */
 int opt_useragent = 0;  /* was an optional "User-Agent:" header specified? */
 int opt_accept = 0;     /* was an optional "Accept:" header specified? */
  /*
@@ -346,16 +335,12 @@ SSL_CTX *ssl_ctx;
 char *ssl_cipher = NULL;
 char *ssl_info = NULL;
 BIO *bio_out,*bio_err;
-#ifdef HAVE_TLSEXT
-int tls_use_sni = 1;         /* used by default, -I disables it */
-const char *tls_sni = NULL; /* 'opt_host' if any, 'hostname' otherwise */
-#endif
 #endif
 
 apr_time_t start, lasttime, stoptime;
 
 /* global request (and its length) */
-char _request[8192];
+char _request[2048];
 char *request = _request;
 apr_size_t reqlen;
 
@@ -438,41 +423,6 @@ static char *xstrdup(const char *s)
         exit(1);
     }
     return ret;
-}
-
-/*
- * Similar to standard strstr() but we ignore case in this version.
- * Copied from ap_strcasestr().
- */
-static char *xstrcasestr(const char *s1, const char *s2)
-{
-    char *p1, *p2;
-    if (*s2 == '\0') {
-        /* an empty s2 */
-        return((char *)s1);
-    }
-    while(1) {
-        for ( ; (*s1 != '\0') && (apr_tolower(*s1) != apr_tolower(*s2)); s1++);
-        if (*s1 == '\0') {
-            return(NULL);
-        }
-        /* found first character of s2, see if the rest matches */
-        p1 = (char *)s1;
-        p2 = (char *)s2;
-        for (++p1, ++p2; apr_tolower(*p1) == apr_tolower(*p2); ++p1, ++p2) {
-            if (*p1 == '\0') {
-                /* both strings ended together */
-                return((char *)s1);
-            }
-        }
-        if (*p2 == '\0') {
-            /* second string ended, a match */
-            break;
-        }
-        /* didn't find a match here, try starting at next character in s1 */
-        s1++;
-    }
-    return((char *)s1);
 }
 
 /* pool abort function */
@@ -871,11 +821,6 @@ static void output_results(int sig)
     if (is_ssl && ssl_info) {
         printf("SSL/TLS Protocol:       %s\n", ssl_info);
     }
-#ifdef HAVE_TLSEXT
-    if (is_ssl && tls_sni) {
-        printf("TLS Server Name:        %s\n", tls_sni);
-    }
-#endif
 #endif
     printf("\n");
     printf("Document Path:          %s\n", path);
@@ -1093,7 +1038,7 @@ static void output_results(int sig)
                 exit(1);
             }
             fprintf(out, "" "Percentage served" "," "Time in ms" "\n");
-            for (i = 0; i <= 100; i++) {
+            for (i = 0; i < 100; i++) {
                 double t;
                 if (i == 0)
                     t = ap_double_ms(stats[0].time);
@@ -1277,7 +1222,7 @@ static void start_connect(struct connection * c)
     apr_status_t rv;
 
     if (!(started < requests))
-        return;
+    return;
 
     c->read = 0;
     c->bread = 0;
@@ -1344,11 +1289,6 @@ static void start_connect(struct connection * c)
             BIO_set_callback(bio, ssl_print_cb);
             BIO_set_callback_arg(bio, (void *)bio_err);
         }
-#ifdef HAVE_TLSEXT
-        if (tls_sni) {
-            SSL_set_tlsext_host_name(c->ssl, tls_sni);
-        }
-#endif
     } else {
         c->ssl = NULL;
     }
@@ -1575,14 +1515,12 @@ static void read_connection(struct connection * c)
                  * this is first time, extract some interesting info
                  */
                 char *p, *q;
-                size_t len = 0;
-                p = xstrcasestr(c->cbuff, "Server:");
+                p = strstr(c->cbuff, "Server:");
                 q = servername;
                 if (p) {
                     p += 8;
-                    /* -1 to not overwrite last '\0' byte */
-                    while (*p > 32 && len++ < sizeof(servername) - 1)
-                        *q++ = *p++;
+                    while (*p > 32)
+                    *q++ = *p++;
                 }
                 *q = 0;
             }
@@ -1613,15 +1551,22 @@ static void read_connection(struct connection * c)
             }
             c->gotheader = 1;
             *s = 0;     /* terminate at end of header */
-            if (keepalive && xstrcasestr(c->cbuff, "Keep-Alive")) {
+            if (keepalive &&
+            (strstr(c->cbuff, "Keep-Alive")
+             || strstr(c->cbuff, "keep-alive"))) {  /* for benefit of MSIIS */
                 char *cl;
-                c->keepalive = 1;
-                cl = xstrcasestr(c->cbuff, "Content-Length:");
-                if (cl && method != HEAD) {
+                cl = strstr(c->cbuff, "Content-Length:");
+                /* handle NCSA, which sends Content-length: */
+                if (!cl)
+                    cl = strstr(c->cbuff, "Content-length:");
+                if (cl) {
+                    c->keepalive = 1;
                     /* response to HEAD doesn't have entity body */
-                    c->length = atoi(cl + 16);
+                    c->length = method != HEAD ? atoi(cl + 16) : 0;
                 }
-                else {
+                /* The response may not have a Content-Length header */
+                if (!cl) {
+                    c->keepalive = 1;
                     c->length = 0;
                 }
             }
@@ -1726,18 +1671,6 @@ static void test(void)
     else {
         /* Header overridden, no need to add, as it is already in hdrs */
     }
-
-#ifdef HAVE_TLSEXT
-    if (is_ssl && tls_use_sni) {
-        apr_ipsubnet_t *ip;
-        if (((tls_sni = opt_host) || (tls_sni = hostname)) &&
-            (!*tls_sni || apr_ipsubnet_create(&ip, tls_sni, NULL,
-                                               cntxt) == APR_SUCCESS)) {
-            /* IP not allowed in TLS SNI extension */
-            tls_sni = NULL;
-        }
-    }
-#endif
 
     if (!opt_useragent) {
         /* User-Agent: header not overridden, add default value to hdrs */
@@ -1955,14 +1888,14 @@ static void test(void)
 static void copyright(void)
 {
     if (!use_html) {
-        printf("This is ApacheBench, Version %s\n", AP_AB_BASEREVISION " <$Revision: 1757674 $>");
+        printf("This is ApacheBench, Version %s\n", AP_AB_BASEREVISION " <$Revision: 1604373 $>");
         printf("Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/\n");
         printf("Licensed to The Apache Software Foundation, http://www.apache.org/\n");
         printf("\n");
     }
     else {
         printf("<p>\n");
-        printf(" This is ApacheBench, Version %s <i>&lt;%s&gt;</i><br>\n", AP_AB_BASEREVISION, "$Revision: 1757674 $");
+        printf(" This is ApacheBench, Version %s <i>&lt;%s&gt;</i><br>\n", AP_AB_BASEREVISION, "$Revision: 1604373 $");
         printf(" Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/<br>\n");
         printf(" Licensed to The Apache Software Foundation, http://www.apache.org/<br>\n");
         printf("</p>\n<p>\n");
@@ -2026,24 +1959,15 @@ static void usage(const char *progname)
 #define SSL2_HELP_MSG ""
 #endif
 
-#ifndef OPENSSL_NO_SSL3
-#define SSL3_HELP_MSG "SSL3, "
-#else
-#define SSL3_HELP_MSG ""
-#endif
-
 #ifdef HAVE_TLSV1_X
 #define TLS1_X_HELP_MSG ", TLS1.1, TLS1.2"
 #else
 #define TLS1_X_HELP_MSG ""
 #endif
 
-#ifdef HAVE_TLSEXT
-    fprintf(stderr, "    -I              Disable TLS Server Name Indication (SNI) extension\n");
-#endif
     fprintf(stderr, "    -Z ciphersuite  Specify SSL/TLS cipher suite (See openssl ciphers)\n");
     fprintf(stderr, "    -f protocol     Specify SSL/TLS protocol\n");
-    fprintf(stderr, "                    (" SSL2_HELP_MSG SSL3_HELP_MSG "TLS1" TLS1_X_HELP_MSG " or ALL)\n");
+    fprintf(stderr, "                    (" SSL2_HELP_MSG "SSL3, TLS1" TLS1_X_HELP_MSG " or ALL)\n");
 #endif
     exit(EINVAL);
 }
@@ -2204,7 +2128,7 @@ int main(int argc, const char * const argv[])
     myhost = NULL; /* 0.0.0.0 or :: */
 
     apr_getopt_init(&opt, cntxt, argc, argv);
-    while ((status = apr_getopt(opt, "n:c:t:s:b:T:p:u:v:lrkVhwiIx:y:z:C:H:P:A:g:X:de:SqB:m:"
+    while ((status = apr_getopt(opt, "n:c:t:s:b:T:p:u:v:lrkVhwix:y:z:C:H:P:A:g:X:de:SqB:m:"
 #ifdef USE_SSL
             "Z:f:"
 #endif
@@ -2323,16 +2247,7 @@ int main(int argc, const char * const argv[])
                  * allow override of some of the common headers that ab adds
                  */
                 if (strncasecmp(opt_arg, "Host:", 5) == 0) {
-                    char *host;
-                    apr_size_t len;
-                    opt_arg += 5;
-                    while (apr_isspace(*opt_arg))
-                        opt_arg++;
-                    len = strlen(opt_arg);
-                    host = strdup(opt_arg);
-                    while (len && apr_isspace(host[len-1]))
-                        host[--len] = '\0';
-                    opt_host = host;
+                    opt_host = 1;
                 } else if (strncasecmp(opt_arg, "Accept:", 7) == 0) {
                     opt_accept = 1;
                 } else if (strncasecmp(opt_arg, "User-Agent:", 11) == 0) {
@@ -2396,17 +2311,9 @@ int main(int argc, const char * const argv[])
 #ifndef OPENSSL_NO_SSL2
                 } else if (strncasecmp(opt_arg, "SSL2", 4) == 0) {
                     meth = SSLv2_client_method();
-#ifdef HAVE_TLSEXT
-                    tls_use_sni = 0;
 #endif
-#endif
-#ifndef OPENSSL_NO_SSL3
                 } else if (strncasecmp(opt_arg, "SSL3", 4) == 0) {
                     meth = SSLv3_client_method();
-#ifdef HAVE_TLSEXT
-                    tls_use_sni = 0;
-#endif
-#endif
 #ifdef HAVE_TLSV1_X
                 } else if (strncasecmp(opt_arg, "TLS1.1", 6) == 0) {
                     meth = TLSv1_1_client_method();
@@ -2417,11 +2324,6 @@ int main(int argc, const char * const argv[])
                     meth = TLSv1_client_method();
                 }
                 break;
-#ifdef HAVE_TLSEXT
-            case 'I':
-                tls_use_sni = 0;
-                break;
-#endif
 #endif
         }
     }

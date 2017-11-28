@@ -41,7 +41,7 @@
  * done. If the value matches the string or regular expression, the
  * environment variables listed as var ... are set. Each var can
  * be in one of three formats: var, which sets the named variable
- * (the value "1"); var=value, which sets the variable to
+ * (the value value "1"); var=value, which sets the variable to
  * the given value; or !var, which unsets the variable is it has
  * been previously set.
  *
@@ -531,7 +531,8 @@ static int match_headers(request_rec *r)
                     val = r->connection->local_ip;
                     break;
                 case SPECIAL_REMOTE_HOST:
-                    val = ap_get_useragent_host(r, REMOTE_NAME, NULL);
+                    val =  ap_get_remote_host(r->connection, r->per_dir_config,
+                                              REMOTE_NAME, NULL);
                     break;
                 case SPECIAL_REQUEST_URI:
                     val = r->uri;

@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
-<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -19,7 +17,7 @@
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
 <p class="apache">Serveur Apache HTTP Version 2.4</p>
-<img alt="" src="../images/feather.png" /></div>
+<img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Modules</a></div>
@@ -54,14 +52,14 @@ pages SSI</td></tr>
 <li><img alt="" src="../images/down.gif" /> <a href="#setenv">SetEnv</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#unsetenv">UnsetEnv</a></li>
 </ul>
-<h3>Traitement des bugs</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">Journal des modifications de httpd</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mod_env">Problèmes connus</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mod_env">Signaler un bug</a></li></ul><h3>Voir aussi</h3>
+<h3>Voir aussi</h3>
 <ul class="seealso">
 <li><a href="../env.html">Variables d'environnement</a></li>
 <li><code class="directive"><a href="../mod/mod_setenvif.html#setenvif">SetEnvIf</a></code></li>
-<li><a href="#comments_section">Commentaires</a></li></ul></div>
+</ul><ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
 
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="passenv" id="passenv">Directive</a> <a name="PassEnv" id="PassEnv">PassEnv</a></h2>
+<div class="directive-section"><h2><a name="PassEnv" id="PassEnv">PassEnv</a> <a name="passenv" id="passenv">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Transmet des variables d'environnement depuis le
 shell</td></tr>
@@ -84,7 +82,7 @@ shell</td></tr>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="setenv" id="setenv">Directive</a> <a name="SetEnv" id="SetEnv">SetEnv</a></h2>
+<div class="directive-section"><h2><a name="SetEnv" id="SetEnv">SetEnv</a> <a name="setenv" id="setenv">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Définit des variables d'environnement</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>SetEnv <var>var-env</var> [<var>valeur</var>]</code></td></tr>
@@ -121,7 +119,7 @@ shell</td></tr>
 </ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="unsetenv" id="unsetenv">Directive</a> <a name="UnsetEnv" id="UnsetEnv">UnsetEnv</a></h2>
+<div class="directive-section"><h2><a name="UnsetEnv" id="UnsetEnv">UnsetEnv</a> <a name="unsetenv" id="unsetenv">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Supprime des variables de l'environnement</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>UnsetEnv <var>var-env</var> [<var>var-env</var>]
@@ -163,7 +161,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_env.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

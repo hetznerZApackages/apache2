@@ -283,7 +283,7 @@ static int mmap_handler(request_rec *r, a_file *file)
     APR_BRIGADE_INSERT_TAIL(bb, b);
 
     if (ap_pass_brigade(r->output_filters, bb) != APR_SUCCESS)
-        return AP_FILTER_ERROR;
+        return HTTP_INTERNAL_SERVER_ERROR;
 #endif
     return OK;
 }
@@ -301,7 +301,7 @@ static int sendfile_handler(request_rec *r, a_file *file)
     APR_BRIGADE_INSERT_TAIL(bb, b);
 
     if (ap_pass_brigade(r->output_filters, bb) != APR_SUCCESS)
-        return AP_FILTER_ERROR;
+        return HTTP_INTERNAL_SERVER_ERROR;
 #endif
     return OK;
 }
@@ -312,10 +312,10 @@ static int file_cache_handler(request_rec *r)
     int errstatus;
     int rc = OK;
 
-    /* Bail out if r->handler isn't the default value, and doesn't look like a Content-Type
-     * XXX: Even though we made the user explicitly list each path to cache?
+    /* XXX: not sure if this is right yet
+     * see comment in http_core.c:default_handler
      */
-    if (ap_strcmp_match(r->handler, "*/*") && !AP_IS_DEFAULT_HANDLER_NAME(r->handler)) {
+    if (ap_strcmp_match(r->handler, "*/*")) {
         return DECLINED;
     }
 

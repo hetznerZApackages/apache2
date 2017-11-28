@@ -26,7 +26,6 @@ XINCDIRS	+= \
 			$(APR)/include \
 			$(APRUTIL)/include \
 			$(AP_WORK)/include \
-			$(STDMOD)/generators \
 			$(AP_WORK)/server/mpm/netware \
 			$(NWOS) \
 			$(EOLIST)

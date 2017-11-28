@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head>
-<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -19,7 +17,7 @@
 <div id="page-header">
 <p class="menu"><a href="./mod/">Modüller</a> | <a href="./mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="./glossary.html">Terimler</a> | <a href="./sitemap.html">Site Haritası</a></p>
 <p class="apache">Apache HTTP Sunucusu Sürüm 2.4</p>
-<img alt="" src="./images/feather.png" /></div>
+<img alt="" src="./images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Sunucusu</a> &gt; <a href="http://httpd.apache.org/docs/">Belgeleme</a> &gt; <a href="./">Sürüm 2.4</a></div>
@@ -130,7 +128,6 @@ kullanımı</a></li>
 <li><a href="howto/ssi.html">Sunucu Taraflı İçerik Yerleştirme (SSI)</a></li>
 <li><a href="howto/htaccess.html">.htaccess Dosyaları</a></li>
 <li><a href="howto/public_html.html">Kullanıcı Dizinleri (public_html)</a></li>
-<li><a href="howto/reverse_proxy.html">Ters Vekil Yapılandırma Rehberi</a></li>
 </ul>
 </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section"><h2><a name="platform" id="platform">Platformlara Özgü Bilgiler</a></h2>
@@ -228,7 +225,7 @@ Windows ile Apache Kullanımı</a></li>
 <li><a href="mod/mod_dumpio.html">Apache Modülü mod_dumpio</a></li>
 <li><a href="mod/mod_echo.html">Apache Modülü mod_echo</a></li>
 <li><a href="mod/mod_env.html">Apache Modülü mod_env</a></li>
-<li><a href="mod/mod_example_hooks.html">Apache Modülü mod_example_hooks</a></li>
+<li><a href="mod/mod_example.html">Apache Modülü mod_example</a></li>
 <li><a href="mod/mod_expires.html">Apache Modülü mod_expires</a></li>
 <li><a href="mod/mod_ext_filter.html">Apache Modülü mod_ext_filter</a></li>
 <li><a href="mod/mod_file_cache.html">Apache Modülü mod_file_cache</a></li>
@@ -236,7 +233,6 @@ Windows ile Apache Kullanımı</a></li>
 <li><a href="mod/mod_headers.html">Apache Modülü mod_headers</a></li>
 <li><a href="mod/mod_heartbeat.html">Apache Modülü mod_heartbeat</a></li>
 <li><a href="mod/mod_heartmonitor.html">Apache Modülü mod_heartmonitor</a></li>
-<li><a href="mod/mod_http2.html">Apache Modülü mod_http2</a></li>
 <li><a href="mod/mod_ident.html">Apache Modülü mod_ident</a></li>
 <li><a href="mod/mod_imagemap.html">Apache Modülü mod_imagemap</a></li>
 <li><a href="mod/mod_include.html">Apache Modülü mod_include</a></li>
@@ -266,10 +262,8 @@ Windows ile Apache Kullanımı</a></li>
 <li><a href="mod/mod_proxy_fcgi.html">Apache Modülü mod_proxy_fcgi</a></li>
 <li><a href="mod/mod_proxy_fdpass.html">Apache Modülü mod_proxy_fdpass</a></li>
 <li><a href="mod/mod_proxy_ftp.html">Apache Modülü mod_proxy_ftp</a></li>
-<li><a href="mod/mod_proxy_hcheck.html">Apache Modülü mod_proxy_hcheck</a></li>
 <li><a href="mod/mod_proxy_html.html">Apache Modülü mod_proxy_html</a></li>
 <li><a href="mod/mod_proxy_http.html">Apache Modülü mod_proxy_http</a></li>
-<li><a href="mod/mod_proxy_http2.html">Apache Modülü mod_proxy_http2</a></li>
 <li><a href="mod/mod_proxy_scgi.html">Apache Modülü mod_proxy_scgi</a></li>
 <li><a href="mod/mod_proxy_wstunnel.html">Apache Modülü mod_proxy_wstunnel</a></li>
 <li><a href="mod/mod_ratelimit.html">Apache Modülü mod_ratelimit</a></li>
@@ -354,7 +348,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/sitemap.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="./mod/">Modüller</a> | <a href="./mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="./glossary.html">Terimler</a> | <a href="./sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

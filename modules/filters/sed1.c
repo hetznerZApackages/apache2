@@ -235,7 +235,6 @@ static void copy_to_genbuf(sed_eval_t *eval, const char* sz)
     if (eval->gsize < reqsize) {
         grow_gen_buffer(eval, reqsize, NULL);
     }
-    memcpy(eval->genbuf, sz, len + 1);
 }
 
 /*

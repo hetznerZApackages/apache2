@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head>
-<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -18,7 +16,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p>
 <p class="apache">Apache HTTP Sunucusu Sürüm 2.4</p>
-<img alt="" src="../images/feather.png" /></div>
+<img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Sunucusu</a> &gt; <a href="http://httpd.apache.org/docs/">Belgeleme</a> &gt; <a href="../">Sürüm 2.4</a> &gt; <a href="./">Sanal Konaklar</a></div><div id="page-content"><div id="preamble"><h1>Sanal Konak Örnekleri</h1>
@@ -52,17 +50,17 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#migrate">Bir isme dayalı sanal konağı bir IP’ye dayalı
     sanal konakla yansılamak</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#serverpath"><code>ServerPath</code> yönergesinin kullanımı</a></li>
-</ul><h3>Ayrıca bakınız:</h3><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
+</ul><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="purename" id="purename">Tek bir IP ile çok sayıda isme dayalı site</a></h2>
     
 
-    <p>Bu örnekte, makinenizin tek bir IP adresine çözümlenen çok sayıda konak 
-      adına sahip olduğunu, <code>example.com</code> ve 
-      <code>example.org</code> gibi farklı isimlere farklı yanıtlar vermek 
-      istediğinizi varsayalım.</p>
-    
+    <p>Bu örnekte, makinenizin tek bir IP adresine sahip olduğunu ve bu
+      makineye <code>example.com</code> ve <code>example.org</code> şeklinde
+      (DNS A kayıtları sayesinde) farklı isimlerle erişilebildiğini
+      varsayalım.</p>
+
     <div class="note"><h3>Bilginize</h3><p>Apache sunucusu üzerinde sanal konakları
       yapılandırmakla bu konak isimleri için sihirli bir şekilde DNS
       kayıtlarının da oluşturulmasını sağlamış olmazsınız. Bu isimler için
@@ -78,14 +76,14 @@
     <pre class="prettyprint lang-config"># Apache’nin 80. portu dinlediğinden emin olalım
 Listen 80
 &lt;VirtualHost *:80&gt;
-  DocumentRoot "/siteler/ecom"
+  DocumentRoot /siteler/ecom
   ServerName example.com
 
   # Diğer yönergeler, burada ...
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost *:80&gt;
-  DocumentRoot "/siteler/eorg"
+  DocumentRoot /siteler/eorg
   ServerName example.org
 
   # Diğer yönergeler, burada ...
@@ -98,19 +96,13 @@ Listen 80
       dosyasındaki <code>ServerName example.com</code> yönergeli konak, ilk
       sanal konak olduğundan en yüksek önceliğe sahiptir ve
       <cite>öntanımlı</cite> veya <cite>baskın</cite> site olarak davranır.
-      Yani, hiçbir <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> yönergesi 
-      ile eşleşmeyen bir istek alındığında bu istek ilk <code class="directive"><a href="../mod/core.html#virtualhost">&lt;VirtualHost&gt;</a></code> yapılandırması ile
+      Yani, hiçbir <code>ServerName</code> yönergesi ile eşleşmeyen bir istek
+      alındığında bu istek ilk <code>VirtualHost</code> yapılandırması ile
       karşılanır.</p>
-    
-    <p>Yukarıdaki yapılandırmayı hemen hemen tüm isme dayalı sanal konaklar
-      için kullanabilirsiniz. Bu yapılandırmanın çalışmayacağı tek durum,
-      farklı içerikleri farklı IP adres veya portlardan sunma gereğiyle
-      karşılaşmaktır.</p>
 
     <div class="note"><h3>Bilginize</h3>
-      <p><code>*</code> yerine sisteminizdeki belli bir IP adresini 
-        yazabilirsiniz. Böyle sanal konaklar sadece, HTTP isteklerinin sadece 
-        belirtilen IP adreslerinden alınması için kullanilabilir.</p>
+      <p>IP adresi ve porta dayalı ayrımı umursamıyorsanız, <code>*</code>
+        yerine kendi IP adresinizi yazabilirsiniz.</p>
 
       <pre class="prettyprint lang-config">NameVirtualHost 192.168.1.22
 
@@ -127,6 +119,11 @@ Listen 80
         adresiniz değişse bile bu yapılandırmayı değiştirmeden
         kullanabilirsiniz.</p>
     </div>
+
+    <p>Yukarıdaki yapılandırmayı hemen hemen tüm isme dayalı sanal konaklar
+      için kullanabilirsiniz. Bu yapılandırmanın çalışmayacağı tek durum,
+      farklı içerikleri farklı IP adreslerinden sunma gereğiyle
+      karşılaşmaktır.</p>
 
   </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -147,17 +144,17 @@ Listen 80
 
 # Bu, 192.168.1.2 adresindeki "ana sunucu" olsun
 ServerName sunucu.example.com
-DocumentRoot "/siteler/anasunucu"
+DocumentRoot /siteler/anasunucu
 
 &lt;VirtualHost 192.168.1.20&gt;
-    DocumentRoot "/siteler/ecom"
+    DocumentRoot /siteler/ecom
     ServerName example.com
 
     # Diğer yönergeler, burada ...
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 192.168.1.20&gt;
-    DocumentRoot "/siteler/eorg"
+    DocumentRoot /siteler/eorg
     ServerName example.org
 
     # Diğer yönergeler, burada ...
@@ -180,18 +177,18 @@ DocumentRoot "/siteler/anasunucu"
       bakan IP’ye, iç ağda ise iç ağa bakan IP’ye çözümleniyor olsun.</p>
 
     <p>Bu durumda, sunucu hem iç hem de dış ağdan gelen isteklere aynı içerik,
-      dolayısıyla aynı <code class="directive"><a href="../mod/core.html#virtualhost">&lt;VirtualHost&gt;</a></code> bölümü ile hizmet verebilir.</p>
+      dolayısıyla aynı <code>VirtualHost</code> bölümü ile hizmet
+      verebilir.</p>
 
     <pre class="prettyprint lang-config">&lt;VirtualHost 192.168.1.1 172.20.30.40&gt;
-    DocumentRoot "/siteler/sunucu"
+    DocumentRoot /siteler/sunucu
     ServerName sunucu.example.com
     ServerAlias sunucu
 &lt;/VirtualHost&gt;</pre>
 
 
     <p>Artık, hem iç hem de dış ağdan gelen isteklere aynı
-      <code class="directive"><a href="../mod/core.html#virtualhost">&lt;VirtualHost&gt;</a></code> 
-      bölümünden hizmet sunulacaktır.</p>
+      <code>VirtualHost</code> bölümünden hizmet sunulacaktır.</p>
 
     <div class="note"><h3>Bilginize:</h3>
       <p>İç ağdan istek yapan biri, tam nitelenmiş konak ismi
@@ -218,22 +215,22 @@ Listen 8080
 
 &lt;VirtualHost 172.20.30.40:80&gt;
     ServerName example.com
-    DocumentRoot "/siteler/ecom-80"
+    DocumentRoot /siteler/ecom-80
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.40:8080&gt;
     ServerName example.com
-    DocumentRoot "/siteler/ecom-8080"
+    DocumentRoot /siteler/ecom-8080
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.40:80&gt;
     ServerName example.org
-    DocumentRoot "/siteler/eorg-80"
+    DocumentRoot /siteler/eorg-80
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.40:8080&gt;
     ServerName example.org
-    DocumentRoot "/siteler/eorg-8080"
+    DocumentRoot /siteler/eorg-8080
 &lt;/VirtualHost&gt;</pre>
 
 
@@ -248,12 +245,12 @@ Listen 8080
     <pre class="prettyprint lang-config">Listen 80
 
 &lt;VirtualHost 172.20.30.40&gt;
-    DocumentRoot "/siteler/ecom"
+    DocumentRoot /siteler/ecom
     ServerName example.com
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.50&gt;
-    DocumentRoot "/siteler/eorg"
+    DocumentRoot /siteler/eorg
     ServerName example.org
 &lt;/VirtualHost&gt;</pre>
 
@@ -277,22 +274,22 @@ Listen 172.20.30.50:80
 Listen 172.20.30.50:8080
 
 &lt;VirtualHost 172.20.30.40:80&gt;
-    DocumentRoot "/siteler/ecom-80"
+    DocumentRoot /siteler/ecom-80
     ServerName example.com
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.40:8080&gt;
-    DocumentRoot "/siteler/ecom-8080"
+    DocumentRoot /siteler/ecom-8080
     ServerName example.com
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.50:80&gt;
-    DocumentRoot "/siteler/eorg-80"
+    DocumentRoot /siteler/eorg-80
     ServerName example.org
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.50:8080&gt;
-    DocumentRoot "/siteler/eorg-8080"
+    DocumentRoot /siteler/eorg-8080
     ServerName example.org
 &lt;/VirtualHost&gt;</pre>
 
@@ -309,28 +306,28 @@ Listen 172.20.30.50:8080
     <pre class="prettyprint lang-config">Listen 80
 
 &lt;VirtualHost 172.20.30.40&gt;
-    DocumentRoot "/siteler/ecom"
+    DocumentRoot /siteler/ecom
     ServerName example.com
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.40&gt;
-    DocumentRoot "/siteler/eorg"
+    DocumentRoot /siteler/eorg
     ServerName example.org
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.40&gt;
-    DocumentRoot "/siteler/enet"
+    DocumentRoot /siteler/enet
     ServerName example.net
 &lt;/VirtualHost&gt;
 
 # IP'ye dayalı
 &lt;VirtualHost 172.20.30.50&gt;
-    DocumentRoot "/siteler/eedu"
+    DocumentRoot /siteler/eedu
     ServerName example.edu
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.60&gt;
-    DocumentRoot "/siteler/egov"
+    DocumentRoot /siteler/egov
     ServerName example.gov
 &lt;/VirtualHost&gt;</pre>
 
@@ -350,8 +347,8 @@ Listen 172.20.30.50:8080
 
     <pre class="prettyprint lang-config">&lt;VirtualHost *:*&gt;
     ProxyPreserveHost On
-    ProxyPass        "/" "http://192.168.111.2/"
-    ProxyPassReverse "/" "http://192.168.111.2/"
+    ProxyPass / http://192.168.111.2/
+    ProxyPassReverse / http://192.168.111.2/
     ServerName konak.example.com
 &lt;/VirtualHost&gt;</pre>
 
@@ -367,7 +364,7 @@ Listen 172.20.30.50:8080
       adresi/portu ile eşleşmeyen istekleri yakalamak istersek...</p>
 
     <pre class="prettyprint lang-config">&lt;VirtualHost _default_:*&gt;
-    DocumentRoot "/siteler/default"
+    DocumentRoot /siteler/default
 &lt;/VirtualHost&gt;</pre>
 
 
@@ -393,12 +390,12 @@ Listen 172.20.30.50:8080
       <code>_default_</code> sanal konağı kullanmak istersek...</p>
 
     <pre class="prettyprint lang-config">&lt;VirtualHost _default_:80&gt;
-    DocumentRoot "/siteler/default80"
+    DocumentRoot /siteler/default80
     # ...
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost _default_:*&gt;
-    DocumentRoot "/siteler/default"
+    DocumentRoot /siteler/default
     # ...
 &lt;/VirtualHost&gt;</pre>
 
@@ -416,7 +413,7 @@ Listen 172.20.30.50:8080
       sunmasını istersek...</p>
 
     <pre class="prettyprint lang-config">&lt;VirtualHost _default_:80&gt;
-    DocumentRoot "/siteler/default"
+    DocumentRoot /siteler/default
     ...
 &lt;/VirtualHost&gt;</pre>
 
@@ -447,18 +444,18 @@ Listen 172.20.30.50:8080
 
     <pre class="prettyprint lang-config">Listen 80
 ServerName example.com
-DocumentRoot "/siteler/ecom"
+DocumentRoot /siteler/ecom
 
 &lt;VirtualHost 192.168.1.20 192.168.1.2&gt;
-    DocumentRoot "/siteler/eorg"
+    DocumentRoot /siteler/eorg
     ServerName example.org
     # ...
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 192.168.1.20&gt;
-    DocumentRoot "/siteler/enet"
+    DocumentRoot /siteler/enet
     ServerName example.enet
-    ServerAlias *.example.net
+    ServerAlias *.example.enet
     # ...
 &lt;/VirtualHost&gt;</pre>
 
@@ -483,27 +480,27 @@ DocumentRoot "/siteler/ecom"
 
     <pre class="prettyprint lang-config">&lt;VirtualHost 172.20.30.40&gt;
     # ilk sanal konak
-    DocumentRoot "/siteler/baska"
+    DocumentRoot /siteler/baska
     RewriteEngine On
-    RewriteRule "." "/siteler/baska/index.html"
+    RewriteRule . /siteler/baska/index.html
     # ...
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.40&gt;
-    DocumentRoot /siteler/baska/bir
-    ServerName "bir.baska.tld"
-    ServerPath "/bir/"
+DocumentRoot /siteler/baska/bir
+    ServerName bir.baska.tld
+    ServerPath /bir/
     RewriteEngine On
-    RewriteRule "^(/bir/.*) /siteler/baska$1"
+    RewriteRule ^(/bir/.*) /siteler/baska$1
     # ...
 &lt;/VirtualHost&gt;
 
 &lt;VirtualHost 172.20.30.40&gt;
-    DocumentRoot "/siteler/baska/iki"
+    DocumentRoot /siteler/baska/iki
     ServerName iki.baska.tld
-    ServerPath "/iki/"
+    ServerPath /iki/
     RewriteEngine On
-    RewriteRule "^(/iki/.*)" "/siteler/baska$1"
+    RewriteRule ^(/iki/.*) /siteler/baska$1
     # ...
 &lt;/VirtualHost&gt;</pre>
 
@@ -553,7 +550,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/vhosts/examples.html
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

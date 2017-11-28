@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
-<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -18,7 +16,7 @@
 <body id="manual-page" class="no-sidebar"><div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="../images/feather.png" /></div>
+<img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="../"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a></div><div id="page-content"><div id="preamble"><h1>How-To / Tutorials</h1>
@@ -88,20 +86,6 @@
     </dl>
 
     <dl>
-      <dt>HTTP/2 with httpd</dt>
-      <dd>
-      <p>HTTP/2 is the evolution of the world's most successful application layer protocol, HTTP. 
-        It focuses on making more efficient use of network resources without changing the semantics of HTTP.
-        This guide explains how HTTP/2 is implemented in httpd, showing basic configurations tips and 
-        best practices.
-      </p>
-
-        <p>See: <a href="http2.html">HTTP/2 guide</a></p>
-      </dd>
-    </dl>
-
-
-    <dl>
       <dt>Introduction to Server Side Includes</dt>
       <dd>
         <p>SSI (Server Side Includes) are directives that are placed in
@@ -127,19 +111,6 @@
       </dd>
     </dl>
 
-    <dl>
-      <dt>Reverse Proxy guide</dt>
-      <dd>
-        <p>Apache httpd has extensive capabilities as a reverse proxy server using the
-        <code class="directive"><a href="../mod/mod_proxy.html#proxypass">ProxyPass</a></code> directive as well as
-        <code class="directive"><a href="../mod/mod_proxy.html#balancermember">BalancerMember</a></code> to create sophisticated
-        reverse proxying implementations which provide for high-availability, load
-        balancing and failover, cloud-based clustering and dynamic on-the-fly reconfiguration.</p>
-
-        <p>See: <a href="reverse_proxy.html">Reverse proxy guide</a></p>
-      </dd>
-    </dl>
-
   </div></div>
 <div class="bottomlang">
 <p><span>Available Languages: </span><a href="../en/howto/" title="English">&nbsp;en&nbsp;</a> |
@@ -148,7 +119,7 @@
 <a href="../ko/howto/" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a> |
 <a href="../zh-cn/howto/" hreflang="zh-cn" rel="alternate" title="Simplified Chinese">&nbsp;zh-cn&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

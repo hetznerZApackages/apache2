@@ -22,7 +22,6 @@
 #include "http_config.h"
 #include "http_log.h"
 #include "http_core.h"
-#include "http_protocol.h"
 #include "ap_provider.h"
 #include "ap_socache.h"
 #include "util_filter.h"
@@ -31,7 +30,6 @@
 #include "util_mutex.h"
 
 #include "mod_cache.h"
-#include "mod_status.h"
 
 #include "cache_socache_common.h"
 
@@ -76,12 +74,12 @@ typedef struct cache_socache_object_t
     apr_table_t *headers_out; /* Output headers to save */
     cache_socache_info_t socache_info; /* Header information. */
     apr_size_t body_offset; /* offset to the start of the body */
-    apr_off_t body_length; /* length of the cached entity body */
     unsigned int newbody :1; /* whether a new body is present */
     apr_time_t expire; /* when to expire the entry */
 
     const char *name; /* Requested URI without vary bits - suitable for mortals. */
     const char *key; /* On-disk prefix; URI with Vary bits (if present) */
+    apr_off_t file_size; /*  File size of the cached data file  */
     apr_off_t offset; /* Max size to set aside */
     apr_time_t timeout; /* Max time to set aside */
     unsigned int done :1; /* Is the attempt to cache complete? */
@@ -191,6 +189,7 @@ static apr_status_t read_table(cache_handle_t *handle, request_rec *r,
         apr_size_t *slider)
 {
     apr_size_t key = *slider, colon = 0, len = 0;
+    ;
 
     while (*slider < buffer_len) {
         if (buffer[*slider] == ':') {
@@ -462,8 +461,8 @@ static int open_entity(cache_handle_t *h, request_rec *r, const char *key)
      */
     apr_pool_create(&sobj->pool, r->pool);
 
-    sobj->buffer = apr_palloc(sobj->pool, dconf->max);
-    sobj->buffer_len = dconf->max;
+    sobj->buffer = apr_palloc(sobj->pool, dconf->max + 1);
+    sobj->buffer_len = dconf->max + 1;
 
     /* attempt to retrieve the cached entry */
     if (socache_mutex) {
@@ -953,7 +952,13 @@ static apr_status_t store_body(cache_handle_t *h, request_rec *r,
     }
 
     if (!sobj->newbody) {
-        sobj->body_length = 0;
+        if (sobj->body) {
+            apr_brigade_cleanup(sobj->body);
+        }
+        else {
+            sobj->body = apr_brigade_create(r->pool,
+                    r->connection->bucket_alloc);
+        }
         sobj->newbody = 1;
     }
     if (sobj->offset) {
@@ -1015,19 +1020,27 @@ static apr_status_t store_body(cache_handle_t *h, request_rec *r,
             continue;
         }
 
-        sobj->body_length += length;
-        if (sobj->body_length >= sobj->buffer_len - sobj->body_offset) {
+        sobj->file_size += length;
+        if (sobj->file_size >= sobj->buffer_len - sobj->body_offset) {
             ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02378)
                     "URL %s failed the buffer size check "
                     "(%" APR_OFF_T_FMT ">=%" APR_SIZE_T_FMT ")",
-                    h->cache_obj->key, sobj->body_length,
-                    sobj->buffer_len - sobj->body_offset);
+                    h->cache_obj->key, sobj->file_size, sobj->buffer_len - sobj->body_offset);
             apr_pool_destroy(sobj->pool);
             sobj->pool = NULL;
             return APR_EGENERAL;
         }
-        memcpy(sobj->buffer + sobj->body_offset + sobj->body_length - length,
-               str, length);
+
+        rv = apr_bucket_copy(e, &e);
+        if (rv != APR_SUCCESS) {
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(02379)
+                    "Error when copying bucket for URL %s",
+                    h->cache_obj->key);
+            apr_pool_destroy(sobj->pool);
+            sobj->pool = NULL;
+            return rv;
+        }
+        APR_BRIGADE_INSERT_TAIL(sobj->body, e);
 
         /* have we reached the limit of how much we're prepared to write in one
          * go? If so, leave, we'll get called again. This prevents us from trying
@@ -1061,10 +1074,8 @@ static apr_status_t store_body(cache_handle_t *h, request_rec *r,
             return APR_EGENERAL;
         }
         if (cl_header) {
-            apr_off_t cl;
-            char *cl_endp;
-            if (apr_strtoff(&cl, cl_header, &cl_endp, 10) != APR_SUCCESS
-                    || *cl_endp != '\0' || cl != sobj->body_length) {
+            apr_int64_t cl = apr_atoi64(cl_header);
+            if ((errno == 0) && (sobj->file_size != cl)) {
                 ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02381)
                         "URL %s didn't receive complete response, not caching",
                         h->cache_obj->key);
@@ -1088,6 +1099,24 @@ static apr_status_t commit_entity(cache_handle_t *h, request_rec *r)
     cache_object_t *obj = h->cache_obj;
     cache_socache_object_t *sobj = (cache_socache_object_t *) obj->vobj;
     apr_status_t rv;
+    apr_size_t len;
+
+    /* flatten the body into the buffer */
+    len = sobj->buffer_len - sobj->body_offset;
+    rv = apr_brigade_flatten(sobj->body, (char *) sobj->buffer
+            + sobj->body_offset, &len);
+    if (APR_SUCCESS != rv) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(02382)
+                "could not flatten brigade, not caching: %s",
+                sobj->key);
+        goto fail;
+    }
+    if (len >= sobj->buffer_len - sobj->body_offset) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(02383)
+                "body too big for the cache buffer, not caching: %s",
+                h->cache_obj->key);
+        goto fail;
+    }
 
     if (socache_mutex) {
         apr_status_t status = apr_global_mutex_lock(socache_mutex);
@@ -1096,13 +1125,13 @@ static apr_status_t commit_entity(cache_handle_t *h, request_rec *r)
                     "could not acquire lock, ignoring: %s", obj->key);
             apr_pool_destroy(sobj->pool);
             sobj->pool = NULL;
-            return status;
+            return rv;
         }
     }
     rv = conf->provider->socache_provider->store(
             conf->provider->socache_instance, r->server,
             (unsigned char *) sobj->key, strlen(sobj->key), sobj->expire,
-            sobj->buffer, sobj->body_offset + sobj->body_length, sobj->pool);
+            sobj->buffer, (unsigned int) sobj->body_offset + len, sobj->pool);
     if (socache_mutex) {
         apr_status_t status = apr_global_mutex_unlock(socache_mutex);
         if (status != APR_SUCCESS) {
@@ -1110,7 +1139,7 @@ static apr_status_t commit_entity(cache_handle_t *h, request_rec *r)
                     "could not release lock, ignoring: %s", obj->key);
             apr_pool_destroy(sobj->pool);
             sobj->pool = NULL;
-            return status;
+            return DECLINED;
         }
     }
     if (rv != APR_SUCCESS) {
@@ -1260,11 +1289,9 @@ static const char *set_cache_max(cmd_parms *parms, void *in_struct_ptr,
 {
     cache_socache_dir_conf *dconf = (cache_socache_dir_conf *) in_struct_ptr;
 
-    if (apr_strtoff(&dconf->max, arg, NULL, 10) != APR_SUCCESS
-            || dconf->max < 1024 || dconf->max > APR_UINT32_MAX) {
-        return "CacheSocacheMaxSize argument must be a integer representing "
-               "the max size of a cached entry (headers and body), at least 1024 "
-               "and at most " APR_STRINGIFY(APR_UINT32_MAX);
+    if (apr_strtoff(&dconf->max, arg, NULL, 10) != APR_SUCCESS || dconf->max
+            < 1024) {
+        return "CacheSocacheMaxSize argument must be a integer representing the max size of a cached entry (headers and body), at least 1024";
     }
     dconf->max_set = 1;
     return NULL;
@@ -1348,68 +1375,6 @@ static apr_status_t destroy_cache(void *data)
     return APR_SUCCESS;
 }
 
-static int socache_status_hook(request_rec *r, int flags)
-{
-    apr_status_t status = APR_SUCCESS;
-    cache_socache_conf *conf = ap_get_module_config(r->server->module_config,
-                                                    &cache_socache_module);
-    if (!conf->provider || !conf->provider->socache_provider ||
-        !conf->provider->socache_instance) {
-        return DECLINED;
-    }
-
-    if (!(flags & AP_STATUS_SHORT)) {
-        ap_rputs("<hr>\n"
-                 "<table cellspacing=0 cellpadding=0>\n"
-                 "<tr><td bgcolor=\"#000000\">\n"
-                 "<b><font color=\"#ffffff\" face=\"Arial,Helvetica\">"
-                 "mod_cache_socache Status:</font></b>\n"
-                 "</td></tr>\n"
-                 "<tr><td bgcolor=\"#ffffff\">\n", r);
-    }
-    else {
-        ap_rputs("ModCacheSocacheStatus\n", r);
-    }
-
-    if (socache_mutex) {
-        status = apr_global_mutex_lock(socache_mutex);
-        if (status != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r, APLOGNO(02816)
-                    "could not acquire lock for cache status");
-        }
-    }
-
-    if (status != APR_SUCCESS) {
-        if (!(flags & AP_STATUS_SHORT)) {
-            ap_rputs("No cache status data available\n", r);
-        }
-        else {
-            ap_rputs("NotAvailable\n", r);
-        }
-    } else {
-        conf->provider->socache_provider->status(conf->provider->socache_instance,
-                                                 r, flags);
-    }
-
-    if (socache_mutex && status == APR_SUCCESS) {
-        status = apr_global_mutex_unlock(socache_mutex);
-        if (status != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r, APLOGNO(02817)
-                    "could not release lock for cache status");
-        }
-    }
-
-    if (!(flags & AP_STATUS_SHORT)) {
-        ap_rputs("</td></tr>\n</table>\n", r);
-    }
-    return OK;
-}
-
-static void socache_status_register(apr_pool_t *p)
-{
-    APR_OPTIONAL_HOOK(ap, status_hook, socache_status_hook, NULL, NULL, APR_HOOK_MIDDLE);
-}
-
 static int socache_precfg(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *ptmp)
 {
     apr_status_t rv = ap_mutex_register(pconf, cache_socache_id, NULL,
@@ -1419,10 +1384,6 @@ static int socache_precfg(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *ptmp)
         "failed to register %s mutex", cache_socache_id);
         return 500; /* An HTTP status would be a misnomer! */
     }
-
-    /* Register to handle mod_status status page generation */
-    socache_status_register(pconf);
-
     return OK;
 }
 
@@ -1433,7 +1394,7 @@ static int socache_post_config(apr_pool_t *pconf, apr_pool_t *plog,
     apr_status_t rv;
     const char *errmsg;
     static struct ap_socache_hints socache_hints =
-    { 64, 2048, 60000000 };
+    { 64, 32, 60000000 };
 
     for (s = base_server; s; s = s->next) {
         cache_socache_conf *conf =
