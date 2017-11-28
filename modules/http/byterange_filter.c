@@ -380,7 +380,8 @@ static apr_status_t copy_brigade_range(apr_bucket_brigade *bb,
                     return rv;
                 }
                 out_first = APR_BUCKET_NEXT(copy);
-                apr_bucket_delete(copy);
+                APR_BUCKET_REMOVE(copy);
+                apr_bucket_destroy(copy);
             }
             else {
                 out_first = copy;
@@ -399,7 +400,8 @@ static apr_status_t copy_brigade_range(apr_bucket_brigade *bb,
                 }
                 copy = APR_BUCKET_NEXT(copy);
                 if (copy != APR_BRIGADE_SENTINEL(bbout)) {
-                    apr_bucket_delete(copy);
+                    APR_BUCKET_REMOVE(copy);
+                    apr_bucket_destroy(copy);
                 }
             }
             break;

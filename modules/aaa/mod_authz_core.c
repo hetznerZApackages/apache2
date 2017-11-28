@@ -168,13 +168,6 @@ static void *merge_authz_core_dir_config(apr_pool_t *p,
     return (void*)conf;
 }
 
-/* Only per-server directive we have is GLOBAL_ONLY */
-static void *merge_authz_core_svr_config(apr_pool_t *p,
-                                         void *basev, void *newv)
-{
-    return basev;
-}
-
 static void *create_authz_core_svr_config(apr_pool_t *p, server_rec *s)
 {
     authz_core_srv_conf *authcfg;
@@ -196,7 +189,7 @@ static authz_status authz_alias_check_authorization(request_rec *r,
     authz_status ret = AUTHZ_DENIED;
 
     /* Look up the provider alias in the alias list.
-     * Get the dir_config and call ap_Merge_per_dir_configs()
+     * Get the the dir_config and call ap_Merge_per_dir_configs()
      * Call the real provider->check_authorization() function
      * return the result of the above function call
      */
@@ -976,7 +969,7 @@ static const char *all_parse_config(cmd_parms *cmd, const char *require_line,
     /*
      * If the argument to the 'all' provider is 'granted' then just let
      * everybody in. This would be equivalent to the previous syntax of
-     * 'allow from all'. If the argument is 'denied' we reject everybody,
+     * 'allow from all'. If the argument is 'denied' we reject everbody,
      * which is equivalent to 'deny from all'.
      */
     if (strcasecmp(require_line, "granted") == 0) {
@@ -1069,16 +1062,6 @@ static const char *expr_parse_config(cmd_parms *cmd, const char *require_line,
     const char *expr_err = NULL;
     struct require_expr_info *info = apr_pcalloc(cmd->pool, sizeof(*info));
 
-    /* if the expression happens to be surrounded by quotes, skip them */
-    if (require_line[0] == '"') {
-        apr_size_t len = strlen(require_line);
-
-        if (require_line[len-1] == '"')
-            require_line = apr_pstrndup(cmd->temp_pool,
-                                        require_line + 1,
-                                        len - 2);
-    }
-
     apr_pool_userdata_setn(info, REQUIRE_EXPR_NOTE, apr_pool_cleanup_null,
                           cmd->temp_pool);
     info->expr = ap_expr_parse_cmd(cmd, require_line, 0, &expr_err,
@@ -1157,7 +1140,7 @@ AP_DECLARE_MODULE(authz_core) =
     create_authz_core_dir_config,   /* dir config creater */
     merge_authz_core_dir_config,    /* dir merger */
     create_authz_core_svr_config,   /* server config */
-    merge_authz_core_svr_config ,   /* merge server config */
+    NULL,                           /* merge server config */
     authz_cmds,
     register_hooks                  /* register hooks */
 };

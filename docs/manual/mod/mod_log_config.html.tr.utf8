@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head>
-<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr" xml:lang="tr"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -19,7 +17,7 @@
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p>
 <p class="apache">Apache HTTP Sunucusu Sürüm 2.4</p>
-<img alt="" src="../images/feather.png" /></div>
+<img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Sunucusu</a> &gt; <a href="http://httpd.apache.org/docs/">Belgeleme</a> &gt; <a href="../">Sürüm 2.4</a> &gt; <a href="./">Modüller</a></div>
@@ -53,22 +51,21 @@
       her sunucu için birden fazla  <code class="directive">TransferLog</code> ve
       <code class="directive">CustomLog</code> yönergesi belirtilebilir.</p>
 </div>
-<div id="quickview"><h3>Konular</h3>
-<ul id="topics">
-<li><img alt="" src="../images/down.gif" /> <a href="#formats">Günlük Girdilerinin Kişiselleştirilmesi</a></li>
-<li><img alt="" src="../images/down.gif" /> <a href="#security">Güvenlik Kaygıları</a></li>
-</ul><h3 class="directives">Yönergeler</h3>
+<div id="quickview"><h3 class="directives">Yönergeler</h3>
 <ul id="toc">
 <li><img alt="" src="../images/down.gif" /> <a href="#bufferedlogs">BufferedLogs</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#customlog">CustomLog</a></li>
-<li><img alt="" src="../images/down.gif" /> <a href="#globallog">GlobalLog</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#logformat">LogFormat</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#transferlog">TransferLog</a></li>
 </ul>
-<h3>Bugfix checklist</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">httpd changelog</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mod_log_config">Known issues</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mod_log_config">Report a bug</a></li></ul><h3>Ayrıca bakınız:</h3>
+<h3>Konular</h3>
+<ul id="topics">
+<li><img alt="" src="../images/down.gif" /> <a href="#formats">Günlük Girdilerinin Kişiselleştirilmesi</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#security">Güvenlik Kaygıları</a></li>
+</ul><h3>Ayrıca bakınız:</h3>
 <ul class="seealso">
 <li><a href="../logs.html">Apache Günlük Dosyaları</a></li>
-<li><a href="#comments_section">Yorum</a></li></ul></div>
+</ul><ul class="seealso"><li><a href="#comments_section">Yorum</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="formats" id="formats">Günlük Girdilerinin Kişiselleştirilmesi</a></h2>
@@ -202,25 +199,17 @@
         </td></tr>
 <tr><td><code>%T</code></td>
         <td>Saniye cinsinden, isteği sunmak için harcanan zaman.</td></tr>
-<tr class="odd"><td><code>%{<var>BİRİM</var>}T</code></td>
-        <td><var>BİRİM</var> ile belirtilen zaman birimi cinsinden, isteği
-          sunmak için harcanan zaman. Geçerli birimler: milisaniye için
-          <code>ms</code>, mikrosaniye için <code>us</code>, saniye için
-          <code>s</code>. <code>s</code> kullanımı birimsiz <code>%T</code> ile
-          aynı sonucu verir; <code>us</code> kullanımı <code>%D</code> ile aynı
-          sonucu verir. Birimli <code>%T</code> kullanımı 2.4.13 ve sonrasında
-          geçerlidir.</td></tr>
-<tr><td><code>%u</code></td>
+<tr class="odd"><td><code>%u</code></td>
         <td>Uzak kullanıcı (kimlik doğrulaması istenmişse vardır; durum kodu
           (<code>%s</code>) 401 ise yanlış olabilir).</td></tr>
-<tr class="odd"><td><code>%U</code></td>
+<tr><td><code>%U</code></td>
         <td>Herhangi bir sorgu dizgesi içermeksizin istenen URL yolu.</td></tr>
-<tr><td><code>%v</code></td>
+<tr class="odd"><td><code>%v</code></td>
         <td>İsteği sunan sunucunun meşru sunucu ismi (<code class="directive"><a href="../mod/core.html#servername">ServerName</a></code>).</td></tr>
-<tr class="odd"><td><code>%V</code></td>
+<tr><td><code>%V</code></td>
         <td><code class="directive"><a href="../mod/core.html#usecanonicalname">UseCanonicalName</a></code> ayarı ile
           ilgili sunucu ismi.</td></tr>
-<tr><td><code>%X</code></td>
+<tr class="odd"><td><code>%X</code></td>
         <td>Yanıt tamamlandığında bağlantı durumu:
 
         <table>
@@ -232,24 +221,16 @@
         <tr><td><code>-</code> = </td>
             <td>Yanıt gönderildikten sonra bağlantı kapatılacak.</td></tr>
         </table></td></tr>
-<tr class="odd"><td><code>%I</code></td>
+<tr><td><code>%I</code></td>
         <td>İstek ve başlıklar dahil alınan bayt sayısı. Sıfır olamaz. Bunu
           kullanmak için <code class="module"><a href="../mod/mod_logio.html">mod_logio</a></code> etkin olmalıdır.</td></tr>
-<tr><td><code>%O</code></td>
-        <td>Başlıklar dahil gönderilen bayt sayısı. Bir yanıtın
-          gönderilmesinden önce istekten vazgeçilmesi gibi nadir durumlarda
-          sıfır olabilir. Bunu kullanmak için <code class="module"><a href="../mod/mod_logio.html">mod_logio</a></code> etkin
-          olmalıdır.</td></tr>
-<tr class="odd"><td><code>%S</code></td>
+<tr class="odd"><td><code>%O</code></td>
+        <td>Başlıklar dahil gönderilen bayt sayısı. Sıfır olamaz. Bunu
+          kullanmak için <code class="module"><a href="../mod/mod_logio.html">mod_logio</a></code> etkin olmalıdır.</td></tr>
+<tr><td><code>%S</code></td>
         <td>Aktarılan bayt sayısı (alınan ve gönderilen), istekler ve başlıklar
           dahil; sıfır olamaz. %I ve %O'nun birleşimidir. Bunu kullanmak için
           <code class="module"><a href="../mod/mod_logio.html">mod_logio</a></code> etkinleştirilmelidir.</td></tr>
-<tr><td><code>%{<var>ALANADI</var>}^ti</code></td>
-        <td>Sunucuya gönderilen istekteki <code><var>ALANADI</var>:</code>
-          Trailer satır(lar)ının içeriği.</td></tr>
-<tr class="odd"><td><code>%{<var>VARNAME</var>}^to</code></td>
-        <td>Sunucudan gönderilen yanıttaki <code><var>ALANADI</var>:</code>
-          Trailer satır(lar)ının içeriği.</td></tr>
 </table>
 
     <h3><a name="modifiers" id="modifiers">Değiştiriciler</a></h3>
@@ -427,10 +408,10 @@ expr=<var>ifade</var>]</code></td></tr>
 
     <pre class="prettyprint lang-config"># Biçem dizgesi yerine takma ad içeren CustomLog
 LogFormat "%h %l %u %t \"%r\" %&gt;s %b" common
-CustomLog "logs/access_log" common
+CustomLog logs/access_log common
 
 # Biçem dizgesinin kendisini içeren CustomLog
-CustomLog "logs/access_log" "%h %l %u %t \"%r\" %&gt;s %b"</pre>
+CustomLog logs/access_log "%h %l %u %t \"%r\" %&gt;s %b"</pre>
 
 
     <p>Üçüncü argüman isteğe bağlı olup,belli bir isteğin günlüğe kaydedilip
@@ -448,45 +429,16 @@ CustomLog "logs/access_log" "%h %l %u %t \"%r\" %&gt;s %b"</pre>
       isterseniz:</p>
 
     <pre class="prettyprint lang-config">SetEnvIf Request_URI \.gif$ gif-image
-CustomLog "gif-requests.log" common env=gif-image
-CustomLog "nongif-requests.log" common env=!gif-image</pre>
+CustomLog gif-requests.log common env=gif-image
+CustomLog nongif-requests.log common env=!gif-image</pre>
 
 
     <p>Veya eski <code>RefererIgnore</code> yönergesinin davranışını taklit
       etmek isterseniz:</p>
 
     <pre class="prettyprint lang-config">SetEnvIf Referer example\.com localreferer
-CustomLog "referer.log" referer env=!localreferer</pre>
+CustomLog referer.log referer env=!localreferer</pre>
 
-
-</div>
-<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="GlobalLog" id="GlobalLog">GlobalLog</a> <a name="globallog" id="globallog">Yönergesi</a></h2>
-<table class="directive">
-<tr><th><a href="directive-dict.html#Description">Açıklama:</a></th><td>Günlük dosyasının ismini ve biçemini belirler</td></tr>
-<tr><th><a href="directive-dict.html#Syntax">Sözdizimi:</a></th><td><code>GlobalLog  <var>dosya</var>|<var>boru</var>|<var>sağlayıcı</var>
-<var>biçem</var>|<var>takma_ad</var>
-[env=[!]<var>ortam_değişkeni</var>|
-expr=<var>ifade</var>]</code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Bağlam:</a></th><td>sunucu geneli</td></tr>
-<tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Temel</td></tr>
-<tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>mod_log_config</td></tr>
-<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>Apache HTTP Sunucusunun 2.4.19 ve sonraki sürümlerinde kullanılabilir.</td></tr>
-</table>
-
-    <p><code class="directive">GlobalLog</code> yönergesi ana sunucu yapılandırması ve
-       tüm tanımlı sanal konaklarca paylaşılan bir günlük tanımlar.</p>
-
-    <p><code class="directive">GlobalLog</code> yönergesi aşağıdaki farklar dışında
-       <code class="directive">CustomLog</code> yönergesine eşdeğerdir:</p>
-    <ul>
-       <li><code class="directive">GlobalLog</code> sanal konak bağlamında belirtilirse
-         geçersizdir.</li>
-       <li>Sanal konaklar küresel bağlamda belirtilmiş bir
-         <code class="directive">CustomLog</code> yönergesinin tersine
-         <code class="directive">GlobalLog</code> yönergesini kendi
-         <code class="directive">CustomLog</code> yönergesiymiş gibi kullanır.</li>
-    </ul>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -545,7 +497,7 @@ expr=<var>ifade</var>]</code></td></tr>
       belirtilmedikçe Ortak Günlük Biçemi öntanımlıdır.</p>
 
     <pre class="prettyprint lang-config">LogFormat "%h %l %u %t \"%r\" %&gt;s %b \"%{Referer}i\" \"%{User-agent}i\""
-TransferLog "logs/access_log"</pre>
+TransferLog logs/access_log</pre>
 
 
 </div>
@@ -574,7 +526,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_log_config.h
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

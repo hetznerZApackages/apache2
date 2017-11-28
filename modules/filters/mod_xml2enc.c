@@ -127,7 +127,7 @@ static void fix_skipto(request_rec* r, xml2ctx* ctx)
 {
     apr_status_t rv;
     xml2cfg* cfg = ap_get_module_config(r->per_dir_config, &xml2enc_module);
-    if ((cfg->skipto != NULL) && (ctx->flags & ENC_SKIPTO)) {
+    if ((cfg->skipto != NULL) && (ctx->flags | ENC_SKIPTO)) {
         int found = 0;
         char* p = ap_strchr(ctx->buf, '<');
         tattr* starts = (tattr*) cfg->skipto->elts;
@@ -142,7 +142,8 @@ static void fix_skipto(request_rec* r, xml2ctx* ctx)
                                                &bstart);
                     ap_assert(rv == APR_SUCCESS);
                     while (b = APR_BRIGADE_FIRST(ctx->bbsave), b != bstart) {
-                        apr_bucket_delete(b);
+                        APR_BUCKET_REMOVE(b);
+                        apr_bucket_destroy(b);
                     }
                     ctx->bytes -= (p-ctx->buf);
                     ctx->buf = p ;
@@ -227,7 +228,8 @@ static void sniff_encoding(request_rec* r, xml2ctx* ctx)
         /* cut out the <meta> we're invalidating */
         while (cutb != cute) {
             b = APR_BUCKET_NEXT(cutb);
-            apr_bucket_delete(cutb);
+            APR_BUCKET_REMOVE(cutb);
+            apr_bucket_destroy(cutb);
             cutb = b;
         }
         /* and leave a string */
@@ -433,7 +435,8 @@ static apr_status_t xml2enc_ffunc(ap_filter_t* f, apr_bucket_brigade* bb)
                 /* remove the data we've just read */
                 rv = apr_brigade_partition(bb, bytes, &bstart);
                 while (b = APR_BRIGADE_FIRST(bb), b != bstart) {
-                    apr_bucket_delete(b);
+                    APR_BUCKET_REMOVE(b);
+                    apr_bucket_destroy(b);
                 }
                 ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, f->r, APLOGNO(01438)
                               "xml2enc: consuming %" APR_SIZE_T_FMT

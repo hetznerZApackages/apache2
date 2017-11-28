@@ -11,8 +11,6 @@ use File::Spec;
 use File::Basename;
 use File::Path;
 use Getopt::Long;
-use 5.014;
-no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 
 my $quiet;
 my $force;
@@ -34,18 +32,15 @@ my $act        = $1;
 my $obj        = $2;
 my $dir_suffix = $3;
 
-my @essential_module_list = qw(alias auth_basic authn_file authz_host
-    authz_user autoindex deflate dir env filter logio mime negotiation
-    setenvif unixd version watchdog);
-my $env_file = $ENV{APACHE_ENVVARS};
-if (! $env_file) {
-    if ($ENV{APACHE_CONFDIR}) {
-        $env_file = "$ENV{APACHE_CONFDIR}/envvars";
-    }
-    else {
-        $env_file = "/etc/apache2$dir_suffix/envvars";
-    }
-}
+my @essential_module_list = (qw/access_compat alias auth_basic authn_file/,
+    qw/authz_host authz_user autoindex deflate dir env filter logio/,
+    qw/mime negotiation setenvif unixd version watchdog/);
+my $env_file = $ENV{APACHE_ENVVARS}
+    || (
+    $ENV{APACHE_CONFDIR}
+    ? "$ENV{APACHE_CONFDIR}/envvars"
+    : "/etc/apache2$dir_suffix/envvars"
+    );
 $ENV{LANG} = 'C';
 read_env_file($env_file);
 
@@ -82,16 +77,7 @@ my $choicedir = $act eq 'enable' ? $availdir : $enabldir;
 my $linkdir = File::Spec->abs2rel( $availdir, $enabldir );
 
 my $request_reload = 0;
-my $request_htcacheclean;
-my $htc = "apache-htcacheclean$dir_suffix";
-my $htc_service = "apache-htcacheclean";  # Service name for systemd
-my $apache_service = "apache2";
-if (defined($dir_suffix) and $dir_suffix ne '') {
-    # Uses '@instance.service' suffix instead of '-instance' suffix
-    my $service_suffix = '@' . substr($dir_suffix, 1) . '.service';
-    $htc_service .= $service_suffix;
-    $apache_service .= $service_suffix;
-}
+
 my $rc = 0;
 
 if ( !scalar @ARGV ) {
@@ -120,19 +106,8 @@ foreach my $acton (@objs) {
     doit($acton) or $rc = 1;
 }
 
-my $htcstart = "";
-my $apache_reload = "";
-my $cmd = ($act eq "enable") ? "start" : "stop";
-if (is_systemd()) {
-    $htcstart = "  systemctl $cmd $htc_service\n";
-    $apache_reload = "  systemctl $reload $apache_service\n";
-} else {
-    $htcstart = "  service $htc $cmd\n";
-    $apache_reload = "  service apache2$dir_suffix $reload\n";
-}
-info(  "To activate the new configuration, you need to run:\n"
-     . $apache_reload
-     . ($request_htcacheclean ? $htcstart : "")
+info(
+    "To activate the new configuration, you need to run:\n  service apache2 $reload\n"
 ) if $request_reload;
 
 exit($rc);
@@ -156,7 +131,7 @@ sub doit {
 
     my ( $conftgt, $conflink );
     if ( $obj eq 'module' ) {
-        if ( $act eq 'enable' && $acton eq 'cgi' && threaded() ) {
+        if ( $acton eq 'cgi' && threaded() ) {
             print
                 "Your MPM seems to be threaded. Selecting cgid instead of cgi.\n";
             $acton = 'cgid';
@@ -283,7 +258,11 @@ sub doit {
             }
 
             print "Enabling $obj $acton.\n";
-            special_module_handling($acton);
+            if ( $acton eq 'ssl' ) {
+                info(     "See /usr/share/doc/apache2/README.Debian.gz on "
+                        . "how to configure SSL and create self-signed certificates.\n"
+                );
+            }
             return add_link( $tgt, $link )
                 && switch_marker( $obj, $act, $acton );
         }
@@ -294,7 +273,6 @@ sub doit {
     }
     else {
         if ( -e $link || -l $link ) {
-            special_module_handling($acton);
             if ($obj eq 'module' && grep {$_ eq $acton} @essential_module_list) {
                   $force || essential_module_handling($acton);
             }
@@ -566,52 +544,4 @@ sub essential_module_handling {
         exit(1)
     }
 }
-
-sub special_module_handling {
-    my $acton = shift;
-
-    if ($obj ne 'module') {
-        return;
-    }
-
-    given ($acton) {
-        when ('ssl') {
-            if ( $act eq 'enable' ) {
-                info(  "See /usr/share/doc/apache2/README.Debian.gz on "
-                     . "how to configure SSL and create self-signed "
-                     . "certificates.\n"
-                );
-            }
-        }
-        when ('cache_disk') {
-            $request_htcacheclean = 1;
-            my $verb = "\u$act";
-            my $command;
-            $verb =~ s/e$/ing/;
-            if (-d "/run/systemd" and -x "/bin/systemctl") {
-                info("$verb external service $htc_service\n");
-                $command = "systemctl $act $htc_service";
-            } else {
-                info("$verb external service $htc\n");
-                $command = "update-rc.d $htc $act";
-            }
-            my $res = system($command);
-            if ($res == 0) {
-                info("The service will be started on next reboot.\n")
-                    if $act eq 'enable';
-            }
-            else {
-                warning("'$command' failed\n");
-            }
-
-        }
-    }
-}
-
-sub is_systemd
-{
-    my $init = readlink("/proc/1/exe") || "";
-    return scalar $init =~ /systemd/;
-}
-
 # vim: syntax=perl sw=4 sts=4 sr et

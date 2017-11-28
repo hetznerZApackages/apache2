@@ -566,6 +566,7 @@ DAV_DECLARE(void) dav_close_propdb(dav_propdb *propdb)
 #if 0
     apr_pool_destroy(propdb->p);
 #endif
+    return;
 }
 
 DAV_DECLARE(dav_get_props_result) dav_get_allprops(dav_propdb *propdb,

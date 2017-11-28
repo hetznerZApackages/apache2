@@ -64,12 +64,10 @@ typedef struct {
 
 const char *scgi_sendfile_off = "off";
 const char *scgi_sendfile_on = "X-Sendfile";
-const char *scgi_internal_redirect_off = "off";
-const char *scgi_internal_redirect_on = "Location";
 
 typedef struct {
     const char *sendfile;
-    const char *internal_redirect;
+    int internal_redirect;
 } scgi_config;
 
 
@@ -419,29 +417,11 @@ static int pass_response(request_rec *r, proxy_conn_rec *conn)
         }
     }
 
-    if (r->status == HTTP_OK 
-        && (!conf->internal_redirect /* default === On */
-            || conf->internal_redirect != scgi_internal_redirect_off)) {
-        short err = 1;
-        const char *location_header = conf->internal_redirect ? 
-            conf->internal_redirect : scgi_internal_redirect_on;
-
-        location = apr_table_get(r->err_headers_out, location_header);
-        if (!location) {
-            err = 0;
-            location = apr_table_get(r->headers_out, location_header);
-        }
+    if (conf->internal_redirect && r->status == HTTP_OK) {
+        location = apr_table_get(r->headers_out, "Location");
         if (location && *location == '/') {
             scgi_request_config *req_conf = apr_palloc(r->pool,
                                                        sizeof(*req_conf));
-            if (strcasecmp(location_header, "Location")) {
-                if (err) {
-                    apr_table_unset(r->err_headers_out, location_header);
-                }
-                else {
-                    apr_table_unset(r->headers_out, location_header);
-                }
-            }
             req_conf->location = location;
             req_conf->type = scgi_internal_redirect;
             ap_set_module_config(r->request_config, &proxy_scgi_module,
@@ -451,9 +431,8 @@ static int pass_response(request_rec *r, proxy_conn_rec *conn)
         }
     }
 
-    if (ap_pass_brigade(r->output_filters, bb)) {
-        return AP_FILTER_ERROR;
-    }
+    /* XXX: What could we do with that return code? */
+    (void)ap_pass_brigade(r->output_filters, bb);
 
     return OK;
 }
@@ -509,7 +488,7 @@ static int scgi_request_status(int *status, request_rec *r)
                     *status = HTTP_INTERNAL_SERVER_ERROR;
                     return *status;
                 }
-            } while (0);
+            } while(0);
 
             return OK;
             /* break; */
@@ -530,7 +509,7 @@ static int scgi_handler(request_rec *r, proxy_worker *worker,
     int status;
     proxy_conn_rec *backend = NULL;
     apr_pool_t *p = r->pool;
-    apr_uri_t *uri;
+    apr_uri_t *uri = apr_palloc(r->pool, sizeof(*uri));
     char dummy;
 
     if (strncasecmp(url, SCHEME "://", sizeof(SCHEME) + 2)) {
@@ -548,7 +527,6 @@ static int scgi_handler(request_rec *r, proxy_worker *worker,
     backend->is_ssl = 0;
 
     /* Step One: Determine Who To Connect To */
-    uri = apr_palloc(p, sizeof(*uri));
     status = ap_proxy_determine_connection(p, r, conf, worker, backend,
                                            uri, &url, proxyname, proxyport,
                                            &dummy, 1);
@@ -586,8 +564,8 @@ static void *create_scgi_config(apr_pool_t *p, char *dummy)
 {
     scgi_config *conf=apr_palloc(p, sizeof(*conf));
 
-    conf->sendfile = NULL; /* === default (off) */
-    conf->internal_redirect = NULL; /* === default (on) */
+    conf->sendfile = NULL;
+    conf->internal_redirect = -1;
 
     return conf;
 }
@@ -598,7 +576,7 @@ static void *merge_scgi_config(apr_pool_t *p, void *base_, void *add_)
     scgi_config *base=base_, *add=add_, *conf=apr_palloc(p, sizeof(*conf));
 
     conf->sendfile = add->sendfile ? add->sendfile: base->sendfile;
-    conf->internal_redirect = add->internal_redirect
+    conf->internal_redirect =   (add->internal_redirect != -1)
                               ? add->internal_redirect
                               : base->internal_redirect;
     return conf;
@@ -623,33 +601,16 @@ static const char *scgi_set_send_file(cmd_parms *cmd, void *mconfig,
 }
 
 
-static const char *scgi_set_internal_redirect(cmd_parms *cmd, void *mconfig,
-                                              const char *arg)
-{
-    scgi_config *conf = mconfig;
-
-    if (!strcasecmp(arg, "Off")) {
-        conf->internal_redirect = scgi_internal_redirect_off;
-    }
-    else if (!strcasecmp(arg, "On")) {
-        conf->internal_redirect = scgi_internal_redirect_on;
-    }
-    else {
-        conf->internal_redirect = arg;
-    }
-    return NULL;
-}
-
-
 static const command_rec scgi_cmds[] =
 {
     AP_INIT_TAKE1("ProxySCGISendfile", scgi_set_send_file, NULL,
                   RSRC_CONF|ACCESS_CONF,
-                  "The name of the X-Sendfile pseudo response header or "
+                  "The name of the X-Sendfile peudo response header or "
                   "On or Off"),
-    AP_INIT_TAKE1("ProxySCGIInternalRedirect", scgi_set_internal_redirect, NULL,
-                  RSRC_CONF|ACCESS_CONF,
-                  "The name of the pseudo response header or On or Off"),
+    AP_INIT_FLAG("ProxySCGIInternalRedirect", ap_set_flag_slot,
+                 (void*)APR_OFFSETOF(scgi_config, internal_redirect),
+                 RSRC_CONF|ACCESS_CONF,
+                 "Off if internal redirect responses should not be accepted"),
     {NULL}
 };
 

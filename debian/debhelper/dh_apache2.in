@@ -58,11 +58,6 @@ sub apache_api_version
 	return "apache2-api-$API";
 }
 
-sub apache_depends
-{
-	# TODO XXX this should be determined from ap_mmn.h, too.
-	return apache_api_version() . ", apache2-bin ( >= 2.4.16 )";
-}
 
 sub apache_version
 {
@@ -83,7 +78,6 @@ sub apache_conf_installdir
 =head1 SYNOPSIS
 
 B<dh_apache2> [S<I<debhelper options>>] [S<B<--conditional>>=I<expression>] [B<--error-handler=>I<function>] [B<-n>|B<--noscripts>]
-    [B<-e>|B<--noenable>] [B<-r>|B<--restart>]
 
 =head1 DESCRIPTION
 
@@ -122,7 +116,7 @@ B<dh_apache2>. Instead the helper will scan the package installation directory
 for recognized files and guess their purpose depending on their installation
 path in the file system. Use with caution.
 
-=head1 INVOCATION
+=head1 INVOKATION
 
 B<dh_apache2> is not part of debhelper and might require information available
 in the apache2-dev package. Packages making use of B<dh_apache2> should declare
@@ -440,7 +434,7 @@ foreach my $package ((@{$dh{DOPACKAGES}}))
 				}
 				if ($dir =~ m#etc/apache2/sites-available# and $file =~ m#.conf$#)
 				{
-					verbose_print("package $package appears	to contain a virtual host configuration\n");
+					verbose_print("package $package appears	to contain a virtual host confoguration\n");
 					push @{$PACKAGE_TYPE{'has_a_site_conf'}}, $conf_name;
 				}
 				if ($dir =~ m#etc/apache2/conf-available# and $file =~ m#.conf$#)
@@ -463,7 +457,7 @@ foreach my $package ((@{$dh{DOPACKAGES}}))
 		{
 			warning("Package $package appears to be an Apache module. It should comply to the package naming scheme libapache2-mod-<modulename>\n");
 		}
-		addsubstvar($package, "misc:Depends", apache_depends());
+		addsubstvar($package, "misc:Depends", apache_api_version());
 
 		my $modules = "";
 		foreach my $module (@{$PACKAGE_TYPE{'has_a_module'}})
@@ -477,7 +471,7 @@ foreach my $package ((@{$dh{DOPACKAGES}}))
 	if ($#{$PACKAGE_TYPE{'has_a_conf_file'}} >= 0 or $#{$PACKAGE_TYPE{'has_a_site_conf'}} >= 0)
 	{
 		$PACKAGE_TYPE{'dependency_line'} .= "| httpd";
-		addsubstvar($package, "misc:Recommends", "apache2 ( >= 2.4.6-4~ ) " . $PACKAGE_TYPE{'dependency_line'} );
+		addsubstvar($package, "misc:Recommends", "apache2 (" . apache_version() . ") " . $PACKAGE_TYPE{'dependency_line'} );
 
 		my $confs = "";
 		my $sites = "";

@@ -123,11 +123,7 @@ AP_DECLARE(char **) ap_create_environment(apr_pool_t *p, apr_table_t *t)
             *whack++ = '_';
         }
         while (*whack != '=') {
-#ifdef WIN32
-            if (!apr_isalnum(*whack) && *whack != '(' && *whack != ')') {
-#else
             if (!apr_isalnum(*whack)) {
-#endif
                 *whack = '_';
             }
             ++whack;
@@ -144,8 +140,6 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     apr_table_t *e;
     server_rec *s = r->server;
     conn_rec *c = r->connection;
-    core_dir_config *conf =
-        (core_dir_config *)ap_get_core_module_config(r->per_dir_config);
     const char *env_temp;
     const apr_array_header_t *hdrs_arr = apr_table_elts(r->headers_in);
     const apr_table_entry_t *hdrs = (const apr_table_entry_t *) hdrs_arr->elts;
@@ -186,14 +180,6 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
         else if (!strcasecmp(hdrs[i].key, "Content-length")) {
             apr_table_addn(e, "CONTENT_LENGTH", hdrs[i].val);
         }
-        /* HTTP_PROXY collides with a popular envvar used to configure
-         * proxies, don't let clients set/override it.  But, if you must...
-         */
-#ifndef SECURITY_HOLE_PASS_PROXY
-        else if (!ap_cstr_casecmp(hdrs[i].key, "Proxy")) {
-            ;
-        }
-#endif
         /*
          * You really don't want to disable this check, since it leaves you
          * wide open to CGIs stealing passwords and people viewing them
@@ -202,9 +188,7 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
 #ifndef SECURITY_HOLE_PASS_AUTHORIZATION
         else if (!strcasecmp(hdrs[i].key, "Authorization")
                  || !strcasecmp(hdrs[i].key, "Proxy-Authorization")) {
-            if (conf->cgi_pass_auth == AP_CGI_PASS_AUTH_ON) {
-                add_unless_null(e, http2env(r, hdrs[i].key), hdrs[i].val);
-            }
+            continue;
         }
 #endif
         else
@@ -252,7 +236,7 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     apr_table_addn(e, "SERVER_PORT",
                   apr_psprintf(r->pool, "%u", ap_get_server_port(r)));
     add_unless_null(e, "REMOTE_HOST",
-                    ap_get_useragent_host(r, REMOTE_HOST, NULL));
+                    ap_get_remote_host(c, r->per_dir_config, REMOTE_HOST, NULL));
     apr_table_addn(e, "REMOTE_ADDR", r->useragent_ip);
     apr_table_addn(e, "DOCUMENT_ROOT", ap_document_root(r));    /* Apache */
     apr_table_setn(e, "REQUEST_SCHEME", ap_http_scheme(r));
@@ -294,30 +278,12 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     /* Apache custom error responses. If we have redirected set two new vars */
 
     if (r->prev) {
-        if (conf->qualify_redirect_url != AP_CORE_CONFIG_ON) { 
-            add_unless_null(e, "REDIRECT_URL", r->prev->uri);
-        }
-        else { 
-            /* PR#57785: reconstruct full URL here */
-            apr_uri_t *uri = &r->prev->parsed_uri;
-            if (!uri->scheme) {
-                uri->scheme = (char*)ap_http_scheme(r->prev);
-            }
-            if (!uri->port) {
-                uri->port = ap_get_server_port(r->prev);
-                uri->port_str = apr_psprintf(r->pool, "%u", uri->port);
-            }
-            if (!uri->hostname) {
-                uri->hostname = (char*)ap_get_server_name_for_url(r->prev);
-            }
-            add_unless_null(e, "REDIRECT_URL",
-                            apr_uri_unparse(r->pool, uri, 0));
-        }
         add_unless_null(e, "REDIRECT_QUERY_STRING", r->prev->args);
+        add_unless_null(e, "REDIRECT_URL", r->prev->uri);
     }
 
     if (e != r->subprocess_env) {
-        apr_table_overlap(r->subprocess_env, e, APR_OVERLAP_TABLES_SET);
+      apr_table_overlap(r->subprocess_env, e, APR_OVERLAP_TABLES_SET);
     }
 }
 
@@ -378,25 +344,12 @@ static char *original_uri(request_rec *r)
 AP_DECLARE(void) ap_add_cgi_vars(request_rec *r)
 {
     apr_table_t *e = r->subprocess_env;
-    core_dir_config *conf =
-        (core_dir_config *)ap_get_core_module_config(r->per_dir_config);
-    int request_uri_from_original = 1;
-    const char *request_uri_rule;
 
     apr_table_setn(e, "GATEWAY_INTERFACE", "CGI/1.1");
     apr_table_setn(e, "SERVER_PROTOCOL", r->protocol);
     apr_table_setn(e, "REQUEST_METHOD", r->method);
     apr_table_setn(e, "QUERY_STRING", r->args ? r->args : "");
-
-    if (conf->cgi_var_rules) {
-        request_uri_rule = apr_hash_get(conf->cgi_var_rules, "REQUEST_URI",
-                                        APR_HASH_KEY_STRING);
-        if (request_uri_rule && !strcmp(request_uri_rule, "current-uri")) {
-            request_uri_from_original = 0;
-        }
-    }
-    apr_table_setn(e, "REQUEST_URI",
-                   request_uri_from_original ? original_uri(r) : r->uri);
+    apr_table_setn(e, "REQUEST_URI", original_uri(r));
 
     /* Note that the code below special-cases scripts run from includes,
      * because it "knows" that the sub_request has been hacked to have the
@@ -494,14 +447,12 @@ AP_DECLARE(int) ap_scan_script_header_err_core_ex(request_rec *r, char *buffer,
             const char *msg = "Premature end of script headers";
             if (first_header)
                 msg = "End of script output before headers";
-            /* Intentional no APLOGNO */
             ap_log_rerror(SCRIPT_LOG_MARK, APLOG_ERR|APLOG_TOCLIENT, 0, r,
                           "%s: %s", msg,
                           apr_filepath_name_get(r->filename));
             return HTTP_INTERNAL_SERVER_ERROR;
         }
         else if (rv == -1) {
-            /* Intentional no APLOGNO */
             ap_log_rerror(SCRIPT_LOG_MARK, APLOG_ERR|APLOG_TOCLIENT, 0, r,
                           "Script timed out before returning headers: %s",
                           apr_filepath_name_get(r->filename));
@@ -592,8 +543,7 @@ AP_DECLARE(int) ap_scan_script_header_err_core_ex(request_rec *r, char *buffer,
             }
             if (maybeASCII > maybeEBCDIC) {
                 ap_log_error(SCRIPT_LOG_MARK, APLOG_ERR, 0, r->server,
-                             APLOGNO(02660) "CGI Interface Error: "
-                             "Script headers apparently ASCII: (CGI = %s)",
+                             "CGI Interface Error: Script headers apparently ASCII: (CGI = %s)",
                              r->filename);
                 inbytes_left = outbytes_left = cp - w;
                 apr_xlate_conv_buffer(ap_hdrs_from_ascii,
@@ -609,7 +559,6 @@ AP_DECLARE(int) ap_scan_script_header_err_core_ex(request_rec *r, char *buffer,
                 }
             }
 
-            /* Intentional no APLOGNO */
             ap_log_rerror(SCRIPT_LOG_MARK, APLOG_ERR|APLOG_TOCLIENT, 0, r,
                           "malformed header from script '%s': Bad header: %.30s",
                           apr_filepath_name_get(r->filename), w);
@@ -642,7 +591,6 @@ AP_DECLARE(int) ap_scan_script_header_err_core_ex(request_rec *r, char *buffer,
         else if (!strcasecmp(w, "Status")) {
             r->status = cgi_status = atoi(l);
             if (!ap_is_HTTP_VALID_RESPONSE(cgi_status))
-                /* Intentional no APLOGNO */
                 ap_log_rerror(SCRIPT_LOG_MARK, APLOG_ERR|APLOG_TOCLIENT, 0, r,
                               "Invalid status line from script '%s': %.30s",
                               apr_filepath_name_get(r->filename), l);
@@ -756,7 +704,8 @@ static int getsfunc_BRIGADE(char *buf, int len, void *arg)
             apr_bucket_split(e, src - bucket_data);
         }
         next = APR_BUCKET_NEXT(e);
-        apr_bucket_delete(e);
+        APR_BUCKET_REMOVE(e);
+        apr_bucket_destroy(e);
         e = next;
     }
     *dst = 0;

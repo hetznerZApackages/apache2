@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
-<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -19,7 +17,7 @@
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
 <p class="apache">Serveur Apache HTTP Version 2.4</p>
-<img alt="" src="../images/feather.png" /></div>
+<img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Modules</a></div>
@@ -78,12 +76,10 @@ détaillée pourra s'avérer utile aux utilisateurs.</p>
 <li><img alt="" src="../images/down.gif" /> <a href="#proxyhtmlstripcomments">ProxyHTMLStripComments</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#proxyhtmlurlmap">ProxyHTMLURLMap</a></li>
 </ul>
-<h3>Traitement des bugs</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">Journal des modifications de httpd</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mod_proxy_html">Problèmes connus</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mod_proxy_html">Signaler un bug</a></li></ul><h3>Voir aussi</h3>
-<ul class="seealso">
-<li><a href="#comments_section">Commentaires</a></li></ul></div>
+<ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
 
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlbufsize" id="proxyhtmlbufsize">Directive</a> <a name="ProxyHTMLBufSize" id="ProxyHTMLBufSize">ProxyHTMLBufSize</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLBufSize" id="ProxyHTMLBufSize">ProxyHTMLBufSize</a> <a name="proxyhtmlbufsize" id="proxyhtmlbufsize">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Définit l'incrément de la taille du tampon, ainsi que sa
 taille initiale, pour la mise en
@@ -113,7 +109,7 @@ dynamiquement au cours du traitement d'une requête.
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlcharsetout" id="proxyhtmlcharsetout">Directive</a> <a name="ProxyHTMLCharsetOut" id="ProxyHTMLCharsetOut">ProxyHTMLCharsetOut</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLCharsetOut" id="ProxyHTMLCharsetOut">ProxyHTMLCharsetOut</a> <a name="proxyhtmlcharsetout" id="proxyhtmlcharsetout">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Spécifie un jeu de caractères pour la sortie de
 mod_proxy_html.</td></tr>
@@ -136,7 +132,7 @@ l'entrée.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmldoctype" id="proxyhtmldoctype">Directive</a> <a name="ProxyHTMLDocType" id="ProxyHTMLDocType">ProxyHTMLDocType</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLDocType" id="ProxyHTMLDocType">ProxyHTMLDocType</a> <a name="proxyhtmldoctype" id="proxyhtmldoctype">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Définit une déclaration de type de document HTML ou XHTML.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>ProxyHTMLDocType <var>HTML|XHTML [Legacy]</var><br /><strong>OU</strong>
@@ -172,7 +168,7 @@ Debug.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlenable" id="proxyhtmlenable">Directive</a> <a name="ProxyHTMLEnable" id="ProxyHTMLEnable">ProxyHTMLEnable</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLEnable" id="ProxyHTMLEnable">ProxyHTMLEnable</a> <a name="proxyhtmlenable" id="proxyhtmlenable">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Permet d'activer/désactiver le filtre proxy_html.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>ProxyHTMLEnable <var>On|Off</var></code></td></tr>
@@ -195,7 +191,7 @@ Disponible en tant que module tiers dans les versions 2.x antérieures.</td></tr>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlevents" id="proxyhtmlevents">Directive</a> <a name="ProxyHTMLEvents" id="ProxyHTMLEvents">ProxyHTMLEvents</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLEvents" id="ProxyHTMLEvents">ProxyHTMLEvents</a> <a name="proxyhtmlevents" id="proxyhtmlevents">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Spécifie les attributs à traiter comme des évènements de
 type scripting.</td></tr>
@@ -222,7 +218,7 @@ HTML 4 et XHTML 1.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlextended" id="proxyhtmlextended">Directive</a> <a name="ProxyHTMLExtended" id="ProxyHTMLExtended">ProxyHTMLExtended</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLExtended" id="ProxyHTMLExtended">ProxyHTMLExtended</a> <a name="proxyhtmlextended" id="proxyhtmlextended">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Détermine si l'on doit corriger les liens dans les scripts
 en ligne, les feuilles de style et les évènements de type scripting.</td></tr>
@@ -254,7 +250,7 @@ correspondances erronées.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlfixups" id="proxyhtmlfixups">Directive</a> <a name="ProxyHTMLFixups" id="ProxyHTMLFixups">ProxyHTMLFixups</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLFixups" id="ProxyHTMLFixups">ProxyHTMLFixups</a> <a name="proxyhtmlfixups" id="proxyhtmlfixups">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Corrige les erreurs HTML simples.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>ProxyHTMLFixups <var>[lowercase] [dospath] [reset]</var></code></td></tr>
@@ -279,7 +275,7 @@ d'arrière-plan est déficient.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlinterp" id="proxyhtmlinterp">Directive</a> <a name="ProxyHTMLInterp" id="ProxyHTMLInterp">ProxyHTMLInterp</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLInterp" id="ProxyHTMLInterp">ProxyHTMLInterp</a> <a name="proxyhtmlinterp" id="proxyhtmlinterp">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Active la réinterprétation des règles
 <code class="directive">ProxyHTMLURLMap</code> pour chaque requête.</td></tr>
@@ -302,7 +298,7 @@ Disponible en tant que module tiers dans les versions 2.x antérieures.</td></tr>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmllinks" id="proxyhtmllinks">Directive</a> <a name="ProxyHTMLLinks" id="ProxyHTMLLinks">ProxyHTMLLinks</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLLinks" id="ProxyHTMLLinks">ProxyHTMLLinks</a> <a name="proxyhtmllinks" id="proxyhtmllinks">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Spécifie les éléments HTML dont les attributs d'URL doivent
 être réécrits.</td></tr>
@@ -313,34 +309,22 @@ Disponible en tant que module tiers dans les versions 2.x antérieures.</td></tr>
 <tr><th><a href="directive-dict.html#Compatibility">Compatibilité:</a></th><td>Disponible depuis la version 2.4 du serveur HTTP Apache.
 Disponible en tant que module tiers dans les versions 2.x antérieures.</td></tr>
 </table>
-<p>Cette directive permet de spécifier les éléments dont les attributs d'URL
-doivent être réécrits en utilisant les règles standards <code class="directive"><a href="#proxyhtmlurlmap">ProxyHTMLURLMap</a></code>. Vous devez définir une
-directive ProxyHTMLLinks pour chaque élément, mais chacune d'entre elles peut
-spécifier un nombre quelconque d'attributs</p> <p>Normalement, cette directive
-est définie globalement. Si vous définissez ProxyHTMLLinks à plusieurs niveaux,
-certains niveaux l'emportant sur d'autres, vous devrez spécifier un jeu complet
-de liens pour chaque niveau.</p> <p>Le fichier <var>proxy-html.conf</var>
-fournit une configuration par défaut et définit les liens HTML selon les
-standards HTML 4 et XHTML 1.</p>
-<div class="example"><h3>Exemples issus de proxy-html.conf</h3><pre class="prettyprint lang-config">ProxyHTMLLinks  a          href
-ProxyHTMLLinks  area       href
-ProxyHTMLLinks  link       href
-ProxyHTMLLinks  img        src longdesc usemap
-ProxyHTMLLinks  object     classid codebase data usemap
-ProxyHTMLLinks  q          cite
-ProxyHTMLLinks  blockquote cite
-ProxyHTMLLinks  ins        cite
-ProxyHTMLLinks  del        cite
-ProxyHTMLLinks  form       action
-ProxyHTMLLinks  input      src usemap
-ProxyHTMLLinks  head       profile
-ProxyHTMLLinks  base       href
-ProxyHTMLLinks  script     src for</pre>
-</div>
+<p>Cette directive permet de spécifier les éléments dont les attributs
+d'URL doivent être réécrits en utilisant les règles standards
+<code class="directive">ProxyHTMLURLMap</code>. Vous devez définir une directive
+ProxyHTMLLinks pour chaque élément, mais chacune d'entre elles peut
+spécifier un nombre quelconque d'attributs</p>
+<p>Normalement, cette directive est définie globalement. Si vous
+définissez ProxyHTMLLinks à plusieurs niveaux, certains niveaux
+l'emportant sur d'autres, vous devrez spécifier un jeu complet
+de liens pour chaque niveau.</p>
+<p>Le fichier <var>proxy-html.conf</var> fournit une configuration par
+défaut et définit les liens HTML selon les standards
+HTML 4 et XHTML 1.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlmeta" id="proxyhtmlmeta">Directive</a> <a name="ProxyHTMLMeta" id="ProxyHTMLMeta">ProxyHTMLMeta</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLMeta" id="ProxyHTMLMeta">ProxyHTMLMeta</a> <a name="proxyhtmlmeta" id="proxyhtmlmeta">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Active ou désactive une préinterprétation supplémentaire
 des métadonnées dans les sections HTML <code>&lt;head&gt;</code>.</td></tr>
@@ -380,19 +364,9 @@ précédentes.</td></tr>
     en-têtes HTTP, afin de conserver le but original de cette forme
     de métaélément HTML.</p>
 
-    <div class="warning"><h3>Avertissement</h3> Compte tenu du fait que la
-    directive ProxyHTMLMeta promeut <strong>tous</strong> les éléments
-    <code>http-equiv</code> au rang d'en-têtes HTTP, il est conseillé de ne
-    l'activer que si vous faites autant confiance au contenu HTML qu'à votre
-    serveur mandataire. Avec cette directive en effet, si ce contenu est géré
-    par des gens malintentionnés, ces derniers seront en mesure d'injecter des
-    en-têtes HTTP arbitraires et peut-être malveillants dans les réponses de
-    votre serveur.  
-    </div>
-
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlstripcomments" id="proxyhtmlstripcomments">Directive</a> <a name="ProxyHTMLStripComments" id="ProxyHTMLStripComments">ProxyHTMLStripComments</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLStripComments" id="ProxyHTMLStripComments">ProxyHTMLStripComments</a> <a name="proxyhtmlstripcomments" id="proxyhtmlstripcomments">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Détermine si les commentaires HTML doivent être supprimés.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>ProxyHTMLStripComments <var>On|Off</var></code></td></tr>
@@ -414,7 +388,7 @@ dans la chaîne de filtrage si vous supprimez les commentaires !</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="proxyhtmlurlmap" id="proxyhtmlurlmap">Directive</a> <a name="ProxyHTMLURLMap" id="ProxyHTMLURLMap">ProxyHTMLURLMap</a></h2>
+<div class="directive-section"><h2><a name="ProxyHTMLURLMap" id="ProxyHTMLURLMap">ProxyHTMLURLMap</a> <a name="proxyhtmlurlmap" id="proxyhtmlurlmap">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Définit une règle de réécriture des liens HTML</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>ProxyHTMLURLMap <var>modèle-source modèle-cible [drapeaux] [cond]</var></code></td></tr>
@@ -429,9 +403,7 @@ liens HTML. Lors de l'interprétation d'un document, chaque fois qu'un
 lien correspond à <var>modèle-source</var>, la partie du lien concernée
 sera réécrite en <var>modèle-cible</var>, en tenant compte des
 modifications induites par les drapeaux éventuellement spécifiés et par
-la directive <code class="directive"><a href="#proxyhtmlextended">ProxyHTMLExtended</a></code>.
-Ne seront considérés comme des liens HTML que les éléments spécifiés via la
-directive <code class="directive"><a href="#proxyhtmllinks">ProxyHTMLLinks</a></code>.</p>
+la directive <code class="directive">ProxyHTMLExtended</code>.</p>
 
 <p>Le troisième argument optionnel permet de féfinir un des drapeaux
 suivants (les drapeaux sont sensibles à la casse) :</p>
@@ -545,7 +517,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_proxy_html.h
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

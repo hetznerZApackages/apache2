@@ -812,7 +812,7 @@ static void show_server_data()
     do {
        printf(" %d", lr->bind_addr->port);
        lr = lr->next;
-    } while (lr && lr != ap_listeners);
+    } while(lr && lr != ap_listeners);
 
     /* Display dynamic modules loaded */
     printf("\n");
@@ -872,7 +872,7 @@ static int netware_run(apr_pool_t *_pconf, apr_pool_t *plog, server_rec *s)
     if (setup_listeners(s)) {
         ap_log_error(APLOG_MARK, APLOG_ALERT, status, s, APLOGNO(00223)
             "no listening sockets available, shutting down");
-        return !OK;
+        return -1;
     }
 
     restart_pending = shutdown_pending = 0;
@@ -880,7 +880,7 @@ static int netware_run(apr_pool_t *_pconf, apr_pool_t *plog, server_rec *s)
 
     if (!is_graceful) {
         if (ap_run_pre_mpm(s->process->pool, SB_NOT_SHARED) != OK) {
-            return !OK;
+            return 1;
         }
     }
 
@@ -916,7 +916,6 @@ static int netware_run(apr_pool_t *_pconf, apr_pool_t *plog, server_rec *s)
     ap_log_error(APLOG_MARK, APLOG_INFO, 0, ap_server_conf, APLOGNO(00225)
             "Server built: %s", ap_get_server_built());
     ap_log_command_line(plog, s);
-    ap_log_mpm_common(s);
     show_server_data();
 
     mpm_state = AP_MPMQ_RUNNING;
@@ -943,13 +942,13 @@ static int netware_run(apr_pool_t *_pconf, apr_pool_t *plog, server_rec *s)
             "caught SIGTERM, shutting down");
 
         while (worker_thread_count > 0) {
-            printf ("\rShutdown pending. Waiting for %lu thread(s) to terminate...",
+            printf ("\rShutdown pending. Waiting for %u thread(s) to terminate...",
                     worker_thread_count);
             apr_thread_yield();
         }
 
         mpm_main_cleanup();
-        return DONE;
+        return 1;
     }
     else {  /* the only other way out is a restart */
         /* advance to the next generation */
@@ -964,7 +963,7 @@ static int netware_run(apr_pool_t *_pconf, apr_pool_t *plog, server_rec *s)
 
         /* Wait for all of the threads to terminate before initiating the restart */
         while (worker_thread_count > 0) {
-            printf ("\rRestart pending. Waiting for %lu thread(s) to terminate...",
+            printf ("\rRestart pending. Waiting for %u thread(s) to terminate...",
                     worker_thread_count);
             apr_thread_yield();
         }
@@ -972,7 +971,7 @@ static int netware_run(apr_pool_t *_pconf, apr_pool_t *plog, server_rec *s)
     }
 
     mpm_main_cleanup();
-    return OK;
+    return 0;
 }
 
 static int netware_pre_config(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp)
@@ -1021,11 +1020,15 @@ static int netware_check_config(apr_pool_t *p, apr_pool_t *plog,
         if (startup) {
             ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL, APLOGNO(00228)
                          "WARNING: MaxThreads of %d exceeds compile-time "
-                         "limit of %d threads, decreasing to %d. "
-                         "To increase, please see the HARD_THREAD_LIMIT "
-                         "define in server/mpm/netware%s.",
-                         ap_threads_limit, HARD_THREAD_LIMIT, HARD_THREAD_LIMIT,
-                         MPM_HARD_LIMITS_FILE);
+                         "limit of", ap_threads_limit);
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL,
+                         " %d threads, decreasing to %d.",
+                         HARD_THREAD_LIMIT, HARD_THREAD_LIMIT);
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL,
+                         " To increase, please see the HARD_THREAD_LIMIT"
+                         "define in");
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL,
+                         " server/mpm/netware%s.", MPM_HARD_LIMITS_FILE);
         } else {
             ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(00229)
                          "MaxThreads of %d exceeds compile-time limit "
@@ -1036,11 +1039,11 @@ static int netware_check_config(apr_pool_t *p, apr_pool_t *plog,
     }
     else if (ap_threads_limit < 1) {
         if (startup) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL, APLOGNO(00230)
-                         "WARNING: MaxThreads of %d not allowed, "
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL,
+                         APLOGNO(00230) "WARNING: MaxThreads of %d not allowed, "
                          "increasing to 1.", ap_threads_limit);
         } else {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(02661)
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
                          "MaxThreads of %d not allowed, increasing to 1",
                          ap_threads_limit);
         }
@@ -1067,8 +1070,11 @@ static int netware_check_config(apr_pool_t *p, apr_pool_t *plog,
         if (startup) {
             ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL, APLOGNO(00233)
                          "WARNING: MinSpareThreads of %d not allowed, "
-                         "increasing to 1 to avoid almost certain server failure. "
-                         "Please read the documentation.", ap_threads_min_free);
+                         "increasing to 1", ap_threads_min_free);
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL,
+                         " to avoid almost certain server failure.");
+            ap_log_error(APLOG_MARK, APLOG_WARNING | APLOG_STARTUP, 0, NULL,
+                         " Please read the documentation.");
         } else {
             ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(00234)
                          "MinSpareThreads of %d not allowed, increasing to 1",
@@ -1196,7 +1202,7 @@ static int CommandLineInterpreter(scr_t screenID, const char *commandLine)
         ActivateScreen (getscreenhandle());
 
         /* If an instance id was not given but the nlm is loaded in
-            protected space, then the command belongs to the
+            protected space, then the the command belongs to the
             OS address space instance to pass it on. */
         pID = strstr (szcommandLine, "-p");
         if ((pID == NULL) && nlmisloadedprotected())

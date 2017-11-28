@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
-<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
-<!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -18,7 +16,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="../images/feather.png" /></div>
+<img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Rewrite</a></div><div id="page-content"><div id="preamble"><h1>RewriteRule Flags</h1>
@@ -50,11 +48,10 @@ providing detailed explanations and examples.</p>
 <li><img alt="" src="../images/down.gif" /> <a href="#flag_pt">PT|passthrough</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#flag_qsa">QSA|qsappend</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#flag_qsd">QSD|qsdiscard</a></li>
-<li><img alt="" src="../images/down.gif" /> <a href="#flag_qsl">QSL|qslast</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#flag_r">R|redirect</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#flag_s">S|skip</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#flag_t">T|type</a></li>
-</ul><h3>See also</h3><ul class="seealso"><li><a href="../mod/mod_rewrite.html">Module documentation</a></li><li><a href="intro.html">mod_rewrite introduction</a></li><li><a href="remapping.html">Redirection and remapping</a></li><li><a href="access.html">Controlling access</a></li><li><a href="vhosts.html">Virtual hosts</a></li><li><a href="proxy.html">Proxying</a></li><li><a href="rewritemap.html">Using RewriteMap</a></li><li><a href="advanced.html">Advanced techniques</a></li><li><a href="avoid.html">When not to use mod_rewrite</a></li><li><a href="#comments_section">Comments</a></li></ul></div>
+</ul><h3>See also</h3><ul class="seealso"><li><a href="../mod/mod_rewrite.html">Module documentation</a></li><li><a href="intro.html">mod_rewrite introduction</a></li><li><a href="remapping.html">Redirection and remapping</a></li><li><a href="access.html">Controlling access</a></li><li><a href="vhosts.html">Virtual hosts</a></li><li><a href="proxy.html">Proxying</a></li><li><a href="rewritemap.html">Using RewriteMap</a></li><li><a href="advanced.html">Advanced techniques</a></li><li><a href="avoid.html">When not to use mod_rewrite</a></li></ul><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="introduction" id="introduction">Introduction</a></h2>
@@ -91,7 +88,7 @@ so backreferences are unescaped at the time they are applied.
 Using the B flag, non-alphanumeric characters in backreferences
 will be escaped. For example, consider the rule:</p>
 
-<pre class="prettyprint lang-config">RewriteRule "^search/(.*)$" "/search.php?term=$1"</pre>
+<pre class="prettyprint lang-config">RewriteRule ^search/(.*)$ /search.php?term=$1</pre>
 
 
 <p>Given a search term of 'x &amp; y/z', a browser will encode it as
@@ -103,9 +100,6 @@ isn't a valid URL, and so would be encoded as
 <p>With the B flag set on this same rule, the parameters are re-encoded
 before being passed on to the output URL, resulting in a correct mapping to
 <code>/search.php?term=x%20%26%20y%2Fz</code>.</p>
-
-<pre class="prettyprint lang-config">RewriteRule "^search/(.*)$" "/search.php?term=$1" [B,PT]</pre>
-
 
 <p>Note that you may also need to set <code class="directive"><a href="../mod/core.html#allowencodedslashes">AllowEncodedSlashes</a></code> to <code>On</code> to get this
 particular example to work, as httpd does not allow encoded slashes in URLs, and
@@ -136,15 +130,6 @@ follows:</p>
 
 <div class="example"><p><code>
 [CO=NAME:VALUE:DOMAIN:lifetime:path:secure:httponly]
-</code></p></div>
-
-<p>If a literal ':' character is needed in any of the cookie fields, an 
-alternate syntax is available.  To opt-in to the alternate syntax, the cookie 
-"Name" should be preceded with a ';' character, and field separators should be
-specified as ';'.</p>
-
-<div class="example"><p><code>
-[CO=;NAME;VALUE:MOREVALUE;DOMAIN;lifetime;path;secure;httponly]
 </code></p></div>
 
 <p>You must declare a name, a value, and a domain for the cookie to be set.</p>
@@ -189,7 +174,7 @@ browsers that support this feature.</dd>
 <p>Consider this example:</p>
 
 <pre class="prettyprint lang-config">RewriteEngine On
-RewriteRule "^/index\.html" "-" [CO=frontdoor:yes:.example.com:1440:/]</pre>
+RewriteRule ^/index\.html - [CO=frontdoor:yes:.example.com:1440:/]</pre>
 
 
 <p>In the example give, the rule doesn't rewrite the request.
@@ -240,9 +225,10 @@ variables work.</p>
 
 <p>The full syntax for this flag is:</p>
 
-<pre class="prettyprint lang-config">[E=VAR:VAL]
-[E=!VAR]</pre>
-
+<div class="example"><p><code>
+[E=VAR:VAL]
+[E=!VAR]
+</code></p></div>
 
 <p><code>VAL</code> may contain backreferences (<code>$N</code> or
 <code>%N</code>) which are expanded.</p>
@@ -274,8 +260,8 @@ value of '1' if the requested URI is an image file. Then, that
 environment variable is used to exclude those requests from the access
 log.</p>
 
-<pre class="prettyprint lang-config">RewriteRule "\.(png|gif|jpg)$" "-" [E=image:1]
-CustomLog "logs/access_log" combined env=!image</pre>
+<pre class="prettyprint lang-config">RewriteRule \.(png|gif|jpg)$ - [E=image:1]
+CustomLog logs/access_log combined env=!image</pre>
 
 
 <p>Note that this same effect can be obtained using <code class="directive"><a href="../mod/mod_setenvif.html#setenvif">SetEnvIf</a></code>. This technique is offered as
@@ -300,7 +286,7 @@ allows more flexibility in assigning a Forbidden status.</p>
 <p>The following rule will forbid <code>.exe</code> files from being
 downloaded from your server.</p>
 
-<pre class="prettyprint lang-config">RewriteRule "\.exe" "-" [F]</pre>
+<pre class="prettyprint lang-config">RewriteRule \.exe - [F]</pre>
 
 
 <p>This example uses the "-" syntax for the rewrite target, which means
@@ -320,7 +306,7 @@ longer available.</p>
 <p>As with the [F] flag, you will typically use the "-" syntax for the
 rewrite target when using the [G] flag:</p>
 
-<pre class="prettyprint lang-config">RewriteRule "oldproduct" "-" [G,NC]</pre>
+<pre class="prettyprint lang-config">RewriteRule oldproduct - [G,NC]</pre>
 
 
 <p>When using [G], an [L] is implied - that is, the response is returned
@@ -333,7 +319,7 @@ immediately, and no further rules are evaluated.</p>
 handler. For example, one might use this to force all files without a
 file extension to be parsed by the php handler:</p>
 
-<pre class="prettyprint lang-config">RewriteRule "!\." "-" [H=application/x-httpd-php]</pre>
+<pre class="prettyprint lang-config">RewriteRule !\. - [H=application/x-httpd-php]</pre>
 
 
 <p>
@@ -346,7 +332,7 @@ For example, the following snippet used in per-server context allows
 <code>.php</code> files to be <em>displayed</em> by <code>mod_php</code>
 if they are requested with the <code>.phps</code> extension:</p>
 
-<pre class="prettyprint lang-config">RewriteRule "^(/source/.+\.php)s$" "$1" [H=application/x-httpd-php-source]</pre>
+<pre class="prettyprint lang-config">RewriteRule ^(/source/.+\.php)s$ $1 [H=application/x-httpd-php-source]</pre>
 
 
 <p>The regular expression above - <code>^(/source/.+\.php)s$</code> - will
@@ -394,9 +380,9 @@ redirects.</p>
 argument to <code>index.php</code>, however, the <code class="directive"><a href="../mod/mod_rewrite.html#rewritecond">RewriteCond</a></code> ensures that if the request
 is already for <code>index.php</code>, the <code class="directive"><a href="../mod/mod_rewrite.html#rewriterule">RewriteRule</a></code> will be skipped.</p>
 
-<pre class="prettyprint lang-config">RewriteBase "/"
-RewriteCond "%{REQUEST_URI}" "!=/index.php"
-RewriteRule "^(.*)" "/index.php?req=$1" [L,PT]</pre>
+<pre class="prettyprint lang-config">RewriteBase /
+RewriteCond %{REQUEST_URI} !=/index.php
+RewriteRule ^(.*) /index.php?req=$1 [L,PT]</pre>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -412,7 +398,7 @@ certain string or letter repeatedly in a request. The example shown here
 will replace A with B everywhere in a request, and will continue doing
 so until there are no more As to be replaced.
 </p>
-<pre class="prettyprint lang-config">RewriteRule "(.*)A(.*)" "$1B$2" [N]</pre>
+<pre class="prettyprint lang-config">RewriteRule (.*)A(.*) $1B$2 [N]</pre>
 
 <p>You can think of this as a <code>while</code> loop: While this
 pattern still matches (i.e., while the URI still contains an
@@ -423,9 +409,9 @@ pattern still matches (i.e., while the URI still contains an
 protect against unintended looping.  An alternative maximum number of 
 iterations can be specified by adding to the N flag.  </p>
 <pre class="prettyprint lang-config"># Be willing to replace 1 character in each pass of the loop
-RewriteRule "(.+)[&gt;&lt;;]$" "$1" [N=64000]
+RewriteRule (.+)[&gt;&lt;;]$ $1 [N=64000]
 # ... or, give up if after 10 loops
-RewriteRule "(.+)[&gt;&lt;;]$" "$1" [N=10]</pre>
+RewriteRule (.+)[&gt;&lt;;]$ $1 [N=10]</pre>
 
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -440,7 +426,7 @@ to your dedicated image server. The match is case-insensitive, so that
 <code>.jpg</code> and <code>.JPG</code> files are both acceptable, for
 example.</p>
 
-<pre class="prettyprint lang-config">RewriteRule "(.*\.(jpg|gif|png))$" "http://images.example.com$1" [P,NC]</pre>
+<pre class="prettyprint lang-config">RewriteRule (.*\.(jpg|gif|png))$ http://images.example.com$1 [P,NC]</pre>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -450,7 +436,7 @@ example.</p>
 equivalent. Using the [NE] flag prevents that from happening.
 </p>
 
-<pre class="prettyprint lang-config">RewriteRule "^/anchor/(.+)" "/bigpage.html#$1" [NE,R]</pre>
+<pre class="prettyprint lang-config">RewriteRule ^/anchor/(.+) /bigpage.html#$1 [NE,R]</pre>
 
 
 <p>
@@ -492,7 +478,7 @@ requests.
 example, if you wanted all image requests to be handled by a back-end
 image server, you might do something like the following:</p>
 
-<pre class="prettyprint lang-config">RewriteRule "/(.*)\.(jpg|gif|png)$" "http://images.example.com/$1.$2" [P]</pre>
+<pre class="prettyprint lang-config">RewriteRule /(.*)\.(jpg|gif|png)$ http://images.example.com/$1.$2 [P]</pre>
 
 
 <p>Use of the [P] flag implies [L] - that is, the request is immediately
@@ -549,8 +535,8 @@ use the [PT] flag to ensure that the
 <code class="directive"><a href="../mod/mod_alias.html#alias">Alias</a></code> is evaluated.
 </p>
 
-<pre class="prettyprint lang-config">Alias "/icons" "/usr/local/apache/icons"
-RewriteRule "/pics/(.+)\.jpg$" "/icons/$1.gif" [PT]</pre>
+<pre class="prettyprint lang-config">Alias /icons /usr/local/apache/icons
+RewriteRule /pics/(.+)\.jpg$ /icons/$1.gif [PT]</pre>
 
 
 <p>
@@ -580,7 +566,7 @@ Using the [QSA] flag causes the query strings to be combined.
 
 <p>Consider the following rule:</p>
 
-<pre class="prettyprint lang-config">RewriteRule "/pages/(.+)" "/page.php?page=$1" [QSA]</pre>
+<pre class="prettyprint lang-config">RewriteRule /pages/(.+) /page.php?page=$1 [QSA]</pre>
 
 
 <p>With the [QSA] flag, a request for <code>/pages/123?one=two</code> will be
@@ -611,22 +597,6 @@ observed - that is, the original query string will be discarded and
 replaced with the query string in the <code>RewriteRule</code> target
 URI.
 </p>
-
-</div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="section">
-<h2><a name="flag_qsl" id="flag_qsl">QSL|qslast</a></h2>
-<p>
-By default, the first (left-most) question mark in the substitution
-delimits the path from the query string.  Using the [QSL] flag instructs
-<code class="directive"><a href="../mod/mod_rewrite.html#rewriterule">RewriteRule</a></code> to instead split
-the two components using the last (right-most) question mark.  </p>
-
-<p>
-This is useful when mapping to files that have literal question marks in 
-their filename.  If no query string is used in the substitution, 
-a question mark can be appended to it in combination with this flag.  </p>
-
-<p> This flag is available in version 2.4.19 and later.</p>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -672,13 +642,13 @@ to run the <code class="directive"><a href="../mod/mod_rewrite.html#rewriterule"
 requested URI doesn't correspond with an actual file.</p>
 
 <pre class="prettyprint lang-config"># Is the request for a non-existent file?
-RewriteCond "%{REQUEST_FILENAME}" "!-f"
-RewriteCond "%{REQUEST_FILENAME}" "!-d"
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 # If so, skip these two RewriteRules
-RewriteRule ".?" "-" [S=2]
+RewriteRule .? - [S=2]
 
-RewriteRule "(.*\.gif)" "images.php?$1"
-RewriteRule "(.*\.html)" "docs.php?$1"</pre>
+RewriteRule (.*\.gif) images.php?$1
+RewriteRule (.*\.html) docs.php?$1</pre>
 
 
 <p>This technique is useful because a <code class="directive"><a href="../mod/mod_rewrite.html#rewritecond">RewriteCond</a></code> only applies to the
@@ -690,18 +660,18 @@ use this to make pseudo if-then-else constructs: The last rule of
 the then-clause becomes <code>skip=N</code>, where N is the
 number of rules in the else-clause:</p>
 <pre class="prettyprint lang-config"># Does the file exist?
-RewriteCond "%{REQUEST_FILENAME}" "!-f"
-RewriteCond "%{REQUEST_FILENAME}" "!-d"
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 # Create an if-then-else construct by skipping 3 lines if we meant to go to the "else" stanza.
-RewriteRule ".?" "-" [S=3]
+RewriteRule .? - [S=3]
 
 # IF the file exists, then:
-    RewriteRule "(.*\.gif)" "images.php?$1"
-    RewriteRule "(.*\.html)" "docs.php?$1"
+    RewriteRule (.*\.gif) images.php?$1
+    RewriteRule (.*\.html) docs.php?$1
     # Skip past the "else" stanza.
-    RewriteRule ".?" "-" [S=1]
+    RewriteRule .? - [S=1]
 # ELSE...
-    RewriteRule "(.*)" "404.php?file=$1"
+    RewriteRule (.*) 404.php?file=$1
 # END</pre>
 
 
@@ -718,7 +688,7 @@ sent. This has the same effect as the <code class="directive"><a href="../mod/mo
 source code as plain text, if requested in a particular way:</p>
 
 <pre class="prettyprint lang-config"># Serve .pl files as plain text
-RewriteRule "\.pl$" "-" [T=text/plain]</pre>
+RewriteRule \.pl$ - [T=text/plain]</pre>
 
 
 <p>Or, perhaps, if you have a camera that produces jpeg images without
@@ -726,7 +696,7 @@ file extensions, you could force those images to be served with the
 correct MIME type by virtue of their file names:</p>
 
 <pre class="prettyprint lang-config"># Files with 'IMG' in the name are jpg images.
-RewriteRule "IMG" "-" [T=image/jpg]</pre>
+RewriteRule IMG - [T=image/jpg]</pre>
 
 
 <p>Please note that this is a trivial example, and could be better done
@@ -765,7 +735,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/rewrite/flags.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
