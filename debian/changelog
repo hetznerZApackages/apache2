@@ -1,14 +1,8 @@
-apache2 (2.4.10-10+deb8u11+hetz3~exp2) jessie-hetz-experimental; urgency=high
+apache2 (2.4.10-10+deb8u11+hetz3~exp3) jessie-hetz-experimental; urgency=high
 
-  * Bump rto remove 2.4.25
+  * RErelease
 
- -- Shaun Bugler <sb@hetzner.co.za>  Wed, 29 Nov 2017 09:07:27 +0200
-
-apache2 (2.4.10-10+deb8u11+hetz3~exp1) jessie-hetz-experimental; urgency=high
-
-  * Bump on revert 
-
- -- Shaun Bugler <sb@hetzner.co.za>  Wed, 29 Nov 2017 08:50:40 +0200
+ -- Shaun Bugler <sb@hetzner.co.za>  Wed, 29 Nov 2017 09:14:53 +0200
 
 apache2 (2.4.10-10+deb8u11+hetz1) jessie-hetz; urgency=high
 
