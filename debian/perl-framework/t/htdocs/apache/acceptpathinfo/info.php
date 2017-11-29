@@ -1,1 +1,0 @@
-_<?php echo $_SERVER['PATH_INFO']; ?>_
