@@ -32,3 +32,9 @@ CVE-2017-7679.diff
 CVE-2017-9788-mod_auth_digest.diff
 
 core-Disallow-Methods-registration-at-run-time-.htac.patch
+CVE-2017-15710-mod_authnz_ldap.diff
+CVE-2017-15715-regex-line-endings.diff
+CVE-2018-1283-mod_session.diff
+CVE-2018-1301-HTTP-request-read-out-of-bounds.diff
+CVE-2018-1303-mod_cache_socache-oob.diff
+CVE-2018-1312-mod_auth_digest-nonce.diff

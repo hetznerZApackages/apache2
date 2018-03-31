@@ -1,3 +1,0 @@
-<!--#if expr="-e '/etc/passwd'" -->
-<!--#include virtual="../echo.shtml" -->
-<!--#endif -->

@@ -1,6 +1,0 @@
-<!--#if expr="'ab' -strmatch 'a*'"-->
-pass
-<!--#endif -->
-<!--#if expr="'ab' -strmatch 'b*'"-->
-fail
-<!--#endif -->

@@ -1,3 +1,0 @@
-<!--#if expr="1 = 2 = 3" -->
-<!--#include virtual="../echo.shtml" -->
-<!--#endif -->

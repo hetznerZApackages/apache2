@@ -1,3 +1,21 @@
+apache2 (2.4.10-10+deb8u12) jessie-security; urgency=medium
+
+  * CVE-2017-15710: mod_authnz_ldap: Out of bound write in mod_authnz_ldap
+    when using too small Accept-Language values.
+  * CVE-2017-15715: <FilesMatch> bypass with a trailing newline in the file
+    name.
+    Configure the regular expression engine to match '$' to the end of
+    the input string only, excluding matching the end of any embedded
+    newline characters. Behavior can be changed with new directive
+    'RegexDefaultOptions'.
+  * CVE-2018-1283: Tampering of mod_session data for CGI applications.
+  * CVE-2018-1301: Possible out of bound access after failure in reading the
+    HTTP request
+  * CVE-2018-1303: Possible out of bound read in mod_cache_socache
+  * CVE-2018-1312: mod_auth_digest: Weak Digest auth nonce generation
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 31 Mar 2018 11:31:57 +0200
+
 apache2 (2.4.10-10+deb8u11) jessie-security; urgency=high
 
   * Non-maintainer upload by the Security Team.
