@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u12+hetz1) jessie-hetz; urgency=medium
+
+  * Released 2.4.10-10+deb8u12+hetz1~exp1 as 2.4.10-10+deb8u12+hetz1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 09 Apr 2018 14:30:14 +0200
+
 apache2 (2.4.10-10+deb8u12+hetz1~exp1) jessie-hetz-experimental; urgency=medium
 
   * Import upstream security patches for DSA-4164-1
