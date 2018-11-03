@@ -5,11 +5,12 @@ Maintainer: Debian Apache Maintainers <debian-apache@lists.debian.org>
 Uploaders: Stefan Fritsch <sf@debian.org>, Arno Töll <arno@debian.org>
 Build-Depends: debhelper (>= 9.20131213~), lsb-release, dpkg-dev (>= 1.16.1~),
  libaprutil1-dev (>= 1.5.0), libapr1-dev (>= 1.5.0), libpcre3-dev, zlib1g-dev,
- libssl-dev (>= 0.9.8m), perl,
- liblua5.1-0-dev, libxml2-dev, autotools-dev, gawk | awk
+ libnghttp2-dev, libssl1.0-dev | libssl-dev (<< 1.1), perl,
+ liblua5.2-dev, libxml2-dev, autotools-dev, gawk | awk,
+ dh-systemd
 Build-Conflicts: autoconf2.13
-Standards-Version: 3.9.6
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-apache/apache2.git
+Standards-Version: 3.9.8
+Vcs-Browser: https://anonscm.debian.org/cgit/pkg-apache/apache2.git/
 Vcs-Git: git://anonscm.debian.org/pkg-apache/apache2.git
 Homepage: http://httpd.apache.org/
 
@@ -18,12 +19,12 @@ Architecture: any
 Pre-Depends: dpkg (>= 1.17.14)
 Depends: ${misc:Depends}, lsb-base, procps [!hurd-i386],
  perl, mime-support, apache2-bin (= ${binary:Version}),
- apache2-utils (>= 2.4), apache2-data (= ${source:Version}),
+ apache2-utils (= ${binary:Version}), apache2-data (= ${source:Version}),
  ${perl:Depends}
-Replaces: apache2.2-common
-Conflicts: apache2.2-common (<< 2.3~)
 Provides: httpd, httpd-cgi
 Recommends: ssl-cert
+Conflicts: apache2.2-common, apache2.2-bin
+Replaces: apache2.2-common, apache2.2-bin
 Suggests: www-browser, apache2-doc, apache2-suexec-pristine | apache2-suexec-custom
 Description: Apache HTTP Server
  The Apache HTTP Server Project's goal is to build a secure, efficient and
@@ -36,8 +37,6 @@ Description: Apache HTTP Server
 Package: apache2-data
 Architecture: all
 Depends: ${misc:Depends}
-Replaces: apache2.2-common
-Conflicts: apache2.2-common (<< 2.3~)
 Multi-Arch: foreign
 Description: Apache HTTP Server (common files)
  The Apache HTTP Server Project's goal is to build a secure, efficient and
@@ -53,11 +52,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}
 # MODULE_MAGIC_NUMBER_MAJOR from apache2/include/ap_mmn.h
 Provides: ${apache2:API}
 Suggests: www-browser, apache2-doc, apache2-suexec-pristine | apache2-suexec-custom
-Replaces: apache2.2-bin (<< 2.3~), apache2.2-common (<< 2.3~), apache2-mpm-prefork (<< 2.3~),
- apache2-mpm-itk (<< 2.3~), apache2-mpm-worker (<< 2.3~), apache2-mpm-event (<< 2.3~),
- libapache2-mod-proxy-html (<< 1:2.4.4-2~), libapache2-mod-macro (<< 1:2.4.6-1~)
-Conflicts: apache2.2-bin (<< 2.3~), apache2.2-common (<< 2.3~)
-Breaks: libapache2-mod-proxy-html (<< 1:2.4.4-2~), libapache2-mod-macro (<< 1:2.4.6-1~)
 Description: Apache HTTP Server (modules and other binary files)
  The Apache HTTP Server Project's goal is to build a secure, efficient and
  extensible HTTP server as standards-compliant open source software. The
@@ -66,176 +60,6 @@ Description: Apache HTTP Server (modules and other binary files)
  This package contains the binaries only and does not set up a working
  web-server instance. Install the "apache2" package to get a fully working
  instance.
-
-Package: apache2-mpm-worker
-Architecture: any
-Section: oldlibs
-Priority: extra
-Provides: httpd, httpd-cgi
-Depends: ${misc:Depends}, apache2 (= ${binary:Version})
-Description: transitional worker MPM package for apache2
- This is a transitional package to apache2 for users of apache2-mpm-worker and
- can be safely removed after the installation is complete.
-
-Package: apache2-mpm-prefork
-Architecture: any
-Section: oldlibs
-Priority: extra
-Provides: httpd, httpd-cgi
-Depends: ${misc:Depends}, apache2 (= ${binary:Version})
-Description: transitional prefork MPM package for apache2
- This is a transitional package to apache2 for users of apache2-mpm-prefork and
- can be safely removed after the installation is complete.
-
-Package: apache2-mpm-event
-Architecture: any
-Section: oldlibs
-Priority: extra
-Provides: httpd, httpd-cgi
-Depends: ${misc:Depends}, apache2 (= ${binary:Version})
-Description: transitional event MPM package for apache2
- This is a transitional package to apache2 for users of apache2-mpm-event and
- can be safely removed after the  installation is complete.
-
-Package: apache2-mpm-itk
-Architecture: any
-Section: oldlibs
-Priority: extra
-Provides: httpd, httpd-cgi
-Depends: ${misc:Depends}, apache2 (= ${binary:Version}), libapache2-mpm-itk
-Description: transitional itk MPM package for apache2
- This is a transitional package to apache2 for users of apache2-mpm-itk and
- can be safely removed after the installation is complete.
-
-Package: apache2.2-bin
-Architecture: any
-Section: oldlibs
-Priority: extra
-Breaks: gnome-user-share (<< 3.8.0-2~), libapache2-mod-dnssd (<< 0.6-3.1~)
-Pre-Depends: dpkg (>= 1.17.14)
-Depends: ${misc:Depends}, apache2-bin (>= 2.3~)
-Description: Transitional package for apache2-bin
- This is a transitional package for apache2-bin, and can be safely removed
- after the installation is complete.
-
-Package: apache2.2-common
-Architecture: any
-Section: oldlibs
-Priority: extra
-Depends: ${misc:Depends}, apache2 (>= 2.3~)
-Description: Transitional package for apache2
- This is a transitional package for apache2-bin, and can be safely removed
- after the installation is complete.
-Breaks: libapache2-mod-apparmor (<< 2.8.0-1),
-  libapache2-mod-auth-pam (<< 1.1.1-9+deb8),
-  libapache2-mod-auth-sys-group (<< 1.1.1-9+deb8),
-  libapache2-mod-layout (<< 5.1-1+deb8),
-  libapache2-mod-random (<< 2.1-1+deb8),
-  libapache2-mod-speedycgi (<< 2.22-13+deb8),
-  libapache2-mod-vhost-hash-alias (<< 1.0-2+deb8),
-  libapache2-mod-spamhaus (<< 0.7-1.1),
-  libapache2-mod-auth-mysql (<< 4.3.9-13.1+deb8),
-  libapache2-mod-scgi (<< 1.13-1.1),
-  libapache2-mod-auth-pgsql (<< 2.0.3-6),
-  libapache2-mod-php5 (<< 5.5.0~beta4-3),
-  libapache2-mod-php5filter (<< 5.5.0~beta4-3),
-  libapache2-mod-encoding (<< 20040616-5.2),
-  libapache2-mod-perl2 (<< 2.0.8+httpd24-r1449661-2),
-  libapache2-mod-auth-ntlm-winbind (<< 0.0.0.lorikeet+svn+801-2),
-  libapache-singleton-perl (<< 0.15-2),
-  libapache2-mod-fastcgi (<< 2.4.7~0910052141-1.1),
-  libapache2-mod-authn-yubikey (<< 1.0-1.1),
-  libapache2-mod-neko (<< 2.0.0-1),
-  libapache2-mod-authz-unixgroup (<< 1.1.0-0.1),
-  libapache2-mod-auth-openid (<< 0.7-1),
-  libapache2-mod-python (<< 3.3.1-11),
-  libapache2-mod-fcgid (<< 1:2.3.6-1.3),
-  libapache2-mod-gnutls (<< 0.5.10-2),
-  libapache2-mod-auth-pubtkt (<< 0.8-2),
-  libapache2-mod-auth-plain (<< 2.0.52),
-  libapache2-mod-wsgi (<< 3.4-2),
-  libapache2-mod-wsgi-py3 (<< 3.4-2),
-  libapache2-mod-jk (<< 1:1.2.37-2),
-  libapache2-mod-uwsgi (<< 1.9.13-1),
-  libapache2-mod-ruwsgi (<< 1.9.13-1),
-  libapache2-mod-authnz-external (<< 3.3.1-0.1),
-  libapache2-svn (<< 1.7.9-1+nmu3),
-  libapache2-mod-vhost-ldap  (<< 2.4.0-1),
-  libapache2-mod-nss (<< 1.0.8-3),
-  libapache2-mod-rpaf (<< 0.6-11),
-  libapache2-mod-lisp (<< 1.3.1-1.3),
-  gridsite (<< 1.7.21-2),
-  libapache2-mod-suphp (<< 0.7.1-3.1+deb8),
-  libapache2-mod-rivet (<< 2.1.1-3),
-  libapache2-mod-authn-sasl (<< 1.2-2),
-  libapache2-mod-auth-radius (<< 1.5.8-1.2),
-  libapache2-mod-auth-memcookie (<< 1.0.2-8),
-  libapache2-reload-perl (<< 0.12-2),
-  libapache2-mod-macro (<< 1.2.1-1),
-  libapache2-mod-ruid2 (<< 0.9.8-3),
-  libapache2-mod-auth-cas (<< 1.0.9.1-3),
-  libapache2-mod-geoip (<< 1.2.8-1),
-  libapache2-mod-authn-webid (<< 0~20110301-2),
-  libapache2-modsecurity  (<< 2.6.6-7),
-  libapache2-mod-upload-progress (<< 0.2-1),
-  libapache-authenhook-perl (<< 2.00-04+pristine-5),
-  libapache2-authcookie-perl (<< 3.19-2),
-  libapache2-mod-shib2 (<< 2.5.2+dfsg-2),
-  libapache2-mod-removeip (<< 1.0b-5.1),
-  libapache2-mod-bw (<< 0.92-9),
-  libapache2-mod-log-sql (<< 1.100-15),
-  libapache2-mod-xsendfile (<< 0.12-2),
-  libapache2-mod-qos (<< 10.15-3),
-  libapache2-mod-musicindex (<< 1.4.1-1),
-  libapache2-mod-apreq2 (<< 2.13-2),
-  libapache2-request-perl (<< 2.13-2),
-  libapache2-mod-parser3 (<< 3.4.2-7),
-  libapache2-mod-evasive (<< 1.10.1-2),
-  libapache2-mod-auth-kerb (<< 5.4-2.1),
-  libapache2-mod-dacs (<< 1.4.28b-2),
-  libapache2-mod-auth-tkt (<< 2.1.0-7),
-  libapache2-webauth (<< 4.2.0-1),
-  libapache2-webkdc (<< 4.2.0-1),
-  libapache2-mod-dnssd (<< 0.6-3.1~),
-  ikiwiki-hosting-web (<< 0.20140419),
-  libapache2-mod-passenger (<< 3.0.13debian-1.1),
-  libapache2-mod-mono (<< 2.11+git20130708.6b73e85-2),
-  libapache2-mod-mime-xattr (<< 0.4-5),
-  libapache2-mod-defensible (<< 1.4-3.1),
-  libapache2-mod-ldap-userdir (<< 1.1.19-2),
-  libapache2-mod-ocamlnet (<< 3.5.1-1+deb8),
-  libapache2-mod-proxy-html (<< 1:2.4.9-2),
-  libapache2-mod-ruby (<< 1.2.6-2+deb8),
-  libapache2-mod-axis2c (<< 1.6.0-6),
-  libapache2-modsecurity (<< 2.8.0-1),
-  libapache2-mod-chroot (<< 0.5-7+deb8),
-  libapache2-mod-annodex (<< 0.2.2-6+deb8),
-  libapache2-mod-line-edit (<< 1.0.0-1+deb8)
-Conflicts: libapache2-mod-bt,
-  libapache2-mod-cband,
-  libapache2-mod-php4,
-  libapache2-mod-shib
-
-Package: libapache2-mod-proxy-html
-Architecture: any
-Section: oldlibs
-Priority: extra
-Pre-Depends: dpkg (>= 1.17.14)
-Depends: ${misc:Depends}, apache2-bin (>= 2.3~)
-Description: Transitional package for apache2-bin
- This is a transitional package for apache2-bin, and can be safely removed
- after the installation is complete.
-
-Package: libapache2-mod-macro
-Architecture: any
-Section: oldlibs
-Priority: extra
-Pre-Depends: dpkg (>= 1.17.14)
-Depends: ${misc:Depends}, apache2-bin (>= 2.3~)
-Description: Transitional package for apache2-bin
- This is a transitional package for apache2-bin, and can be safely removed
- after the installation is complete.
-
 
 Package: apache2-utils
 Architecture: any
@@ -256,22 +80,9 @@ Description: Apache HTTP Server (utility programs for web servers)
   - check_forensic (Extract mod_log_forensic output from Apache log files)
   - httxt2dbm (Generate dbm files for use with RewriteMap)
 
-Package: apache2-suexec
-Architecture: any
-Section: oldlibs
-Priority: extra
-Pre-Depends: dpkg (>= 1.17.14)
-Depends: ${misc:Depends},
- apache2-suexec-pristine (= ${binary:Version})
-Description: transitional package for apache2-suexec-pristine
- This is a transitional package for apache2-suexec-pristine, and can be safely
- removed after the installation is complete.
-
 Package: apache2-suexec-pristine
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, apache2-bin
-Replaces: apache2-suexec (<< 2.3~)
-Breaks: apache2-suexec (<< 2.3~)
 Provides: apache2-suexec
 Description: Apache HTTP Server standard suexec program for mod_suexec
  Provides the standard suexec helper program for mod_suexec. This version is
@@ -282,8 +93,6 @@ Package: apache2-suexec-custom
 Priority: extra
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, apache2-bin
-Replaces: apache2-suexec (<< 2.3~)
-Breaks: apache2-suexec (<< 2.3~)
 Provides: apache2-suexec
 Description: Apache HTTP Server configurable suexec program for mod_suexec
  Provides a customizable version of the suexec helper program for mod_suexec.
@@ -311,11 +120,9 @@ Description: Apache HTTP Server (on-site documentation)
 
 Package: apache2-dev
 Architecture: any
-Depends: ${misc:Depends}, openssl,
- libapr1-dev, libaprutil1-dev, debhelper (>= 9), ${perl:Depends}
-Provides: apache2-prefork-dev, apache2-threaded-dev, dh-apache2
-Replaces: apache2-prefork-dev, apache2-threaded-dev
-Conflicts: apache2-prefork-dev, apache2-threaded-dev
+Depends: ${misc:Depends}, openssl, libapr1-dev, libaprutil1-dev,
+ debhelper (>= 9), ${perl:Depends}
+Provides: dh-apache2
 Description: Apache HTTP Server (development headers)
  The Apache HTTP Server Project's goal is to build a secure, efficient and
  extensible HTTP server as standards-compliant open source software. The
@@ -330,6 +137,18 @@ Description: Apache HTTP Server (development headers)
   - Apache 2 module configurations and shared objects
   - Site configuration files
   - Global configuration files
+
+Package: apache2-ssl-dev
+Architecture: any
+Depends: ${misc:Depends}, apache2-dev (= ${binary:Version}),
+ libssl1.0-dev | libssl-dev (<< 1.1)
+Description: Apache HTTP Server (mod_ssl development headers)
+ The Apache HTTP Server Project's goal is to build a secure, efficient and
+ extensible HTTP server as standards-compliant open source software. The
+ result has long been the number one web server on the Internet.
+ .
+ This package provides the development header and the dependencies for
+ modules that interact with mod_ssl's internal openssl state.
 
 Package: apache2-dbg
 Section: debug

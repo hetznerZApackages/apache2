@@ -50,7 +50,7 @@ Copyright: 2009 The Apache Software Foundation
  1996 by Zeus Technology Ltd. http://www.zeustech.net/
 License: Apache-2.0 and Zeus
 
-Files: debian/a2query.in debian/debhelper/dh_apache2
+Files: debian/a2query.in debian/debhelper/dh_apache2.in
 Copyright: 2012 Arno Töll
 License: Apache-2.0 or GPL-2+
 
@@ -60,10 +60,6 @@ License: MIT
 
 Files: debian/a2enmod
 Copyright: 2008 Stefan Fritsch
-License: Apache-2.0
-
-Files: debian/patches/itk/*
-Copyright: 2005-2012 Steinar H. Gunderson, 2008 Knut Auvor Grythe
 License: Apache-2.0
 
 License: Apache-2.0

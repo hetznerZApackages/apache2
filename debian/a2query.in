@@ -176,9 +176,9 @@ sub load_defaults
 {
 	my @out = `$APACHE2 -V 2>/dev/null`;
 	return if $?;
-	for (my $line; $line <= $#out; $line++)
+	foreach my $line (@out)
 	{
-		if ($out[$line] =~ m/(Server version|Server MPM|Magic Number):\s+(.*?)$/)
+		if ($line =~ m/(Server version|Server MPM|Magic Number):\s+(.*?)$/)
 		{
 			my ($pattern, $value) = ($1, $2);
 			if ($pattern =~ /version/)
@@ -186,11 +186,11 @@ sub load_defaults
 				$SERVER_VERSION = $value;
 				$SERVER_VERSION =~ s/[^\d\.]//g;
 			}
-			elsif($pattern =~ /MPM/)
+			elsif ($pattern =~ /MPM/)
 			{
 				$MPM = $value;
 			}
-			elsif($pattern =~ /Magic/)
+			elsif ($pattern =~ /Magic/)
 			{
 				$API = $value;
 				$API =~ s/\:\d+//;
@@ -204,15 +204,15 @@ sub load_modules
 {
 	my $conf_dir = $CONFIG_DIR . "/mods-enabled";
 	opendir(DIR, $conf_dir) || fail("$conf_dir: $!", 1);
-	while( readdir(DIR) )
+	while ( readdir(DIR) )
 	{
 		my $file = $_;
 		next if $file !~ m/\.load$/;
 		$file =~ s/\.load//;
-		if ($file =~ /mpm_(\w+)/ && $file ne 'mpm_itk')
+		if ($file =~ /mpm_(event|worker|prefork)/)
 		{
 			$MPM = $1 if $MPM eq 'invalid';
-			if(grep { $_ =~ m/^mpm_/ } @MODULES)
+			if (grep { $_ =~ m/^mpm_(?:event|worker|prefork)/ } @MODULES)
 			{
 				fail("There is more than one MPM loaded. Do not proceed due to undefined results", 1);
 			}
@@ -231,7 +231,7 @@ sub load_conf
 	}
 	my $conf_dir = $CONFIG_DIR . "/conf-enabled";
 	opendir(DIR, $conf_dir) || fail("$conf_dir: $!", 1);
-	while( readdir(DIR) )
+	while ( readdir(DIR) )
 	{
 		my $file = $_;
 		next if $file !~ m/\.conf$/;
@@ -250,7 +250,7 @@ sub load_sites
 	}
 	my $conf_dir = $CONFIG_DIR . "/sites-enabled";
 	opendir(DIR, $conf_dir) || fail("$conf_dir: $!", 1);
-	while( readdir(DIR) )
+	while ( readdir(DIR) )
 	{
 		my $file = $_;
 		next if $file !~ m/\.conf$/;

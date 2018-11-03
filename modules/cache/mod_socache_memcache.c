@@ -17,6 +17,7 @@
 
 #include "httpd.h"
 #include "http_config.h"
+#include "http_protocol.h"
 
 #include "apr.h"
 #include "apu_version.h"
@@ -33,6 +34,8 @@
 #include "ap_mpm.h"
 #include "http_log.h"
 #include "apr_memcache.h"
+#include "apr_strings.h"
+#include "mod_status.h"
 
 /* The underlying apr_memcache system is thread safe.. */
 #define MC_KEY_LEN 254
@@ -51,8 +54,14 @@
 #endif
 
 #ifndef MC_DEFAULT_SERVER_TTL
-#define MC_DEFAULT_SERVER_TTL 600
+#define MC_DEFAULT_SERVER_TTL    apr_time_from_sec(15)
 #endif
+
+module AP_MODULE_DECLARE_DATA socache_memcache_module;
+
+typedef struct {
+    apr_uint32_t ttl;
+} socache_mc_svr_cfg;
 
 struct ap_socache_instance_t {
     const char *servers;
@@ -89,6 +98,9 @@ static apr_status_t socache_mc_init(ap_socache_instance_t *ctx,
     char *cache_config;
     char *split;
     char *tok;
+
+    socache_mc_svr_cfg *sconf = ap_get_module_config(s->module_config,
+                                                     &socache_memcache_module);
 
     ap_mpm_query(AP_MPMQ_HARD_LIMIT_THREADS, &thread_limit);
 
@@ -140,7 +152,7 @@ static apr_status_t socache_mc_init(ap_socache_instance_t *ctx,
                                         MC_DEFAULT_SERVER_MIN,
                                         MC_DEFAULT_SERVER_SMAX,
                                         thread_limit,
-                                        MC_DEFAULT_SERVER_TTL,
+                                        sconf->ttl,
                                         &st);
         if (rv != APR_SUCCESS) {
             ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(00788)
@@ -205,8 +217,14 @@ static apr_status_t socache_mc_store(ap_socache_instance_t *ctx, server_rec *s,
         return APR_EINVAL;
     }
 
-    /* In APR-util - unclear what 'timeout' is, as it was not implemented */
-    rv = apr_memcache_set(ctx->mc, buf, (char*)ucaData, nData, 0, 0);
+    /* memcache needs time in seconds till expiry; fail if this is not
+     * positive *before* casting to unsigned (apr_uint32_t). */
+    expiry -= apr_time_now();
+    if (apr_time_sec(expiry) <= 0) {
+        return APR_EINVAL;
+    }
+    rv = apr_memcache_set(ctx->mc, buf, (char*)ucaData, nData,
+                          apr_time_sec(expiry), 0);
 
     if (rv != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(00790)
@@ -278,7 +296,58 @@ static apr_status_t socache_mc_remove(ap_socache_instance_t *ctx, server_rec *s,
 
 static void socache_mc_status(ap_socache_instance_t *ctx, request_rec *r, int flags)
 {
-    /* TODO: Make a mod_status handler. meh. */
+    apr_memcache_t *rc = ctx->mc;
+    int i;
+
+    for (i = 0; i < rc->ntotal; i++) {
+        apr_memcache_server_t *ms;
+        apr_memcache_stats_t *stats;
+        apr_status_t rv;
+        char *br = (!(flags & AP_STATUS_SHORT) ? "<br />" : "");
+
+        ms = rc->live_servers[i];
+
+        ap_rprintf(r, "Memcached server: %s:%d [%s]%s\n", ms->host, (int)ms->port,
+                (ms->status == APR_MC_SERVER_LIVE) ? "Up" : "Down",
+                br);
+        rv = apr_memcache_stats(ms, r->pool, &stats);
+        if (rv != APR_SUCCESS)
+            continue;
+        if (!(flags & AP_STATUS_SHORT)) {
+            ap_rprintf(r, "<b>Version:</b> <i>%s</i> [%u bits], PID: <i>%u</i>, Uptime: <i>%u hrs</i> <br />\n",
+                    stats->version , stats->pointer_size, stats->pid, stats->uptime/3600);
+            ap_rprintf(r, "<b>Clients::</b> Structures: <i>%u</i>, Total: <i>%u</i>, Current: <i>%u</i> <br />\n",
+                    stats->connection_structures, stats->total_connections, stats->curr_connections);
+            ap_rprintf(r, "<b>Storage::</b> Total Items: <i>%u</i>, Current Items: <i>%u</i>, Bytes: <i>%" APR_UINT64_T_FMT "</i> <br />\n",
+                    stats->total_items, stats->curr_items, stats->bytes);
+            ap_rprintf(r, "<b>CPU::</b> System: <i>%u</i>, User: <i>%u</i> <br />\n",
+                    (unsigned)stats->rusage_system, (unsigned)stats->rusage_user );
+            ap_rprintf(r, "<b>Cache::</b> Gets: <i>%u</i>, Sets: <i>%u</i>, Hits: <i>%u</i>, Misses: <i>%u</i> <br />\n",
+                    stats->cmd_get, stats->cmd_set, stats->get_hits, stats->get_misses);
+            ap_rprintf(r, "<b>Net::</b> Input bytes: <i>%" APR_UINT64_T_FMT "</i>, Output bytes: <i>%" APR_UINT64_T_FMT "</i> <br />\n",
+                    stats->bytes_read, stats->bytes_written);
+            ap_rprintf(r, "<b>Misc::</b> Evictions: <i>%" APR_UINT64_T_FMT "</i>, MaxMem: <i>%u</i>, Threads: <i>%u</i> <br />\n",
+                    stats->evictions, stats->limit_maxbytes, stats->threads);
+            ap_rputs("<hr><br />\n", r);
+        }
+        else {
+            ap_rprintf(r, "Version: %s [%u bits], PID: %u, Uptime: %u hrs %s\n",
+                    stats->version , stats->pointer_size, stats->pid, stats->uptime/3600, br);
+            ap_rprintf(r, "Clients:: Structures: %d, Total: %d, Current: %u %s\n",
+                    stats->connection_structures, stats->total_connections, stats->curr_connections, br);
+            ap_rprintf(r, "Storage:: Total Items: %u, Current Items: %u, Bytes: %" APR_UINT64_T_FMT " %s\n",
+                    stats->total_items, stats->curr_items, stats->bytes, br);
+            ap_rprintf(r, "CPU:: System: %u, User: %u %s\n",
+                    (unsigned)stats->rusage_system, (unsigned)stats->rusage_user , br);
+            ap_rprintf(r, "Cache:: Gets: %u, Sets: %u, Hits: %u, Misses: %u %s\n",
+                    stats->cmd_get, stats->cmd_set, stats->get_hits, stats->get_misses, br);
+            ap_rprintf(r, "Net:: Input bytes: %" APR_UINT64_T_FMT ", Output bytes: %" APR_UINT64_T_FMT " %s\n",
+                    stats->bytes_read, stats->bytes_written, br);
+            ap_rprintf(r, "Misc:: Evictions: %" APR_UINT64_T_FMT ", MaxMem: %u, Threads: %u %s\n",
+                    stats->evictions, stats->limit_maxbytes, stats->threads, br);
+        }
+    }
+
 }
 
 static apr_status_t socache_mc_iterate(ap_socache_instance_t *instance,
@@ -304,6 +373,38 @@ static const ap_socache_provider_t socache_mc = {
 
 #endif /* HAVE_APU_MEMCACHE */
 
+static void *create_server_config(apr_pool_t *p, server_rec *s)
+{
+    socache_mc_svr_cfg *sconf = apr_pcalloc(p, sizeof(socache_mc_svr_cfg));
+    
+    sconf->ttl = MC_DEFAULT_SERVER_TTL;
+
+    return sconf;
+}
+
+static const char *socache_mc_set_ttl(cmd_parms *cmd, void *dummy,
+                                      const char *arg)
+{
+    apr_interval_time_t ttl;
+    socache_mc_svr_cfg *sconf = ap_get_module_config(cmd->server->module_config,
+                                                     &socache_memcache_module);
+
+    if (ap_timeout_parameter_parse(arg, &ttl, "s") != APR_SUCCESS) {
+        return apr_pstrcat(cmd->pool, cmd->cmd->name,
+                           " has wrong format", NULL);
+    }
+
+    if ((ttl < apr_time_from_sec(0)) || (ttl > apr_time_from_sec(3600))) {
+        return apr_pstrcat(cmd->pool, cmd->cmd->name,
+                           " can only be 0 or up to one hour.", NULL);
+    }
+
+    /* apr_memcache_server_create needs a ttl in usec. */
+    sconf->ttl = ttl;
+
+    return NULL;
+}
+
 static void register_hooks(apr_pool_t *p)
 {
 #ifdef HAVE_APU_MEMCACHE
@@ -313,8 +414,18 @@ static void register_hooks(apr_pool_t *p)
 #endif
 }
 
+static const command_rec socache_memcache_cmds[] = {
+    AP_INIT_TAKE1("MemcacheConnTTL", socache_mc_set_ttl, NULL, RSRC_CONF,
+                  "TTL used for the connection with the memcache server(s)"),
+    { NULL }
+};
+
 AP_DECLARE_MODULE(socache_memcache) = {
     STANDARD20_MODULE_STUFF,
-    NULL, NULL, NULL, NULL, NULL,
-    register_hooks
+    NULL,                     /* create per-dir    config structures */
+    NULL,                     /* merge  per-dir    config structures */
+    create_server_config,     /* create per-server config structures */
+    NULL,                     /* merge  per-server config structures */
+    socache_memcache_cmds,    /* table of config file commands       */
+    register_hooks            /* register hooks                      */
 };

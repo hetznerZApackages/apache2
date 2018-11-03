@@ -7,13 +7,11 @@
 # Default-Stop:      0 1 6
 # X-Interactive:     true
 # Short-Description: Apache2 web server
-# Description:       Start the web server and associated helpers
-#  This script will start apache2, and possibly all associated instances.
-#  Moreover, it will set-up temporary directories and helper tools such as
-#  htcacheclean when required by the configuration.
+# Description:       Start the web server
+#  This script will start the apache2 web server.
 ### END INIT INFO
 
-DESC="web server"
+DESC="Apache httpd web server"
 NAME=apache2
 DAEMON=/usr/sbin/$NAME
 
@@ -45,22 +43,6 @@ if [ "$APACHE_ENVVARS" != "$APACHE_CONFDIR/envvars" ] ; then
 	ENV="$ENV APACHE_ENVVARS=$APACHE_ENVVARS"
 fi
 
-
-#edit /etc/default/apache2 to change this.
-HTCACHECLEAN_RUN=auto
-HTCACHECLEAN_MODE=daemon
-HTCACHECLEAN_SIZE=300M
-HTCACHECLEAN_DAEMON_INTERVAL=120
-HTCACHECLEAN_PATH=/var/cache/apache2$DIR_SUFFIX/mod_cache_disk
-HTCACHECLEAN_OPTIONS=""
-
-# Read configuration variable file if it is present
-if [ -f /etc/default/apache2$DIR_SUFFIX ] ; then
-	. /etc/default/apache2$DIR_SUFFIX
-elif [ -f /etc/default/apache2 ] ; then
-	. /etc/default/apache2
-fi
-
 PIDFILE=$(. $APACHE_ENVVARS && echo $APACHE_PID_FILE)
 
 VERBOSE=no
@@ -72,7 +54,6 @@ fi
 
 # Now, set defaults:
 APACHE2CTL="$ENV apache2ctl"
-HTCACHECLEAN="$ENV htcacheclean"
 PIDFILE=$(. $APACHE_ENVVARS && echo $APACHE_PID_FILE)
 APACHE2_INIT_MESSAGE=""
 
@@ -139,6 +120,7 @@ apache_wait_start() {
 
 apache_wait_stop() {
 	local STATUS=$1
+	local METH=$2
 
 	if [ $STATUS != 0 ] ; then
 	        return $STATUS
@@ -146,11 +128,17 @@ apache_wait_stop() {
 
 	PIDTMP=$(pidofproc -p $PIDFILE $DAEMON)
 	if [ -n "${PIDTMP:-}" ] && kill -0 "${PIDTMP:-}" 2> /dev/null; then
+	        if [ "$METH" = "kill" ]; then
+	            killproc -p $PIDFILE $DAEMON
+	        else
+	            $APACHE2CTL $METH > /dev/null 2>&1
+	        fi
+
 	        local i=0
 	        while kill -0 "${PIDTMP:-}" 2> /dev/null;  do
 	                if [ $i = '60' ]; then
-	                        break
 	                        STATUS=2
+	                        break
 	                fi
 	                [ "$VERBOSE" != no ] && log_progress_msg "."
 	                sleep 1
@@ -223,15 +211,13 @@ do_stop()
 	fi
 
 	if [ $AP_RET = 2 ] && apache_conftest ; then
-	        $APACHE2CTL $STOP > /dev/null 2>&1
-	        apache_wait_stop $?
+	        apache_wait_stop $? $STOP
 	        return $?
 	else
 	        if [ $AP_RET = 2 ]; then
 					clear_error_msg
 	                APACHE2_INIT_MESSAGE="The apache2$DIR_SUFFIX configtest failed, so we are trying to kill it manually. This is almost certainly suboptimal, so please make sure your system is working as you'd expect now!"
-	                killproc -p $PIDFILE $DAEMON
-	                apache_wait_stop $?
+	                apache_wait_stop $? "kill"
 	                return $?
 	        elif [ $AP_RET = 1 ] ; then
 	                APACHE2_INIT_MESSAGE="There are processes named 'apache2' running which do not match your pid file which are left untouched in the name of safety, Please review the situation by hand".
@@ -260,27 +246,6 @@ do_reload() {
 }
 
 
-check_htcacheclean() {
-	[ "$HTCACHECLEAN_MODE" = "daemon" ] || return 1
-	[ "$HTCACHECLEAN_RUN"  = "yes"    ] && return 0
-
-	MODSDIR=$(. $APACHE_ENVVARS && echo $APACHE_MODS_ENABLED)
-	        [ "$HTCACHECLEAN_RUN"  = "auto" \
-	                -a -e ${MODSDIR:-$APACHE_CONFDIR/mods-enabled}/cache_disk.load ] && \
-	                return 0
-	return 1
-}
-
-start_htcacheclean() {
-       $HTCACHECLEAN $HTCACHECLEAN_OPTIONS -d$HTCACHECLEAN_DAEMON_INTERVAL \
-	        -i -p$HTCACHECLEAN_PATH -l$HTCACHECLEAN_SIZE
-}
-
-stop_htcacheclean() {
-	pkill -P 1 -f "htcacheclean.* -p$HTCACHECLEAN_PATH " 2> /dev/null || return 1
-}
-
-
 # Sanity checks. They need to occur after function declarations
 [ -x $DAEMON ] || exit 0
 
@@ -294,14 +259,6 @@ if [ -z "$PIDFILE" ] ; then
 	exit 2
 fi
 
-if check_htcacheclean ; then
-	if [ ! -d "$HTCACHECLEAN_PATH" ] ; then
-	        echo "htcacheclean is configured, but directory $HTCACHECLEAN_PATH does not exist!" >&2
-	        exit 2
-	fi
-fi
-
-
 
 case "$1" in
   start)
@@ -312,11 +269,6 @@ case "$1" in
 		0|1)
 			log_success_msg
 			[ "$VERBOSE" != no ] && [ $RET_STATUS = 1 ] && log_warning_msg "Server was already running"
-			if check_htcacheclean ; then
-				[ "$VERBOSE" != no ] && log_daemon_msg "Starting HTTP cache cleaning daemon" "htcacheclean"
-				start_htcacheclean
-				[ "$VERBOSE" != no ] && log_end_msg $?
-			fi
 	        ;;
 		2)
 			log_failure_msg
@@ -341,12 +293,6 @@ case "$1" in
 	        ;;
 	esac
 	print_error_msg
-
-	if check_htcacheclean ; then
-		[ "$VERBOSE" != no ] && log_daemon_msg "Stopping HTTP cache cleaning daemon" "htcacheclean"
-		stop_htcacheclean
-		[ "$VERBOSE" != no ] && log_end_msg $?
-	fi
 
 	;;
   status)
@@ -395,20 +341,11 @@ case "$1" in
 			;;
 	esac
 	;;
-  start-htcacheclean)
-	log_daemon_msg "Starting htcacheclean"
-	start_htcacheclean
-	log_end_msg $?
-	exit $?
-	;;
-  stop-htcacheclean)
-	log_daemon_msg "Stopping htcacheclean"
-	stop_htcacheclean
-	log_end_msg $?
-	exit $?
+  start-htcacheclean|stop-htcacheclean)
+	echo "Use 'service apache-htcacheclean' instead"
 	;;
   *)
-	echo "Usage: $SCRIPTNAME {start|stop|graceful-stop|restart|reload|force-reload|start-htcacheclean|stop-htcacheclean}" >&2
+	echo "Usage: $SCRIPTNAME {start|stop|graceful-stop|restart|reload|force-reload}" >&2
 	exit 3
 	;;
 esac

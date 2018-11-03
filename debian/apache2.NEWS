@@ -1,3 +1,12 @@
+apache2 (2.4.25-3+deb9u5) stretch; urgency=medium
+
+  * This package upgrades mod_http2 to the version from apache2 2.4.33. This
+    fixes a lot of bugs and some security issues, but it also removes the
+    support for using HTTP/2 when running with mpm_prefork. HTTP/2 support
+    is only provided when running with mpm_event or mpm_worker.
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 02 Jun 2018 09:51:46 +0200
+
 apache2 (2.4.10-2) unstable; urgency=low
 
   The default period for which rotated log files are kept has been

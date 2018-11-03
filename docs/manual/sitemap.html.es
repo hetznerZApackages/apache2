@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>Mapa de este sitio web - Servidor HTTP Apache Versión 2.4</title>
+<title>Mapa de este sitio web - Servidor Apache HTTP Versión 2.4</title>
 <link href="./style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="./style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="./style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="./style/css/prettify.css" />
@@ -15,9 +17,9 @@
 <link href="./images/favicon.ico" rel="shortcut icon" /></head>
 <body id="manual-page">
 <div id="page-header">
-<p class="menu"><a href="./mod/">Módulos</a> | <a href="./mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="./glossary.html">Glosario</a> | <a href="./sitemap.html">Mapa de este sitio web</a></p>
+<p class="menu"><a href="./mod/">Módulos</a> | <a href="./mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="./glossary.html">Glosario</a> | <a href="./sitemap.html">Mapa del sitio web</a></p>
 <p class="apache">Versión 2.4 del Servidor HTTP Apache</p>
-<img alt="" src="./images/feather.gif" /></div>
+<img alt="" src="./images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Servidor HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentación</a> &gt; <a href="./">Versión 2.4</a></div>
@@ -212,7 +214,7 @@ usados para describir las directivas de Apache</a></li>
 <li><a href="mod/mod_dumpio.html">Módulo Apache mod_dumpio</a></li>
 <li><a href="mod/mod_echo.html">Módulo Apache mod_echo</a></li>
 <li><a href="mod/mod_env.html">Módulo Apache mod_env</a></li>
-<li><a href="mod/mod_example.html">Módulo Apache mod_example</a></li>
+<li><a href="mod/mod_example_hooks.html">Módulo Apache mod_example_hooks</a></li>
 <li><a href="mod/mod_expires.html">Módulo Apache mod_expires</a></li>
 <li><a href="mod/mod_ext_filter.html">Módulo Apache mod_ext_filter</a></li>
 <li><a href="mod/mod_file_cache.html">Módulo Apache mod_file_cache</a></li>
@@ -220,6 +222,7 @@ usados para describir las directivas de Apache</a></li>
 <li><a href="mod/mod_headers.html">Módulo Apache mod_headers</a></li>
 <li><a href="mod/mod_heartbeat.html">Módulo Apache mod_heartbeat</a></li>
 <li><a href="mod/mod_heartmonitor.html">Módulo Apache mod_heartmonitor</a></li>
+<li><a href="mod/mod_http2.html">Módulo Apache mod_http2</a></li>
 <li><a href="mod/mod_ident.html">Módulo Apache mod_ident</a></li>
 <li><a href="mod/mod_imagemap.html">Módulo Apache mod_imagemap</a></li>
 <li><a href="mod/mod_include.html">Módulo Apache mod_include</a></li>
@@ -249,8 +252,10 @@ usados para describir las directivas de Apache</a></li>
 <li><a href="mod/mod_proxy_fcgi.html">Módulo Apache mod_proxy_fcgi</a></li>
 <li><a href="mod/mod_proxy_fdpass.html">Módulo Apache mod_proxy_fdpass</a></li>
 <li><a href="mod/mod_proxy_ftp.html">Módulo Apache mod_proxy_ftp</a></li>
+<li><a href="mod/mod_proxy_hcheck.html">Módulo Apache mod_proxy_hcheck</a></li>
 <li><a href="mod/mod_proxy_html.html">Módulo Apache mod_proxy_html</a></li>
 <li><a href="mod/mod_proxy_http.html">Módulo Apache mod_proxy_http</a></li>
+<li><a href="mod/mod_proxy_http2.html">Módulo Apache mod_proxy_http2</a></li>
 <li><a href="mod/mod_proxy_scgi.html">Módulo Apache mod_proxy_scgi</a></li>
 <li><a href="mod/mod_proxy_wstunnel.html">Módulo Apache mod_proxy_wstunnel</a></li>
 <li><a href="mod/mod_ratelimit.html">Módulo Apache mod_ratelimit</a></li>
@@ -333,8 +338,8 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/sitemap.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licencia bajo los términos de la <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
-<p class="menu"><a href="./mod/">Módulos</a> | <a href="./mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="./glossary.html">Glosario</a> | <a href="./sitemap.html">Mapa de este sitio web</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licencia bajo los términos de <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="menu"><a href="./mod/">Módulos</a> | <a href="./mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="./glossary.html">Glosario</a> | <a href="./sitemap.html">Mapa del sitio web</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
 }

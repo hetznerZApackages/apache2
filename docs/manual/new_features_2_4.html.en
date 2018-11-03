@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -16,7 +18,7 @@
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="./images/feather.gif" /></div>
+<img alt="" src="./images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.4</a></div><div id="page-content"><div id="preamble"><h1>Overview of new features in Apache HTTP Server 2.4</h1>
@@ -37,16 +39,16 @@
 <li><img alt="" src="./images/down.gif" /> <a href="#programs">Program Enhancements</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#documentation">Documentation</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#developer">Module Developer Changes</a></li>
-</ul><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
+</ul><h3>See also</h3><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="core" id="core">Core Enhancements</a></h2>
     
     <dl>
       <dt>Run-time Loadable MPMs</dt>
-      <dd>Multiple MPMs can now be <a href="mpm.html#dynamic">built 
+      <dd>Multiple MPMs can now be <a href="mpm.html#dynamic">built
       as loadable modules</a> at compile time.
-      The MPM of choice can be configured at run time.</dd>
+      The MPM of choice can be configured at run time via <code class="directive"><a href="./mod/mod_so.html#loadmodule">LoadModule</a></code> directive.</dd>
 
       <dt>Event MPM</dt>
       <dd>The <a href="mod/event.html">Event MPM</a> is no longer experimental
@@ -178,6 +180,19 @@
       <dd>Formerly a third-party module, this supports internationalisation
       in libxml2-based (markup-aware) filter modules.</dd>
 
+      <dt><code class="module"><a href="./mod/mod_macro.html">mod_macro</a></code> (available since 2.4.5)</dt>
+      <dd>Provide macros within configuration files.</dd>
+
+      <dt><code class="module"><a href="./mod/mod_proxy_wstunnel.html">mod_proxy_wstunnel</a></code> (available since 2.4.5)</dt>
+      <dd>Support web-socket tunnels.</dd>
+
+      <dt><code class="module"><a href="./mod/mod_authnz_fcgi.html">mod_authnz_fcgi</a></code> (available since 2.4.10)</dt>
+      <dd>Enable FastCGI authorizer applications to authenticate and/or
+      authorize clients.</dd>
+
+      <dt><code class="module"><a href="./mod/mod_http2.html">mod_http2</a></code> (available since 2.4.17)</dt>
+      <dd>Support for the HTTP/2 transport layer.</dd>
+
     </dl>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
@@ -201,6 +216,8 @@
 
       <dd>EC keys are now supported in addition to RSA and DSA.</dd>
 
+      <dd>Support for TLS-SRP (available in 2.4.4 and later).</dd>
+
       <dt><code class="module"><a href="./mod/mod_proxy.html">mod_proxy</a></code></dt>
 
       <dd>The <code class="directive"><a href="./mod/mod_proxy.html#proxypass">ProxyPass</a></code> directive
@@ -209,7 +226,9 @@
       <code class="directive"><a href="./mod/core.html#locationmatch">LocationMatch</a></code>
       block, and offers a significant performance advantage over the traditional
       two-parameter syntax when present in large numbers.</dd>
-  <dd>The source address used for proxy requests is now configurable.</dd>
+      <dd>The source address used for proxy requests is now configurable.</dd>
+      <dd>Support for Unix domain sockets to the backend (available in 2.4.7
+      and later).</dd>
 
       <dt><code class="module"><a href="./mod/mod_proxy_balancer.html">mod_proxy_balancer</a></code></dt>
 
@@ -290,6 +309,9 @@
       <dd><code class="module"><a href="./mod/mod_info.html">mod_info</a></code> can now dump the pre-parsed configuration
           to stdout during server startup.</dd>
 
+      <dt><code class="module"><a href="./mod/mod_auth_basic.html">mod_auth_basic</a></code></dt>
+      <dd>New generic mechanism to fake basic authentication (available in
+      2.4.5 and later).</dd>
 
     </dl>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
@@ -298,7 +320,7 @@
     
     <dl>
         <dt><code class="program"><a href="./programs/fcgistarter.html">fcgistarter</a></code></dt>
-        <dd>New FastCGI deamon starter utility</dd>
+        <dd>New FastCGI daemon starter utility</dd>
 
         <dt><code class="program"><a href="./programs/htcacheclean.html">htcacheclean</a></code></dt>
         <dd>Current cached URLs can now be listed, with optional metadata
@@ -314,6 +336,10 @@
         <dt><code class="program"><a href="./programs/rotatelogs.html">rotatelogs</a></code></dt>
         <dd>May now create a link to the current log file.</dd>
         <dd>May now invoke a custom post-rotate script.</dd>
+
+        <dt><code class="program"><a href="./programs/htpasswd.html">htpasswd</a></code>, <code class="program"><a href="./programs/htdbm.html">htdbm</a></code></dt>
+        <dd>Support for the bcrypt algorithm (available in 2.4.4 and later).
+        </dd>
     </dl>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
@@ -416,7 +442,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/new_features_2_4.htm
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
