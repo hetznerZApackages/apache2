@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u6+hetz1~exp1) stretch-hetz-experimental; urgency=medium
+
+  * First custom Apache2.4.25 build for Stretch managed hosting servers
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 17 Feb 2019 10:53:42 +0200
+
 apache2 (2.4.25-3+deb9u6) stretch; urgency=medium
 
   * CVE-2018-1333: mod_http2: Fix DoS by worker exhaustion. Closes: #904106
