@@ -21,10 +21,10 @@
  *
  * Adapted by rst from original NCSA code by Rob McCool
  *
- * Apache adds some new env vars; REDIRECT_URL and REDIRECT_QUERY_STRING for
- * custom error responses, and DOCUMENT_ROOT because we found it useful.
- * It also adds SERVER_ADMIN - useful for scripts to know who to mail when
- * they fail.
+ * This modules uses a httpd core function (ap_add_common_vars) to add some new env vars, 
+ * like REDIRECT_URL and REDIRECT_QUERY_STRING for custom error responses and DOCUMENT_ROOT.
+ * It also adds SERVER_ADMIN - useful for scripts to know who to mail when they fail.
+ * 
  */
 
 #include "apr_lib.h"
@@ -168,6 +168,10 @@ static int is_scriptaliased(request_rec *r)
  */
 #ifndef DEFAULT_CONNECT_ATTEMPTS
 #define DEFAULT_CONNECT_ATTEMPTS  15
+#endif
+
+#ifndef DEFAULT_CONNECT_STARTUP_DELAY
+#define DEFAULT_CONNECT_STARTUP_DELAY 60
 #endif
 
 typedef struct {
@@ -1068,6 +1072,8 @@ static int log_scripterror(request_rec *r, cgid_server_conf * conf, int ret,
     char time_str[APR_CTIME_LEN];
     int log_flags = rv ? APLOG_ERR : APLOG_ERR;
 
+    /* Intentional no APLOGNO */
+    /* Callee provides APLOGNO in error text */
     ap_log_rerror(APLOG_MARK, log_flags, rv, r,
                 "%s: %s", error, r->filename);
 
@@ -1203,18 +1209,26 @@ static int connect_to_daemon(int *sdptr, request_rec *r,
 {
     int sd;
     int connect_tries;
+    int connect_errno;
     apr_interval_time_t sliding_timer;
 
     connect_tries = 0;
     sliding_timer = 100000; /* 100 milliseconds */
     while (1) {
+        connect_errno = 0;
         ++connect_tries;
         if ((sd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
             return log_scripterror(r, conf, HTTP_INTERNAL_SERVER_ERROR, errno,
                                    APLOGNO(01255) "unable to create socket to cgi daemon");
         }
         if (connect(sd, (struct sockaddr *)server_addr, server_addr_len) < 0) {
-            if (errno == ECONNREFUSED && connect_tries < DEFAULT_CONNECT_ATTEMPTS) {
+            /* Save errno for later */
+            connect_errno = errno;
+            /* ECONNREFUSED means the listen queue is full; ENOENT means that
+             * the cgid server either hasn't started up yet, or we're pointing
+             * at the wrong socket file */
+            if ((errno == ECONNREFUSED || errno == ENOENT) && 
+                 connect_tries < DEFAULT_CONNECT_ATTEMPTS) {
                 ap_log_rerror(APLOG_MARK, APLOG_DEBUG, errno, r, APLOGNO(01256)
                               "connect #%d to cgi daemon failed, sleeping before retry",
                               connect_tries);
@@ -1235,9 +1249,20 @@ static int connect_to_daemon(int *sdptr, request_rec *r,
                                       close_unix_socket, apr_pool_cleanup_null);
             break; /* we got connected! */
         }
+
+        /* If we didn't find the socket but the server was not recently restarted,
+         * chances are there's something wrong with the cgid daemon
+         */
+        if (connect_errno == ENOENT &&
+            apr_time_sec(apr_time_now() - ap_scoreboard_image->global->restart_time) > 
+                DEFAULT_CONNECT_STARTUP_DELAY) {
+            return log_scripterror(r, conf, HTTP_SERVICE_UNAVAILABLE, connect_errno, 
+                                   apr_pstrcat(r->pool, APLOGNO(02833) "ScriptSock ", sockname, " does not exist", NULL));
+        }
+
         /* gotta try again, but make sure the cgid daemon is still around */
-        if (kill(daemon_pid, 0) != 0) {
-            return log_scripterror(r, conf, HTTP_SERVICE_UNAVAILABLE, errno, APLOGNO(01258)
+        if (connect_errno != ENOENT && kill(daemon_pid, 0) != 0) {
+            return log_scripterror(r, conf, HTTP_SERVICE_UNAVAILABLE, connect_errno, APLOGNO(01258)
                                    "cgid daemon is gone; is Apache terminating?");
         }
     }
@@ -1273,8 +1298,8 @@ static void discard_script_output(apr_bucket_brigade *bb)
 
 struct cleanup_script_info {
     request_rec *r;
-    unsigned long conn_id;
     cgid_server_conf *conf;
+    pid_t pid;
 };
 
 static apr_status_t dead_yet(pid_t pid, apr_interval_time_t max_wait)
@@ -1326,25 +1351,19 @@ static apr_status_t cleanup_nonchild_process(request_rec *r, pid_t pid)
     return APR_EGENERAL;
 }
 
-static apr_status_t cleanup_script(void *vptr)
-{
-    struct cleanup_script_info *info = vptr;
-    int sd;
-    int rc;
+static apr_status_t get_cgi_pid(request_rec *r,  cgid_server_conf *conf, pid_t *pid) { 
     cgid_req_t req = {0};
-    pid_t pid;
     apr_status_t stat;
+    int rc, sd;
 
-    rc = connect_to_daemon(&sd, info->r, info->conf);
+    rc = connect_to_daemon(&sd, r, conf);
     if (rc != OK) {
         return APR_EGENERAL;
     }
 
-    /* we got a socket, and there is already a cleanup registered for it */
-
     req.req_type = GETPID_REQ;
     req.ppid = parent_pid;
-    req.conn_id = info->r->connection->id;
+    req.conn_id = r->connection->id;
 
     stat = sock_write(sd, &req, sizeof(req));
     if (stat != APR_SUCCESS) {
@@ -1352,18 +1371,26 @@ static apr_status_t cleanup_script(void *vptr)
     }
 
     /* wait for pid of script */
-    stat = sock_read(sd, &pid, sizeof(pid));
+    stat = sock_read(sd, pid, sizeof(*pid));
     if (stat != APR_SUCCESS) {
         return stat;
     }
 
     if (pid == 0) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, info->r, APLOGNO(01261)
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01261)
                       "daemon couldn't find CGI process for connection %lu",
-                      info->conn_id);
+                      r->connection->id);
         return APR_EGENERAL;
     }
-    return cleanup_nonchild_process(info->r, pid);
+
+    return APR_SUCCESS;
+}
+
+
+static apr_status_t cleanup_script(void *vptr)
+{
+    struct cleanup_script_info *info = vptr;
+    return cleanup_nonchild_process(info->r, info->pid);
 }
 
 static int cgid_handler(request_rec *r)
@@ -1434,13 +1461,18 @@ static int cgid_handler(request_rec *r)
         return log_scripterror(r, conf, HTTP_NOT_FOUND, 0, APLOGNO(01266)
                                "AcceptPathInfo off disallows user's path");
     }
-/*
+    /*
     if (!ap_suexec_enabled) {
         if (!ap_can_exec(&r->finfo))
             return log_scripterror(r, conf, HTTP_FORBIDDEN, 0, APLOGNO(01267)
                                    "file permissions deny server execution");
     }
-*/
+    */
+
+    /*
+     * httpd core function used to add common environment variables like
+     * DOCUMENT_ROOT. 
+     */
     ap_add_common_vars(r);
     ap_add_cgi_vars(r);
     env = ap_create_environment(r->pool, r->subprocess_env);
@@ -1456,12 +1488,19 @@ static int cgid_handler(request_rec *r)
     }
 
     info = apr_palloc(r->pool, sizeof(struct cleanup_script_info));
-    info->r = r;
-    info->conn_id = r->connection->id;
     info->conf = conf;
-    apr_pool_cleanup_register(r->pool, info,
+    info->r = r;
+    rv = get_cgi_pid(r, conf, &(info->pid));
+
+    if (APR_SUCCESS == rv){  
+        apr_pool_cleanup_register(r->pool, info,
                               cleanup_script,
                               apr_pool_cleanup_null);
+    }
+    else { 
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rv, r, "error determining cgi PID");
+    }
+
     /* We are putting the socket discriptor into an apr_file_t so that we can
      * use a pipe bucket to send the data to the client.  APR will create
      * a cleanup for the apr_file_t which will close the socket, so we'll
@@ -1502,7 +1541,7 @@ static int cgid_handler(request_rec *r)
             }
             ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01270)
                           "Error reading request entity data");
-            return HTTP_INTERNAL_SERVER_ERROR;
+            return ap_map_http_request_error(rv, HTTP_BAD_REQUEST);
         }
 
         for (bucket = APR_BRIGADE_FIRST(bb);
@@ -1650,10 +1689,8 @@ static int cgid_handler(request_rec *r)
 
         rv = ap_pass_brigade(r->output_filters, bb);
         if (rv != APR_SUCCESS) { 
-            /* APLOG_ERR because the core output filter message is at error,
-             * but doesn't know it's passing CGI output 
-             */
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(02550) "Failed to flush CGI output to client");
+            ap_log_rerror(APLOG_MARK, APLOG_TRACE1, rv, r,
+                          "Failed to flush CGI output to client");
         }
     }
 
@@ -1788,6 +1825,7 @@ static int include_cmd(include_ctx_t *ctx, ap_filter_t *f,
     cgid_dirconf *dc = ap_get_module_config(r->per_dir_config, &cgid_module);
 
     struct cleanup_script_info *info;
+    apr_status_t rv;
 
     add_ssi_vars(r);
     env = ap_create_environment(r->pool, r->subprocess_env);
@@ -1799,13 +1837,22 @@ static int include_cmd(include_ctx_t *ctx, ap_filter_t *f,
     send_req(sd, r, command, env, SSI_REQ);
 
     info = apr_palloc(r->pool, sizeof(struct cleanup_script_info));
-    info->r = r;
-    info->conn_id = r->connection->id;
     info->conf = conf;
-    /* for this type of request, the script is invoked through an
-     * intermediate shell process...  cleanup_script is only able
-     * to knock out the shell process, not the actual script
-     */
+    info->r = r;
+    rv = get_cgi_pid(r, conf, &(info->pid));
+    if (APR_SUCCESS == rv) {             
+        /* for this type of request, the script is invoked through an
+         * intermediate shell process...  cleanup_script is only able
+         * to knock out the shell process, not the actual script
+         */
+        apr_pool_cleanup_register(r->pool, info,
+                                  cleanup_script,
+                                  apr_pool_cleanup_null);
+    }
+    else { 
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rv, r, "error determining cgi PID (for SSI)");
+    }
+
     apr_pool_cleanup_register(r->pool, info,
                               cleanup_script,
                               apr_pool_cleanup_null);
@@ -1845,8 +1892,8 @@ static apr_status_t handle_exec(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "missing argument for exec element in %s",
-                      r->filename);
+                      0, r, APLOGNO(03196)
+                      "missing argument for exec element in %s", r->filename);
     }
 
     if (!(ctx->flags & SSI_FLAG_PRINTING)) {

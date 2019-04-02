@@ -69,6 +69,11 @@ interface. If an updated package is not buildable with Apache 2.2 anymore, the
 apache2-dev build-dependency should be versioned ">> 2.4~", because older
 versions of apache2-threaded-dev did provide apache2-dev.
 
+A module package that uses openssl specific interfaces in mod_ssl, either by
+using the mod_ssl_openssl.h header, or by using mod_ssl-internal private
+interfaces (don't do that!), must build-depend on apache2-ssl-dev to ensure
+that the correct version of the openssl headers are used.
+
 The resulting binary package should be called libapache2-mod-<modulename> and
 MUST NOT depend on apache2 or apache2-bin. Instead a module package must depend
 on our virtual package providing the module magic number which denotes the ABI

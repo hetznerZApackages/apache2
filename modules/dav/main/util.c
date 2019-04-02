@@ -428,7 +428,7 @@ DAV_DECLARE(void) dav_xmlns_add(dav_xmlns_info *xi,
     apr_hash_set(xi->prefix_uri, prefix, APR_HASH_KEY_STRING, uri);
 
     /* note: this may overwrite an existing URI->prefix mapping, but it
-       doesn't matter -- any prefix is usuable to specify the URI. */
+       doesn't matter -- any prefix is usable to specify the URI. */
     apr_hash_set(xi->uri_prefix, uri, APR_HASH_KEY_STRING, prefix);
 }
 
@@ -587,7 +587,7 @@ static dav_error * dav_add_if_state(apr_pool_t *p, dav_if_header *ih,
 }
 
 /* fetch_next_token returns the substring from str+1
- * to the next occurence of char term, or \0, whichever
+ * to the next occurrence of char term, or \0, whichever
  * occurs first.  Leading whitespace is ignored.
  */
 static char *dav_fetch_next_token(char **str, char term)
@@ -1595,8 +1595,10 @@ DAV_DECLARE(dav_error *) dav_validate_request(request_rec *r,
         }
     }
 
-    /* (1) Validate the specified resource, at the specified depth */
-    if (resource->exists && depth > 0) {
+    /* (1) Validate the specified resource, at the specified depth.
+     * Avoid the walk there is no if_header and we aren't planning
+     * to modify this resource. */
+    if (resource->exists && depth > 0 && !(!if_header && flags & DAV_VALIDATE_NO_MODIFY)) {
         dav_walker_ctx ctx = { { 0 } };
         dav_response *multi_status;
 
@@ -1821,10 +1823,11 @@ DAV_DECLARE(void) dav_add_vary_header(request_rec *in_req,
      * so only do this check if there is a versioning provider */
     if (vsn_hooks != NULL) {
         const char *target = apr_table_get(in_req->headers_in, DAV_LABEL_HDR);
-        const char *vary = apr_table_get(out_req->headers_out, "Vary");
 
         /* If Target-Selector specified, add it to the Vary header */
         if (target != NULL) {
+            const char *vary = apr_table_get(out_req->headers_out, "Vary");
+
             if (vary == NULL)
                 vary = DAV_LABEL_HDR;
             else

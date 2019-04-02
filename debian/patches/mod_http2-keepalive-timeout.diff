@@ -1,0 +1,25 @@
+# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=915103
+# http://svn.apache.org/viewvc?view=revision&revision=1832566
+--- apache2.orig/modules/http2/h2_conn.c
++++ apache2/modules/http2/h2_conn.c
+@@ -240,7 +240,19 @@ apr_status_t h2_conn_run(struct h2_ctx *
+              && mpm_state != AP_MPMQ_STOPPING);
+ 
+     if (c->cs) {
+-        c->cs->state = CONN_STATE_LINGER;
++        switch (session->state) {
++            case H2_SESSION_ST_INIT:
++            case H2_SESSION_ST_IDLE:
++            case H2_SESSION_ST_BUSY:
++            case H2_SESSION_ST_WAIT:
++                c->cs->state = CONN_STATE_WRITE_COMPLETION;
++                break;
++            case H2_SESSION_ST_CLEANUP:
++            case H2_SESSION_ST_DONE:
++            default:
++                c->cs->state = CONN_STATE_LINGER;
++            break;
++        }
+     }
+ 
+     return APR_SUCCESS;
