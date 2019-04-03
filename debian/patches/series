@@ -38,3 +38,7 @@ CVE-2018-1283-mod_session.diff
 CVE-2018-1301-HTTP-request-read-out-of-bounds.diff
 CVE-2018-1303-mod_cache_socache-oob.diff
 CVE-2018-1312-mod_auth_digest-nonce.diff
+
+CVE-2018-17199.patch
+CVE-2019-0217-digest-collusion-in-mod_auth_digest.diff
+CVE-2019-0220-merge-slashes.diff
