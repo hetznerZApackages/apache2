@@ -1,3 +1,9 @@
+apache2 (2.4.10-10+deb8u14+hetz1) jessie-hetz; urgency=medium
+
+  * Released 2.4.10-10+deb8u14+hetz1~exp1 as 2.4.10-10+deb8u14+hetz1
+
+ -- Shaun Bugler - Hetzner <sb@hetzner.co.za>  Mon, 08 Apr 2019 14:59:26 +0200
+
 apache2 (2.4.10-10+deb8u14+hetz1~exp1) jessie-hetz-experimental; urgency=medium
 
   * Import upstream security release 
