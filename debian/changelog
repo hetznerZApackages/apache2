@@ -1,3 +1,29 @@
+apache2 (2.4.10-10+deb8u14+hetz1~exp1) jessie-hetz-experimental; urgency=medium
+
+  * Import upstream security release 
+
+ -- Shaun Bugler - Hetzner <sb@hetzner.co.za>  Mon, 08 Apr 2019 13:54:50 +0200
+
+apache2 (2.4.10-10+deb8u14) jessie-security; urgency=medium
+
+  * Non-maintainer upload by the LTS Security Team.
+  * CVE-2019-0217: mod_auth_digest: Access control bypass
+  * CVE-2019-0220: URL normalization inconsistincy.
+    Consecutive slashes in URL's are now merged before use in LocationMatch
+    and RewriteRule. The old behavior can be restored with the new directive
+    "MergeSlashes off".
+
+ -- Jonas Meurer <jonas@freesources.org>  Wed, 03 Apr 2019 12:43:39 +0200
+
+apache2 (2.4.10-10+deb8u13) jessie-security; urgency=medium
+
+  * Non-maintainer upload by the LTS Team. 
+  * CVE-2018-17199
+    In order to not ignore expire time of cookies, always decode session
+    attributes early.
+ 
+ -- Thorsten Alteholz <debian@alteholz.de>  Tue, 29 Jan 2019 19:03:02 +0100
+
 apache2 (2.4.10-10+deb8u12+hetz1) jessie-hetz; urgency=medium
 
   * Released 2.4.10-10+deb8u12+hetz1~exp1 as 2.4.10-10+deb8u12+hetz1
