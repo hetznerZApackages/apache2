@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u7+hetz1~exp5) jessie-hetz-experimental; urgency=medium
+
+  * Updating upstream to 2.4.25 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Mon, 29 Apr 2019 11:32:11 +0200
+
 apache2 (2.4.25-3+deb9u7+hetz1~exp4) jessie-hetz-experimental; urgency=medium
 
   * Adjust the lines in the patch for relax suexec ownership 
