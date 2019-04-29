@@ -1,3 +1,10 @@
+apache2 (2.4.25-3+deb9u7+hetz1~exp1) jessie-hetz-experimental; urgency=medium
+
+  * Attempting to backport Stretch Apache2 to Jessie
+  * Includes our patches for follow symlinks and suexec user
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Mon, 29 Apr 2019 10:14:14 +0200
+
 apache2 (2.4.25-3+deb9u7) stretch-security; urgency=medium
 
   [ Xavier Guimard ]
