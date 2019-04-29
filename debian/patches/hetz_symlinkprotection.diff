@@ -2,7 +2,7 @@ Index: apache2/server/request.c
 ===================================================================
 --- apache2.orig/server/request.c
 +++ apache2/server/request.c
-@@ -436,7 +436,7 @@ static int resolve_symlink(char *d, apr_
+@@ -474,7 +474,7 @@ static int resolve_symlink(char *d, apr_
      savename = (lfi->valid & APR_FINFO_NAME) ? lfi->name : NULL;
  
      /* if OPT_SYM_OWNER is unset, we only need to check target accessible */
@@ -11,7 +11,7 @@ Index: apache2/server/request.c
          if (apr_stat(&fi, d, lfi->valid & ~(APR_FINFO_NAME | APR_FINFO_LINK), p)
              != APR_SUCCESS)
          {
-@@ -1077,6 +1077,7 @@ AP_DECLARE(int) ap_directory_walk(reques
+@@ -1115,6 +1115,7 @@ AP_DECLARE(int) ap_directory_walk(reques
               * if...we have allowed symlinks
               * skip the lstat and dummy up an APR_DIR value for thisinfo.
               */
@@ -19,7 +19,7 @@ Index: apache2/server/request.c
              if (r->finfo.filetype != APR_NOFILE
  #ifdef CASE_BLIND_FILESYSTEM
                  && (filename_len <= canonical_len)
-@@ -1088,6 +1089,7 @@ AP_DECLARE(int) ap_directory_walk(reques
+@@ -1126,6 +1127,7 @@ AP_DECLARE(int) ap_directory_walk(reques
                  ++seg;
                  continue;
              }
