@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>Índice de Directivas - Servidor HTTP Apache Versión 2.4</title>
+<title>Índice de Directivas - Servidor Apache HTTP Versión 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
@@ -14,9 +16,9 @@
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
 <body id="directive-index"><div id="page-header">
-<p class="menu"><a href="../mod/">Módulos</a> | <a href="../mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="../glossary.html">Glosario</a> | <a href="../sitemap.html">Mapa de este sitio web</a></p>
+<p class="menu"><a href="../mod/">Módulos</a> | <a href="../mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="../glossary.html">Glosario</a> | <a href="../sitemap.html">Mapa del sitio web</a></p>
 <p class="apache">Versión 2.4 del Servidor HTTP Apache</p>
-<img alt="" src="../images/feather.gif" /></div>
+<img alt="" src="../images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Servidor HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentación</a> &gt; <a href="../">Versión 2.4</a> &gt; <a href="./">Módulos</a></div><div id="preamble"><h1>Índice de Directivas</h1>
@@ -46,7 +48,7 @@
       directiva de forma resumida.
     </p>
   
-<p class="letters"><a href="#A">&nbsp;A&nbsp;</a> | <a href="#B">&nbsp;B&nbsp;</a> | <a href="#C">&nbsp;C&nbsp;</a> | <a href="#D">&nbsp;D&nbsp;</a> | <a href="#E">&nbsp;E&nbsp;</a> | <a href="#F">&nbsp;F&nbsp;</a> | <a href="#G">&nbsp;G&nbsp;</a> | <a href="#H">&nbsp;H&nbsp;</a> | <a href="#I">&nbsp;I&nbsp;</a> | <a href="#K">&nbsp;K&nbsp;</a> | <a href="#L">&nbsp;L&nbsp;</a> | <a href="#M">&nbsp;M&nbsp;</a> | <a href="#N">&nbsp;N&nbsp;</a> | <a href="#O">&nbsp;O&nbsp;</a> | <a href="#P">&nbsp;P&nbsp;</a> | <a href="#R">&nbsp;R&nbsp;</a> | <a href="#S">&nbsp;S&nbsp;</a> | <a href="#T">&nbsp;T&nbsp;</a> | <a href="#U">&nbsp;U&nbsp;</a> | <a href="#V">&nbsp;V&nbsp;</a> | <a href="#W">&nbsp;W&nbsp;</a> | <a href="#X">&nbsp;X&nbsp;</a></p>
+<p class="letters"><a href="#A">&nbsp;A&nbsp;</a> | <a href="#B">&nbsp;B&nbsp;</a> | <a href="#C">&nbsp;C&nbsp;</a> | <a href="#D">&nbsp;D&nbsp;</a> | <a href="#E">&nbsp;E&nbsp;</a> | <a href="#F">&nbsp;F&nbsp;</a> | <a href="#G">&nbsp;G&nbsp;</a> | <a href="#H">&nbsp;H&nbsp;</a> | <a href="#I">&nbsp;I&nbsp;</a> | <a href="#K">&nbsp;K&nbsp;</a> | <a href="#L">&nbsp;L&nbsp;</a> | <a href="#M">&nbsp;M&nbsp;</a> | <a href="#N">&nbsp;N&nbsp;</a> | <a href="#O">&nbsp;O&nbsp;</a> | <a href="#P">&nbsp;P&nbsp;</a> | <a href="#Q">&nbsp;Q&nbsp;</a> | <a href="#R">&nbsp;R&nbsp;</a> | <a href="#S">&nbsp;S&nbsp;</a> | <a href="#T">&nbsp;T&nbsp;</a> | <a href="#U">&nbsp;U&nbsp;</a> | <a href="#V">&nbsp;V&nbsp;</a> | <a href="#W">&nbsp;W&nbsp;</a> | <a href="#X">&nbsp;X&nbsp;</a></p>
 </div>
 <div id="directive-list"><ul>
 <li><a href="core.html#acceptfilter" id="A" name="A">AcceptFilter</a></li>
@@ -199,6 +201,8 @@
 <li><a href="mod_cache.html#cachestoreprivate">CacheStorePrivate</a></li>
 <li><a href="mod_cgid.html#cgidscripttimeout">CGIDScriptTimeout</a></li>
 <li><a href="core.html#cgimapextension">CGIMapExtension</a></li>
+<li><a href="core.html#cgipassauth">CGIPassAuth</a></li>
+<li><a href="core.html#cgivar">CGIVar</a></li>
 <li><a href="mod_charset_lite.html#charsetdefault">CharsetDefault</a></li>
 <li><a href="mod_charset_lite.html#charsetoptions">CharsetOptions</a></li>
 <li><a href="mod_charset_lite.html#charsetsourceenc">CharsetSourceEnc</a></li>
@@ -260,7 +264,7 @@
 <li><a href="core.html#errordocument">ErrorDocument</a></li>
 <li><a href="core.html#errorlog">ErrorLog</a></li>
 <li><a href="core.html#errorlogformat">ErrorLogFormat</a></li>
-<li><a href="mod_example.html#example">Example</a></li>
+<li><a href="mod_example_hooks.html#example">Example</a></li>
 <li><a href="mod_expires.html#expiresactive">ExpiresActive</a></li>
 <li><a href="mod_expires.html#expiresbytype">ExpiresByType</a></li>
 <li><a href="mod_expires.html#expiresdefault">ExpiresDefault</a></li>
@@ -279,10 +283,30 @@
 <li><a href="mod_negotiation.html#forcelanguagepriority">ForceLanguagePriority</a></li>
 <li><a href="core.html#forcetype">ForceType</a></li>
 <li><a href="mod_log_forensic.html#forensiclog">ForensicLog</a></li>
-<li><a href="core.html#gprofdir" id="G" name="G">GprofDir</a></li>
+<li><a href="mod_log_config.html#globallog" id="G" name="G">GlobalLog</a></li>
+<li><a href="core.html#gprofdir">GprofDir</a></li>
 <li><a href="mpm_common.html#gracefulshutdowntimeout">GracefulShutdownTimeout</a></li>
 <li><a href="mod_unixd.html#group">Group</a></li>
-<li><a href="mod_headers.html#header" id="H" name="H">Header</a></li>
+<li><a href="mod_http2.html#h2copyfiles" id="H" name="H">H2CopyFiles</a></li>
+<li><a href="mod_http2.html#h2direct">H2Direct</a></li>
+<li><a href="mod_http2.html#h2earlyhints">H2EarlyHints</a></li>
+<li><a href="mod_http2.html#h2maxsessionstreams">H2MaxSessionStreams</a></li>
+<li><a href="mod_http2.html#h2maxworkeridleseconds">H2MaxWorkerIdleSeconds</a></li>
+<li><a href="mod_http2.html#h2maxworkers">H2MaxWorkers</a></li>
+<li><a href="mod_http2.html#h2minworkers">H2MinWorkers</a></li>
+<li><a href="mod_http2.html#h2moderntlsonly">H2ModernTLSOnly</a></li>
+<li><a href="mod_http2.html#h2push">H2Push</a></li>
+<li><a href="mod_http2.html#h2pushdiarysize">H2PushDiarySize</a></li>
+<li><a href="mod_http2.html#h2pushpriority">H2PushPriority</a></li>
+<li><a href="mod_http2.html#h2pushresource">H2PushResource</a></li>
+<li><a href="mod_http2.html#h2serializeheaders">H2SerializeHeaders</a></li>
+<li><a href="mod_http2.html#h2sessionextrafiles">H2SessionExtraFiles</a></li>
+<li><a href="mod_http2.html#h2streammaxmemsize">H2StreamMaxMemSize</a></li>
+<li><a href="mod_http2.html#h2tlscooldownsecs">H2TLSCoolDownSecs</a></li>
+<li><a href="mod_http2.html#h2tlswarmupsize">H2TLSWarmUpSize</a></li>
+<li><a href="mod_http2.html#h2upgrade">H2Upgrade</a></li>
+<li><a href="mod_http2.html#h2windowsize">H2WindowSize</a></li>
+<li><a href="mod_headers.html#header">Header</a></li>
 <li><a href="mod_autoindex.html#headername">HeaderName</a></li>
 <li><a href="mod_heartbeat.html#heartbeataddress">HeartbeatAddress</a></li>
 <li><a href="mod_heartmonitor.html#heartbeatlisten">HeartbeatListen</a></li>
@@ -290,6 +314,7 @@
 <li><a href="mod_heartmonitor.html#heartbeatstorage">HeartbeatStorage</a></li>
 <li><a href="mod_lbmethod_heartbeat.html#heartbeatstorage">HeartbeatStorage</a></li>
 <li><a href="core.html#hostnamelookups">HostnameLookups</a></li>
+<li><a href="core.html#httpprotocoloptions">HttpProtocolOptions</a></li>
 <li><a href="mod_ident.html#identitycheck" id="I" name="I">IdentityCheck</a></li>
 <li><a href="mod_ident.html#identitychecktimeout">IdentityCheckTimeout</a></li>
 <li><a href="core.html#if">&lt;If&gt;</a></li>
@@ -346,11 +371,13 @@
 <li><a href="core.html#limitxmlrequestbody">LimitXMLRequestBody</a></li>
 <li><a href="mpm_common.html#listen">Listen</a></li>
 <li><a href="mpm_common.html#listenbacklog">ListenBackLog</a></li>
+<li><a href="mpm_common.html#listencoresbucketsratio">ListenCoresBucketsRatio</a></li>
 <li><a href="mod_so.html#loadfile">LoadFile</a></li>
 <li><a href="mod_so.html#loadmodule">LoadModule</a></li>
 <li><a href="core.html#location">&lt;Location&gt;</a></li>
 <li><a href="core.html#locationmatch">&lt;LocationMatch&gt;</a></li>
 <li><a href="mod_log_config.html#logformat">LogFormat</a></li>
+<li><a href="mod_logio.html#logiotrackttfb">LogIOTrackTTFB</a></li>
 <li><a href="core.html#loglevel">LogLevel</a></li>
 <li><a href="mod_log_debug.html#logmessage">LogMessage</a></li>
 <li><a href="mod_lua.html#luaauthzprovider">LuaAuthzProvider</a></li>
@@ -384,6 +411,8 @@
 <li><a href="prefork.html#maxspareservers">MaxSpareServers</a></li>
 <li><a href="mpm_common.html#maxsparethreads">MaxSpareThreads</a></li>
 <li><a href="mpm_netware.html#maxthreads">MaxThreads</a></li>
+<li><a href="mod_socache_memcache.html#memcacheconnttl">MemcacheConnTTL</a></li>
+<li><a href="core.html#mergetrailers">MergeTrailers</a></li>
 <li><a href="mod_cern_meta.html#metadir">MetaDir</a></li>
 <li><a href="mod_cern_meta.html#metafiles">MetaFiles</a></li>
 <li><a href="mod_cern_meta.html#metasuffix">MetaSuffix</a></li>
@@ -407,6 +436,8 @@
 <li><a href="mod_privileges.html#privilegesmode">PrivilegesMode</a></li>
 <li><a href="core.html#protocol">Protocol</a></li>
 <li><a href="mod_echo.html#protocolecho">ProtocolEcho</a></li>
+<li><a href="core.html#protocols">Protocols</a></li>
+<li><a href="core.html#protocolshonororder">ProtocolsHonorOrder</a></li>
 <li><a href="mod_proxy.html#proxy">&lt;Proxy&gt;</a></li>
 <li><a href="mod_proxy.html#proxyaddheaders">ProxyAddHeaders</a></li>
 <li><a href="mod_proxy.html#proxybadheader">ProxyBadHeader</a></li>
@@ -419,6 +450,9 @@
 <li><a href="mod_proxy_ftp.html#proxyftpdircharset">ProxyFtpDirCharset</a></li>
 <li><a href="mod_proxy_ftp.html#proxyftpescapewildcards">ProxyFtpEscapeWildcards</a></li>
 <li><a href="mod_proxy_ftp.html#proxyftplistonwildcard">ProxyFtpListOnWildcard</a></li>
+<li><a href="mod_proxy_hcheck.html#proxyhcexpr">ProxyHCExpr</a></li>
+<li><a href="mod_proxy_hcheck.html#proxyhctemplate">ProxyHCTemplate</a></li>
+<li><a href="mod_proxy_hcheck.html#proxyhctpsize">ProxyHCTPsize</a></li>
 <li><a href="mod_proxy_html.html#proxyhtmlbufsize">ProxyHTMLBufSize</a></li>
 <li><a href="mod_proxy_html.html#proxyhtmlcharsetout">ProxyHTMLCharsetOut</a></li>
 <li><a href="mod_proxy_html.html#proxyhtmldoctype">ProxyHTMLDocType</a></li>
@@ -453,6 +487,7 @@
 <li><a href="mod_proxy.html#proxystatus">ProxyStatus</a></li>
 <li><a href="mod_proxy.html#proxytimeout">ProxyTimeout</a></li>
 <li><a href="mod_proxy.html#proxyvia">ProxyVia</a></li>
+<li><a href="core.html#qualifyredirecturl" id="Q" name="Q">QualifyRedirectURL</a></li>
 <li><a href="mod_autoindex.html#readmename" id="R" name="R">ReadmeName</a></li>
 <li><a href="mpm_common.html#receivebuffersize">ReceiveBufferSize</a></li>
 <li><a href="mod_alias.html#redirect">Redirect</a></li>
@@ -460,6 +495,7 @@
 <li><a href="mod_alias.html#redirectpermanent">RedirectPermanent</a></li>
 <li><a href="mod_alias.html#redirecttemp">RedirectTemp</a></li>
 <li><a href="mod_reflector.html#reflectorheader">ReflectorHeader</a></li>
+<li><a href="core.html#registerhttpmethod">RegisterHttpMethod</a></li>
 <li><a href="mod_remoteip.html#remoteipheader">RemoteIPHeader</a></li>
 <li><a href="mod_remoteip.html#remoteipinternalproxy">RemoteIPInternalProxy</a></li>
 <li><a href="mod_remoteip.html#remoteipinternalproxylist">RemoteIPInternalProxyList</a></li>
@@ -565,6 +601,7 @@
 <li><a href="mod_ssl.html#sslocspdefaultresponder">SSLOCSPDefaultResponder</a></li>
 <li><a href="mod_ssl.html#sslocspenable">SSLOCSPEnable</a></li>
 <li><a href="mod_ssl.html#sslocspoverrideresponder">SSLOCSPOverrideResponder</a></li>
+<li><a href="mod_ssl.html#sslocspproxyurl">SSLOCSPProxyURL</a></li>
 <li><a href="mod_ssl.html#sslocsprespondertimeout">SSLOCSPResponderTimeout</a></li>
 <li><a href="mod_ssl.html#sslocspresponsemaxage">SSLOCSPResponseMaxAge</a></li>
 <li><a href="mod_ssl.html#sslocspresponsetimeskew">SSLOCSPResponseTimeSkew</a></li>
@@ -596,6 +633,7 @@
 <li><a href="mod_ssl.html#sslsessioncache">SSLSessionCache</a></li>
 <li><a href="mod_ssl.html#sslsessioncachetimeout">SSLSessionCacheTimeout</a></li>
 <li><a href="mod_ssl.html#sslsessionticketkeyfile">SSLSessionTicketKeyFile</a></li>
+<li><a href="mod_ssl.html#sslsessiontickets">SSLSessionTickets</a></li>
 <li><a href="mod_ssl.html#sslsrpunknownuserseed">SSLSRPUnknownUserSeed</a></li>
 <li><a href="mod_ssl.html#sslsrpverifierfile">SSLSRPVerifierFile</a></li>
 <li><a href="mod_ssl.html#sslstaplingcache">SSLStaplingCache</a></li>
@@ -615,6 +653,8 @@
 <li><a href="mpm_common.html#startservers">StartServers</a></li>
 <li><a href="mpm_common.html#startthreads">StartThreads</a></li>
 <li><a href="mod_substitute.html#substitute">Substitute</a></li>
+<li><a href="mod_substitute.html#substituteinheritbefore">SubstituteInheritBefore</a></li>
+<li><a href="mod_substitute.html#substitutemaxlinelength">SubstituteMaxLineLength</a></li>
 <li><a href="mod_unixd.html#suexec">Suexec</a></li>
 <li><a href="mod_suexec.html#suexecusergroup">SuexecUserGroup</a></li>
 <li><a href="mpm_common.html#threadlimit" id="T" name="T">ThreadLimit</a></li>
@@ -676,8 +716,8 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/directives.html'
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licencia bajo los términos de la <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
-<p class="menu"><a href="../mod/">Módulos</a> | <a href="../mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="../glossary.html">Glosario</a> | <a href="../sitemap.html">Mapa de este sitio web</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licencia bajo los términos de <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="menu"><a href="../mod/">Módulos</a> | <a href="../mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="../glossary.html">Glosario</a> | <a href="../sitemap.html">Mapa del sitio web</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
 }

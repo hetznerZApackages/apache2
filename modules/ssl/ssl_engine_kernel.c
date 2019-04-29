@@ -29,7 +29,9 @@
                                   time I was too famous.''
                                             -- Unknown                */
 #include "ssl_private.h"
+#include "mod_ssl.h"
 #include "util_md5.h"
+#include "scoreboard.h"
 
 static void ssl_configure_env(request_rec *r, SSLConnRec *sslconn);
 #ifdef HAVE_TLSEXT
@@ -54,8 +56,8 @@ static apr_status_t upgrade_connection(request_rec *r)
 
     bb = apr_brigade_create(r->pool, conn->bucket_alloc);
 
-    rv = ap_fputstrs(conn->output_filters, bb, SWITCH_STATUS_LINE, CRLF,
-                     UPGRADE_HEADER, CRLF, CONNECTION_HEADER, CRLF, CRLF, NULL);
+    rv = ap_fputs(conn->output_filters, bb, SWITCH_STATUS_LINE CRLF
+                  UPGRADE_HEADER CRLF CONNECTION_HEADER CRLF CRLF);
     if (rv == APR_SUCCESS) {
         APR_BRIGADE_INSERT_TAIL(bb,
                                 apr_bucket_flush_create(conn->bucket_alloc));
@@ -80,7 +82,8 @@ static apr_status_t upgrade_connection(request_rec *r)
 
     if (SSL_get_state(ssl) != SSL_ST_OK) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02030)
-                      "TLS upgrade handshake failed: not accepted by client!?");
+                      "TLS upgrade handshake failed");
+        ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, r->server);
 
         return APR_ECONNABORTED;
     }
@@ -111,6 +114,108 @@ static int has_buffered_data(request_rec *r)
     return result;
 }
 
+static int ap_array_same_str_set(apr_array_header_t *s1, apr_array_header_t *s2)
+{
+    int i;
+    const char *c;
+    
+    if (s1 == s2) {
+        return 1;
+    }
+    else if (!s1 || !s2 || (s1->nelts != s2->nelts)) {
+        return 0;
+    }
+    
+    for (i = 0; i < s1->nelts; i++) {
+        c = APR_ARRAY_IDX(s1, i, const char *);
+        if (!c || !ap_array_str_contains(s2, c)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int ssl_pk_server_compatible(modssl_pk_server_t *pks1, 
+                                    modssl_pk_server_t *pks2) 
+{
+    if (!pks1 || !pks2) {
+        return 0;
+    }
+    /* both have the same certificates? */
+    if ((pks1->ca_name_path != pks2->ca_name_path)
+        && (!pks1->ca_name_path || !pks2->ca_name_path 
+            || strcmp(pks1->ca_name_path, pks2->ca_name_path))) {
+        return 0;
+    }
+    if ((pks1->ca_name_file != pks2->ca_name_file)
+        && (!pks1->ca_name_file || !pks2->ca_name_file 
+            || strcmp(pks1->ca_name_file, pks2->ca_name_file))) {
+        return 0;
+    }
+    if (!ap_array_same_str_set(pks1->cert_files, pks2->cert_files)
+        || !ap_array_same_str_set(pks1->key_files, pks2->key_files)) {
+        return 0;
+    }
+    return 1;
+}
+
+static int ssl_auth_compatible(modssl_auth_ctx_t *a1, 
+                               modssl_auth_ctx_t *a2) 
+{
+    if (!a1 || !a2) {
+        return 0;
+    }
+    /* both have the same verification */
+    if ((a1->verify_depth != a2->verify_depth)
+        || (a1->verify_mode != a2->verify_mode)) {
+        return 0;
+    }
+    /* both have the same ca path/file */
+    if ((a1->ca_cert_path != a2->ca_cert_path)
+        && (!a1->ca_cert_path || !a2->ca_cert_path 
+            || strcmp(a1->ca_cert_path, a2->ca_cert_path))) {
+        return 0;
+    }
+    if ((a1->ca_cert_file != a2->ca_cert_file)
+        && (!a1->ca_cert_file || !a2->ca_cert_file 
+            || strcmp(a1->ca_cert_file, a2->ca_cert_file))) {
+        return 0;
+    }
+    /* both have the same ca cipher suite string */
+    if ((a1->cipher_suite != a2->cipher_suite)
+        && (!a1->cipher_suite || !a2->cipher_suite 
+            || strcmp(a1->cipher_suite, a2->cipher_suite))) {
+        return 0;
+    }
+    return 1;
+}
+
+static int ssl_ctx_compatible(modssl_ctx_t *ctx1, 
+                              modssl_ctx_t *ctx2) 
+{
+    if (!ctx1 || !ctx2 
+        || (ctx1->protocol != ctx2->protocol)
+        || !ssl_auth_compatible(&ctx1->auth, &ctx2->auth)
+        || !ssl_pk_server_compatible(ctx1->pks, ctx2->pks)) {
+        return 0;
+    }
+    return 1;
+}
+
+static int ssl_server_compatible(server_rec *s1, server_rec *s2)
+{
+    SSLSrvConfigRec *sc1 = s1? mySrvConfig(s1) : NULL;
+    SSLSrvConfigRec *sc2 = s2? mySrvConfig(s2) : NULL;
+
+    /* both use the same TLS protocol? */
+    if (!sc1 || !sc2 
+        || !ssl_ctx_compatible(sc1->server, sc2->server)) {
+        return 0;
+    }
+    
+    return 1;
+}
+
 /*
  *  Post Read Request Handler
  */
@@ -131,11 +236,28 @@ int ssl_hook_ReadReq(request_rec *r)
         && (upgrade = apr_table_get(r->headers_in, "Upgrade")) != NULL
         && ap_find_token(r->pool, upgrade, "TLS/1.0")) {
         if (upgrade_connection(r)) {
-            return HTTP_INTERNAL_SERVER_ERROR;
+            return AP_FILTER_ERROR;
         }
     }
 
+    /* If we are on a slave connection, we do not expect to have an SSLConnRec,
+     * but our master connection might. */
     sslconn = myConnConfig(r->connection);
+    if (!(sslconn && sslconn->ssl) && r->connection->master) {
+        sslconn = myConnConfig(r->connection->master);
+    }
+    
+    /* If "SSLEngine optional" is configured, this is not an SSL
+     * connection, and this isn't a subrequest, send an Upgrade
+     * response header.  Note this must happen before map_to_storage
+     * and OPTIONS * request processing is completed.
+     */
+    if (sc->enabled == SSL_ENABLED_OPTIONAL && !(sslconn && sslconn->ssl)
+        && !r->main) {
+        apr_table_setn(r->headers_out, "Upgrade", "TLS/1.0, HTTP/1.1");
+        apr_table_mergen(r->headers_out, "Connection", "upgrade");
+    }
+
     if (!sslconn) {
         return DECLINED;
     }
@@ -170,19 +292,18 @@ int ssl_hook_ReadReq(request_rec *r)
      * original problem.
      */
     if (r->proxyreq != PROXYREQ_PROXY && ap_is_initial_req(r)) {
-        if ((servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name))) {
-            char *host, *scope_id;
-            apr_port_t port;
-            apr_status_t rv;
+        server_rec *handshakeserver = sslconn->server;
+        SSLSrvConfigRec *hssc = mySrvConfig(handshakeserver);
 
+        if ((servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name))) {
             /*
              * The SNI extension supplied a hostname. So don't accept requests
-             * with either no hostname or a different hostname as this could
-             * cause us to end up in a different virtual host as the one that
-             * was used for the handshake causing different SSL parameters to
-             * be applied as SSLProtocol, SSLCACertificateFile/Path and
-             * SSLCADNRequestFile/Path cannot be renegotiated (SSLCA* due
-             * to current limitations in OpenSSL, see
+             * with either no hostname or a hostname that selected a different
+             * virtual host than the one used for the handshake, causing
+             * different SSL parameters to be applied, such as SSLProtocol,
+             * SSLCACertificateFile/Path and SSLCADNRequestFile/Path which
+             * cannot be renegotiated (SSLCA* due to current limitations in
+             * OpenSSL, see:
              * http://mail-archives.apache.org/mod_mbox/httpd-dev/200806.mbox/%3C48592955.2090303@velox.ch%3E
              * and
              * http://mail-archives.apache.org/mod_mbox/httpd-dev/201312.mbox/%3CCAKQ1sVNpOrdiBm-UPw1hEdSN7YQXRRjeaT-MCWbW_7mN%3DuFiOw%40mail.gmail.com%3E
@@ -194,20 +315,22 @@ int ssl_hook_ReadReq(request_rec *r)
                             " provided in HTTP request", servername);
                 return HTTP_BAD_REQUEST;
             }
-            rv = apr_parse_addr_port(&host, &scope_id, &port, r->hostname, r->pool);
-            if (rv != APR_SUCCESS || scope_id) {
-                return HTTP_BAD_REQUEST;
-            }
-            if (strcasecmp(host, servername)) {
+            if (r->server != handshakeserver 
+                && !ssl_server_compatible(sslconn->server, r->server)) {
+                /* 
+                 * The request does not select the virtual host that was
+                 * selected by the SNI and its SSL parameters are different
+                 */
+                
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, APLOGNO(02032)
-                            "Hostname %s provided via SNI and hostname %s provided"
-                            " via HTTP are different", servername, host);
-                return HTTP_BAD_REQUEST;
+                             "Hostname %s provided via SNI and hostname %s provided"
+                             " via HTTP have no compatible SSL setup",
+                             servername, r->hostname);
+                return HTTP_MISDIRECTED_REQUEST;
             }
         }
         else if (((sc->strict_sni_vhost_check == SSL_ENABLED_TRUE)
-                 || (mySrvConfig(sslconn->server))->strict_sni_vhost_check
-                    == SSL_ENABLED_TRUE)
+                  || hssc->strict_sni_vhost_check == SSL_ENABLED_TRUE)
                  && r->connection->vhost_lookup_data) {
             /*
              * We are using a name based configuration here, but no hostname was
@@ -227,7 +350,7 @@ int ssl_hook_ReadReq(request_rec *r)
         }
     }
 #endif
-    SSL_set_app_data2(ssl, r);
+    modssl_set_app_data2(ssl, r);
 
     /*
      * Log information about incoming HTTPS requests
@@ -300,6 +423,7 @@ int ssl_hook_Access(request_rec *r)
     SSLConnRec *sslconn         = myConnConfig(r->connection);
     SSL *ssl                    = sslconn ? sslconn->ssl : NULL;
     server_rec *handshakeserver = sslconn ? sslconn->server : NULL;
+    SSLSrvConfigRec *hssc       = handshakeserver? mySrvConfig(handshakeserver) : NULL;
     SSL_CTX *ctx = NULL;
     apr_array_header_t *requires;
     ssl_require_t *ssl_requires;
@@ -311,9 +435,30 @@ int ssl_hook_Access(request_rec *r)
     X509_STORE_CTX cert_store_ctx;
     STACK_OF(SSL_CIPHER) *cipher_list_old = NULL, *cipher_list = NULL;
     const SSL_CIPHER *cipher = NULL;
-    int depth, verify_old, verify, n;
+    int depth, verify_old, verify, n, is_slave = 0;
+    const char *ncipher_suite;
 
+    /* On a slave connection, we do not expect to have an SSLConnRec, but
+     * our master connection might have one. */
+    if (!(sslconn && ssl) && r->connection->master) {
+        sslconn         = myConnConfig(r->connection->master);
+        ssl             = sslconn ? sslconn->ssl : NULL;
+        handshakeserver = sslconn ? sslconn->server : NULL;
+        hssc            = handshakeserver? mySrvConfig(handshakeserver) : NULL;
+        is_slave        = 1;
+    }
+    
     if (ssl) {
+        /*
+         * We should have handshaken here (on handshakeserver),
+         * otherwise we are being redirected (ErrorDocument) from
+         * a renegotiation failure below. The access is still 
+         * forbidden in the latter case, let ap_die() handle
+         * this recursive (same) error.
+         */
+        if (SSL_get_state(ssl) != SSL_ST_OK) {
+            return HTTP_FORBIDDEN;
+        }
         ctx = SSL_get_SSL_CTX(ssl);
     }
 
@@ -321,7 +466,7 @@ int ssl_hook_Access(request_rec *r)
      * Support for SSLRequireSSL directive
      */
     if (dc->bSSLRequired && !ssl) {
-        if (sc->enabled == SSL_ENABLED_OPTIONAL) {
+        if ((sc->enabled == SSL_ENABLED_OPTIONAL) && !is_slave) {
             /* This vhost was configured for optional SSL, just tell the
              * client that we need to upgrade.
              */
@@ -404,8 +549,13 @@ int ssl_hook_Access(request_rec *r)
      *   new cipher suite. This approach is fine because the user explicitly
      *   has to enable this via ``SSLOptions +OptRenegotiate''. So we do no
      *   implicit optimizations.
-     */
-    if (dc->szCipherSuite || (r->server != handshakeserver)) {
+     */     
+    ncipher_suite = (dc->szCipherSuite? 
+                     dc->szCipherSuite : (r->server != handshakeserver)?
+                     sc->server->auth.cipher_suite : NULL);
+    
+    if (ncipher_suite && (!sslconn->cipher_suite 
+                          || strcmp(ncipher_suite, sslconn->cipher_suite))) {
         /* remember old state */
 
         if (dc->nOptions & SSL_OPT_OPTRENEGOTIATE) {
@@ -420,10 +570,18 @@ int ssl_hook_Access(request_rec *r)
         }
 
         /* configure new state */
-        if ((dc->szCipherSuite || sc->server->auth.cipher_suite) &&
-            !SSL_set_cipher_list(ssl, dc->szCipherSuite ?
-                                      dc->szCipherSuite :
-                                      sc->server->auth.cipher_suite)) {
+        if (is_slave) {
+            /* TODO: this categorically fails changed cipher suite settings
+             * on slave connections. We could do better by
+             * - create a new SSL* from our SSL_CTX and set cipher suite there,
+             *   and retrieve ciphers, free afterwards
+             * Modifying the SSL on a slave connection is no good.
+             */
+            apr_table_setn(r->notes, "ssl-renegotiate-forbidden", "cipher-suite");
+            return HTTP_FORBIDDEN;
+        }
+
+        if (!SSL_set_cipher_list(ssl, ncipher_suite)) {
             ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(02253)
                           "Unable to reconfigure (per-directory) "
                           "permitted SSL ciphers");
@@ -490,6 +648,15 @@ int ssl_hook_Access(request_rec *r)
         }
 
         if (renegotiate) {
+            if (is_slave) {
+                /* The request causes renegotiation on a slave connection.
+                 * This is not allowed since we might have concurrent requests
+                 * on this connection.
+                 */
+                apr_table_setn(r->notes, "ssl-renegotiate-forbidden", "cipher-suite");
+                return HTTP_FORBIDDEN;
+            }
+            
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
             if (sc->cipher_server_pref == TRUE) {
                 SSL_set_options(ssl, SSL_OP_CIPHER_SERVER_PREFERENCE);
@@ -499,31 +666,6 @@ int ssl_hook_Access(request_rec *r)
             ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02220)
                          "Reconfigured cipher suite will force renegotiation");
         }
-    }
-
-    /*
-     * override of SSLVerifyDepth
-     *
-     * The depth checks are handled by us manually inside the verify callback
-     * function and not by OpenSSL internally (and our function is aware of
-     * both the per-server and per-directory contexts). So we cannot ask
-     * OpenSSL about the currently verify depth. Instead we remember it in our
-     * SSLConnRec attached to the SSL* of OpenSSL.  We've to force the
-     * renegotiation if the reconfigured/new verify depth is less than the
-     * currently active/remembered verify depth (because this means more
-     * restriction on the certificate chain).
-     */
-    n = (sslconn->verify_depth != UNSET) ?
-        sslconn->verify_depth :
-        (mySrvConfig(handshakeserver))->server->auth.verify_depth;
-    /* determine the new depth */
-    sslconn->verify_depth = (dc->nVerifyDepth != UNSET) ?
-                            dc->nVerifyDepth : sc->server->auth.verify_depth;
-    if (sslconn->verify_depth < n) {
-        renegotiate = TRUE;
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02254)
-                     "Reduced client verification depth will force "
-                     "renegotiation");
     }
 
     /*
@@ -542,6 +684,7 @@ int ssl_hook_Access(request_rec *r)
      */
     if ((dc->nVerifyClient != SSL_CVERIFY_UNSET) ||
         (sc->server->auth.verify_mode != SSL_CVERIFY_UNSET)) {
+
         /* remember old state */
         verify_old = SSL_get_verify_mode(ssl);
         /* configure new state */
@@ -560,6 +703,9 @@ int ssl_hook_Access(request_rec *r)
             verify |= SSL_VERIFY_PEER;
         }
 
+        /* TODO: this seems premature since we do not know if there
+         *       are any changes required.
+         */
         SSL_set_verify(ssl, verify, ssl_callback_SSLVerify);
         SSL_set_verify_result(ssl, X509_V_OK);
 
@@ -575,6 +721,15 @@ int ssl_hook_Access(request_rec *r)
                   (verify     & SSL_VERIFY_FAIL_IF_NO_PEER_CERT)))
             {
                 renegotiate = TRUE;
+                if (is_slave) {
+                    /* The request causes renegotiation on a slave connection.
+                     * This is not allowed since we might have concurrent requests
+                     * on this connection.
+                     */
+                    apr_table_setn(r->notes, "ssl-renegotiate-forbidden", "verify-client");
+                    SSL_set_verify(ssl, verify_old, ssl_callback_SSLVerify);
+                    return HTTP_FORBIDDEN;
+                }
                 /* optimization */
 
                 if ((dc->nOptions & SSL_OPT_OPTRENEGOTIATE) &&
@@ -589,7 +744,36 @@ int ssl_hook_Access(request_rec *r)
                               "Changed client verification type will force "
                               "%srenegotiation",
                               renegotiate_quick ? "quick " : "");
-             }
+            }
+            else if (verify != SSL_VERIFY_NONE) {
+                /*
+                 * override of SSLVerifyDepth
+                 *
+                 * The depth checks are handled by us manually inside the
+                 * verify callback function and not by OpenSSL internally
+                 * (and our function is aware of both the per-server and
+                 * per-directory contexts). So we cannot ask OpenSSL about
+                 * the currently verify depth. Instead we remember it in our
+                 * SSLConnRec attached to the SSL* of OpenSSL.  We've to force
+                 * the renegotiation if the reconfigured/new verify depth is
+                 * less than the currently active/remembered verify depth
+                 * (because this means more restriction on the certificate
+                 * chain).
+                 */
+                n = (sslconn->verify_depth != UNSET)
+                    ? sslconn->verify_depth
+                    : hssc->server->auth.verify_depth;
+                /* determine the new depth */
+                sslconn->verify_depth = (dc->nVerifyDepth != UNSET)
+                                        ? dc->nVerifyDepth
+                                        : sc->server->auth.verify_depth;
+                if (sslconn->verify_depth < n) {
+                    renegotiate = TRUE;
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02254)
+                                  "Reduced client verification depth will "
+                                  "force renegotiation");
+                }
+            }
         }
         /* If we're handling a request for a vhost other than the default one,
          * then we need to make sure that client authentication is properly
@@ -605,8 +789,6 @@ int ssl_hook_Access(request_rec *r)
             && renegotiate
             && ((verify & SSL_VERIFY_PEER) ||
                 (verify & SSL_VERIFY_FAIL_IF_NO_PEER_CERT))) {
-            SSLSrvConfigRec *hssc = mySrvConfig(handshakeserver);
-
 #define MODSSL_CFG_CA_NE(f, sc1, sc2) \
             (sc1->server->auth.f && \
              (!sc2->server->auth.f || \
@@ -702,7 +884,14 @@ int ssl_hook_Access(request_rec *r)
 
             cert = SSL_get_peer_certificate(ssl);
 
-            if (!cert_stack && cert) {
+            if (!cert_stack || (sk_X509_num(cert_stack) == 0)) {
+                if (!cert) {
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02222)
+                                  "Cannot find peer certificate chain");
+
+                    return HTTP_FORBIDDEN;
+                }
+
                 /* client cert is in the session cache, but there is
                  * no chain, since ssl3_get_client_certificate()
                  * sk_X509_shift-ed the peer cert out of the chain.
@@ -710,13 +899,6 @@ int ssl_hook_Access(request_rec *r)
                  */
                 cert_stack = sk_X509_new_null();
                 sk_X509_push(cert_stack, cert);
-            }
-
-            if (!cert_stack || (sk_X509_num(cert_stack) == 0)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02222)
-                              "Cannot find peer certificate chain");
-
-                return HTTP_FORBIDDEN;
             }
 
             if (!(cert_store ||
@@ -828,12 +1010,17 @@ int ssl_hook_Access(request_rec *r)
 
             if (SSL_get_state(ssl) != SSL_ST_OK) {
                 ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02261)
-                              "Re-negotiation handshake failed: "
-                              "Not accepted by client!?");
+                              "Re-negotiation handshake failed");
+                ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, r->server);
 
                 r->connection->keepalive = AP_CONN_CLOSE;
                 return HTTP_FORBIDDEN;
             }
+
+            /* Full renegotiation successful, we now have handshaken with
+             * this server's parameters.
+             */
+            sslconn->server = r->server;
         }
 
         /*
@@ -889,6 +1076,10 @@ int ssl_hook_Access(request_rec *r)
                               SSL_CIPHER_get_name(cipher));
                 return HTTP_FORBIDDEN;
             }
+        }
+        /* remember any new cipher suite used in renegotiation */
+        if (ncipher_suite) {
+            sslconn->cipher_suite = ncipher_suite;
         }
     }
 
@@ -968,7 +1159,7 @@ int ssl_hook_Access(request_rec *r)
  *  Fake a Basic authentication from the X509 client certificate.
  *
  *  This must be run fairly early on to prevent a real authentication from
- *  occuring, in particular it must be run before anything else that
+ *  occurring, in particular it must be run before anything else that
  *  authenticates a user.  This means that the Module statement for this
  *  module should be LAST in the Configuration file.
  */
@@ -1112,6 +1303,7 @@ static const char *ssl_hook_Fixup_vars[] = {
     "SSL_CLIENT_I_DN",
     "SSL_CLIENT_A_KEY",
     "SSL_CLIENT_A_SIG",
+    "SSL_CLIENT_CERT_RFC4523_CEA",
     "SSL_SERVER_M_VERSION",
     "SSL_SERVER_M_SERIAL",
     "SSL_SERVER_V_START",
@@ -1143,13 +1335,8 @@ int ssl_hook_Fixup(request_rec *r)
     SSL *ssl;
     int i;
 
-    /* If "SSLEngine optional" is configured, this is not an SSL
-     * connection, and this isn't a subrequest, send an Upgrade
-     * response header. */
-    if (sc->enabled == SSL_ENABLED_OPTIONAL && !(sslconn && sslconn->ssl)
-        && !r->main) {
-        apr_table_setn(r->headers_out, "Upgrade", "TLS/1.0, HTTP/1.1");
-        apr_table_mergen(r->headers_out, "Connection", "upgrade");
+    if (!(sslconn && sslconn->ssl) && r->connection->master) {
+        sslconn = myConnConfig(r->connection->master);
     }
 
     /*
@@ -1174,7 +1361,8 @@ int ssl_hook_Fixup(request_rec *r)
 
     /* standard SSL environment variables */
     if (dc->nOptions & SSL_OPT_STDENVVARS) {
-        modssl_var_extract_dns(env, sslconn->ssl, r->pool);
+        modssl_var_extract_dns(env, ssl, r->pool);
+        modssl_var_extract_san_entries(env, ssl, r->pool);
 
         for (i = 0; ssl_hook_Fixup_vars[i]; i++) {
             var = (char *)ssl_hook_Fixup_vars[i];
@@ -1359,18 +1547,20 @@ int ssl_callback_SSLVerify(int ok, X509_STORE_CTX *ctx)
     SSL *ssl = X509_STORE_CTX_get_ex_data(ctx,
                                           SSL_get_ex_data_X509_STORE_CTX_idx());
     conn_rec *conn      = (conn_rec *)SSL_get_app_data(ssl);
-    request_rec *r      = (request_rec *)SSL_get_app_data2(ssl);
+    request_rec *r      = (request_rec *)modssl_get_app_data2(ssl);
     server_rec *s       = r ? r->server : mySrvFromConn(conn);
 
     SSLSrvConfigRec *sc = mySrvConfig(s);
     SSLDirConfigRec *dc = r ? myDirConfig(r) : NULL;
     SSLConnRec *sslconn = myConnConfig(conn);
     modssl_ctx_t *mctx  = myCtxConfig(sslconn, sc);
+    int crl_check_mode  = mctx->crl_check_mask & ~SSL_CRLCHECK_FLAGS;
 
     /* Get verify ingredients */
     int errnum   = X509_STORE_CTX_get_error(ctx);
     int errdepth = X509_STORE_CTX_get_error_depth(ctx);
     int depth, verify;
+
 
     /*
      * Log verification information
@@ -1378,10 +1568,10 @@ int ssl_callback_SSLVerify(int ok, X509_STORE_CTX *ctx)
     ssl_log_cxerror(SSLLOG_MARK, APLOG_DEBUG, 0, conn,
                     X509_STORE_CTX_get_current_cert(ctx), APLOGNO(02275)
                     "Certificate Verification, depth %d, "
-                    "CRL checking mode: %s", errdepth,
-                    mctx->crl_check_mode == SSL_CRLCHECK_CHAIN ?
-                    "chain" : (mctx->crl_check_mode == SSL_CRLCHECK_LEAF ?
-                               "leaf" : "none"));
+                    "CRL checking mode: %s (%x)", errdepth,
+                    crl_check_mode == SSL_CRLCHECK_CHAIN ? "chain" :
+                    crl_check_mode == SSL_CRLCHECK_LEAF  ? "leaf"  : "none",
+                    mctx->crl_check_mask);
 
     /*
      * Check for optionally acceptable non-verifiable issuer situation
@@ -1428,6 +1618,17 @@ int ssl_callback_SSLVerify(int ok, X509_STORE_CTX *ctx)
      */
     if (!ok && errnum == X509_V_ERR_CRL_HAS_EXPIRED) {
         X509_STORE_CTX_set_error(ctx, -1);
+    }
+
+    if (!ok && errnum == X509_V_ERR_UNABLE_TO_GET_CRL
+            && (mctx->crl_check_mask & SSL_CRLCHECK_NO_CRL_FOR_CERT_OK)) {
+        ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, conn,
+                      "Certificate Verification: Temporary error (%d): %s: "
+                      "optional therefore we're accepting the certificate",
+                      errnum, X509_verify_cert_error_string(errnum));
+        X509_STORE_CTX_set_error(ctx, X509_V_OK);
+        errnum = X509_V_OK;
+        ok = TRUE;
     }
 
 #ifndef OPENSSL_NO_OCSP
@@ -1628,7 +1829,7 @@ static void ssl_session_log(server_rec *s,
                             const char *result,
                             long timeout)
 {
-    char buf[SSL_SESSION_ID_STRING_LEN];
+    char buf[MODSSL_SESSION_ID_STRING_LEN];
     char timeout_str[56] = {'\0'};
 
     if (!APLOGdebug(s)) {
@@ -1644,7 +1845,7 @@ static void ssl_session_log(server_rec *s,
                  "Inter-Process Session Cache: "
                  "request=%s status=%s id=%s %s(session %s)",
                  request, status,
-                 SSL_SESSION_id2sz(id, idlen, buf, sizeof(buf)),
+                 modssl_SSL_SESSION_id2sz(id, idlen, buf, sizeof(buf)),
                  timeout_str, result);
 }
 
@@ -1736,7 +1937,7 @@ SSL_SESSION *ssl_callback_GetSessionCacheEntry(SSL *ssl,
 
 /*
  *  This callback function is executed by OpenSSL whenever a
- *  SSL_SESSION is removed from the the internal OpenSSL cache.
+ *  SSL_SESSION is removed from the internal OpenSSL cache.
  *  We use this to remove the SSL_SESSION in the inter-process
  *  disk-cache, too.
  */
@@ -1785,32 +1986,32 @@ static void log_tracing_state(const SSL *ssl, conn_rec *c,
      */
     if (where & SSL_CB_HANDSHAKE_START) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
-                      "%s: Handshake: start", SSL_LIBRARY_NAME);
+                      "%s: Handshake: start", MODSSL_LIBRARY_NAME);
     }
     else if (where & SSL_CB_HANDSHAKE_DONE) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
-                      "%s: Handshake: done", SSL_LIBRARY_NAME);
+                      "%s: Handshake: done", MODSSL_LIBRARY_NAME);
     }
     else if (where & SSL_CB_LOOP) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                       "%s: Loop: %s",
-                      SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                      MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
     }
     else if (where & SSL_CB_READ) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                       "%s: Read: %s",
-                      SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                      MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
     }
     else if (where & SSL_CB_WRITE) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                       "%s: Write: %s",
-                      SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                      MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
     }
     else if (where & SSL_CB_ALERT) {
         char *str = (where & SSL_CB_READ) ? "read" : "write";
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                       "%s: Alert: %s:%s:%s",
-                      SSL_LIBRARY_NAME, str,
+                      MODSSL_LIBRARY_NAME, str,
                       SSL_alert_type_string_long(rc),
                       SSL_alert_desc_string_long(rc));
     }
@@ -1818,12 +2019,12 @@ static void log_tracing_state(const SSL *ssl, conn_rec *c,
         if (rc == 0) {
             ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                           "%s: Exit: failed in %s",
-                          SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                          MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
         }
         else if (rc < 0) {
             ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                           "%s: Exit: error in %s",
-                          SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                          MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
         }
     }
 
@@ -1890,23 +2091,29 @@ void ssl_callback_Info(const SSL *ssl, int where, int rc)
 
 #ifdef HAVE_TLSEXT
 /*
- * This callback function is executed when OpenSSL encounters an extended
+ * This function sets the virtual host from an extended
  * client hello with a server name indication extension ("SNI", cf. RFC 6066).
  */
-int ssl_callback_ServerNameIndication(SSL *ssl, int *al, modssl_ctx_t *mctx)
+static apr_status_t init_vhost(conn_rec *c, SSL *ssl)
 {
-    const char *servername =
-                SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-    conn_rec *c = (conn_rec *)SSL_get_app_data(ssl);
-
+    const char *servername;
+    
     if (c) {
+        SSLConnRec *sslcon = myConnConfig(c);
+        
+        if (sslcon->server != c->base_server) {
+            /* already found the vhost */
+            return APR_SUCCESS;
+        }
+        
+        servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
         if (servername) {
             if (ap_vhost_iterate_given_conn(c, ssl_find_vhost,
                                             (void *)servername)) {
                 ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(02043)
                               "SSL virtual host for servername %s found",
                               servername);
-                return SSL_TLSEXT_ERR_OK;
+                return APR_SUCCESS;
             }
             else {
                 ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(02044)
@@ -1936,8 +2143,20 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, modssl_ctx_t *mctx)
                           "(using default/first virtual host)");
         }
     }
+    
+    return APR_NOTFOUND;
+}
 
-    return SSL_TLSEXT_ERR_NOACK;
+/*
+ * This callback function is executed when OpenSSL encounters an extended
+ * client hello with a server name indication extension ("SNI", cf. RFC 6066).
+ */
+int ssl_callback_ServerNameIndication(SSL *ssl, int *al, modssl_ctx_t *mctx)
+{
+    conn_rec *c = (conn_rec *)SSL_get_app_data(ssl);
+    apr_status_t status = init_vhost(c, ssl);
+    
+    return (status == APR_SUCCESS)? SSL_TLSEXT_ERR_OK : SSL_TLSEXT_ERR_NOACK;
 }
 
 /*
@@ -1949,50 +2168,10 @@ static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s)
 {
     SSLSrvConfigRec *sc;
     SSL *ssl;
-    BOOL found = FALSE;
-    apr_array_header_t *names;
-    int i;
+    BOOL found;
     SSLConnRec *sslcon;
 
-    /* check ServerName */
-    if (!strcasecmp(servername, s->server_hostname)) {
-        found = TRUE;
-    }
-
-    /*
-     * if not matched yet, check ServerAlias entries
-     * (adapted from vhost.c:matches_aliases())
-     */
-    if (!found) {
-        names = s->names;
-        if (names) {
-            char **name = (char **)names->elts;
-            for (i = 0; i < names->nelts; ++i) {
-                if (!name[i])
-                    continue;
-                if (!strcasecmp(servername, name[i])) {
-                    found = TRUE;
-                    break;
-                }
-            }
-        }
-    }
-
-    /* if still no match, check ServerAlias entries with wildcards */
-    if (!found) {
-        names = s->wild_names;
-        if (names) {
-            char **name = (char **)names->elts;
-            for (i = 0; i < names->nelts; ++i) {
-                if (!name[i])
-                    continue;
-                if (!ap_strcasecmp_match(servername, name[i])) {
-                    found = TRUE;
-                    break;
-                }
-            }
-        }
-    }
+    found = ssl_util_vhost_matches(servername, s);
 
     /* set SSL_CTX (if matched) */
     sslcon = myConnConfig(c);
@@ -2040,7 +2219,9 @@ static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s)
          * retrieval
          */
         sslcon->server = s;
-
+        sslcon->cipher_suite = sc->server->auth.cipher_suite;
+        
+        ap_update_child_status_from_server(c->sbh, SERVER_BUSY_READ, c, s);
         /*
          * There is one special filter callback, which is set
          * very early depending on the base_server's log level.
@@ -2049,8 +2230,14 @@ static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s)
          * we need to set that callback here.
          */
         if (APLOGtrace4(s)) {
-            BIO_set_callback(SSL_get_rbio(ssl), ssl_io_data_cb);
-            BIO_set_callback_arg(SSL_get_rbio(ssl), (void *)ssl);
+            BIO *rbio = SSL_get_rbio(ssl),
+                *wbio = SSL_get_wbio(ssl);
+            BIO_set_callback(rbio, ssl_io_data_cb);
+            BIO_set_callback_arg(rbio, (void *)ssl);
+            if (wbio && wbio != rbio) {
+                BIO_set_callback(wbio, ssl_io_data_cb);
+                BIO_set_callback_arg(wbio, (void *)ssl);
+            }
         }
 
         return 1;
@@ -2129,6 +2316,96 @@ int ssl_callback_SessionTicket(SSL *ssl,
     return -1;
 }
 #endif /* HAVE_TLS_SESSION_TICKETS */
+
+#ifdef HAVE_TLS_ALPN
+
+/*
+ * This callback function is executed when the TLS Application-Layer
+ * Protocol Negotiation Extension (ALPN, RFC 7301) is triggered by the Client
+ * Hello, giving a list of desired protocol names (in descending preference) 
+ * to the server.
+ * The callback has to select a protocol name or return an error if none of
+ * the clients preferences is supported.
+ * The selected protocol does not have to be on the client list, according
+ * to RFC 7301, so no checks are performed.
+ * The client protocol list is serialized as length byte followed by ASCII
+ * characters (not null-terminated), followed by the next protocol name.
+ */
+int ssl_callback_alpn_select(SSL *ssl,
+                             const unsigned char **out, unsigned char *outlen,
+                             const unsigned char *in, unsigned int inlen,
+                             void *arg)
+{
+    conn_rec *c = (conn_rec*)SSL_get_app_data(ssl);
+    SSLConnRec *sslconn = myConnConfig(c);
+    apr_array_header_t *client_protos;
+    const char *proposed;
+    size_t len;
+    int i;
+
+    /* If the connection object is not available,
+     * then there's nothing for us to do. */
+    if (c == NULL) {
+        return SSL_TLSEXT_ERR_OK;
+    }
+
+    if (inlen == 0) {
+        /* someone tries to trick us? */
+        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(02837)
+                      "ALPN client protocol list empty");
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
+    client_protos = apr_array_make(c->pool, 0, sizeof(char *));
+    for (i = 0; i < inlen; /**/) {
+        unsigned int plen = in[i++];
+        if (plen + i > inlen) {
+            /* someone tries to trick us? */
+            ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(02838)
+                          "ALPN protocol identifier too long");
+            return SSL_TLSEXT_ERR_ALERT_FATAL;
+        }
+        APR_ARRAY_PUSH(client_protos, char *) =
+            apr_pstrndup(c->pool, (const char *)in+i, plen);
+        i += plen;
+    }
+
+    /* The order the callbacks are invoked from TLS extensions is, unfortunately
+     * not defined and older openssl versions do call ALPN selection before
+     * they callback the SNI. We need to make sure that we know which vhost
+     * we are dealing with so we respect the correct protocols.
+     */
+    init_vhost(c, ssl);
+    
+    proposed = ap_select_protocol(c, NULL, sslconn->server, client_protos);
+    if (!proposed) {
+        proposed = ap_get_protocol(c);
+    }
+    
+    len = strlen(proposed);
+    if (len > 255) {
+        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(02840)
+                      "ALPN negotiated protocol name too long");
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+    *out = (const unsigned char *)proposed;
+    *outlen = (unsigned char)len;
+        
+    if (strcmp(proposed, ap_get_protocol(c))) {
+        apr_status_t status;
+        
+        status = ap_switch_protocol(c, NULL, sslconn->server, proposed);
+        if (status != APR_SUCCESS) {
+            ap_log_cerror(APLOG_MARK, APLOG_ERR, status, c,
+                          APLOGNO(02908) "protocol switch to '%s' failed",
+                          proposed);
+            return SSL_TLSEXT_ERR_ALERT_FATAL;
+        }
+    }
+
+    return SSL_TLSEXT_ERR_OK;
+}
+#endif /* HAVE_TLS_ALPN */
 
 #ifdef HAVE_SRP
 
