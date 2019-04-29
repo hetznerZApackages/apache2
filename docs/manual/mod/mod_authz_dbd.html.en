@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -17,7 +19,7 @@
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="../images/feather.gif" /></div>
+<img alt="" src="../images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Modules</a></div>
@@ -48,19 +50,19 @@
        the backend database driver and connection parameters, and
        manage the database connections.</p>
 </div>
-<div id="quickview"><h3 class="directives">Directives</h3>
-<ul id="toc">
-<li><img alt="" src="../images/down.gif" /> <a href="#authzdbdlogintoreferer">AuthzDBDLoginToReferer</a></li>
-<li><img alt="" src="../images/down.gif" /> <a href="#authzdbdquery">AuthzDBDQuery</a></li>
-<li><img alt="" src="../images/down.gif" /> <a href="#authzdbdredirectquery">AuthzDBDRedirectQuery</a></li>
-</ul>
-<h3>Topics</h3>
+<div id="quickview"><h3>Topics</h3>
 <ul id="topics">
 <li><img alt="" src="../images/down.gif" /> <a href="#requiredirectives">The Require Directives</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#login">Database Login</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#client">Client Login integration</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#example">Configuration example</a></li>
-</ul><h3>See also</h3>
+</ul><h3 class="directives">Directives</h3>
+<ul id="toc">
+<li><img alt="" src="../images/down.gif" /> <a href="#authzdbdlogintoreferer">AuthzDBDLoginToReferer</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#authzdbdquery">AuthzDBDQuery</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#authzdbdredirectquery">AuthzDBDRedirectQuery</a></li>
+</ul>
+<h3>Bugfix checklist</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">httpd changelog</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mod_authz_dbd">Known issues</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mod_authz_dbd">Report a bug</a></li></ul><h3>See also</h3>
 <ul class="seealso">
 <li><code class="directive"><a href="../mod/mod_authz_core.html#require">Require</a></code></li>
 <li>
@@ -68,7 +70,7 @@
 </li>
 <li><code class="directive"><a href="../mod/mod_dbd.html#dbdriver">DBDriver</a></code></li>
 <li><code class="directive"><a href="../mod/mod_dbd.html#dbdparams">DBDParams</a></code></li>
-</ul><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
+<li><a href="#comments_section">Comments</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="requiredirectives" id="requiredirectives">The Require Directives</a></h2>
@@ -155,7 +157,7 @@ DBDKeep 8
 DBDMax  20
 DBDExptime 300
 
-&lt;Directory /usr/www/my.site/team-private/&gt;
+&lt;Directory "/usr/www/my.site/team-private/"&gt;
   # mod_authn_core and mod_auth_basic configuration
   # for mod_authn_dbd
   AuthType Basic
@@ -175,9 +177,9 @@ DBDExptime 300
   # when a user fails to be authenticated or authorized,
   # invite them to login; this page should provide a link
   # to /team-private/login.html
-  ErrorDocument 401 /login-info.html
+  ErrorDocument 401 "/login-info.html"
 
-  &lt;Files login.html&gt;
+  &lt;Files "login.html"&gt;
     # don't require user to already be logged in!
     AuthDBDUserPWQuery "SELECT password FROM authn WHERE user = %s"
 
@@ -190,7 +192,7 @@ DBDExptime 300
     AuthzDBDLoginToReferer On
   &lt;/Files&gt;
 
-  &lt;Files logout.html&gt;
+  &lt;Files "logout.html"&gt;
     # dbd-logout action executes a statement to log user out
     Require dbd-logout
     AuthzDBDQuery "UPDATE authn SET login = 'false' WHERE user = %s"
@@ -304,7 +306,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_authz_dbd.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2014 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -96,7 +96,8 @@ static const char *ap_expr_eval_word(ap_expr_eval_ctx_t *ctx,
                                   node->node_arg2);
         break;
     case op_Concat:
-        if (((ap_expr_t *)node->node_arg2)->node_op != op_Concat) {
+        if (((ap_expr_t *)node->node_arg2)->node_op != op_Concat &&
+            ((ap_expr_t *)node->node_arg1)->node_op != op_Concat) {
             const char *s1 = ap_expr_eval_word(ctx, node->node_arg1);
             const char *s2 = ap_expr_eval_word(ctx, node->node_arg2);
             if (!*s1)
@@ -105,6 +106,30 @@ static const char *ap_expr_eval_word(ap_expr_eval_ctx_t *ctx,
                 result = s1;
             else
                 result = apr_pstrcat(ctx->p, s1, s2, NULL);
+        }
+        else if (((ap_expr_t *)node->node_arg1)->node_op == op_Concat) {
+            const ap_expr_t *nodep = node;
+            int n;
+            int i = 1;
+            struct iovec *vec;
+            do {
+                nodep = nodep->node_arg1;
+                i++;
+            } while (nodep->node_op == op_Concat);
+            vec = apr_palloc(ctx->p, i * sizeof(struct iovec));
+            n = i;
+            nodep = node;
+            i--;
+            do {
+                vec[i].iov_base = (void *)ap_expr_eval_word(ctx,
+                                                            nodep->node_arg2);
+                vec[i].iov_len = strlen(vec[i].iov_base);
+                i--;
+                nodep = nodep->node_arg1;
+            } while (nodep->node_op == op_Concat);
+            vec[i].iov_base = (void *)ap_expr_eval_word(ctx, nodep);
+            vec[i].iov_len = strlen(vec[i].iov_base);
+            result = apr_pstrcatv(ctx->p, vec, n, NULL);
         }
         else {
             const ap_expr_t *nodep = node;
@@ -236,10 +261,8 @@ static int ap_expr_eval_comp(ap_expr_eval_ctx_t *ctx, const ap_expr_t *node)
                 do {
                     const ap_expr_t *val = e2->node_arg1;
                     AP_DEBUG_ASSERT(e2->node_op == op_ListElement);
-                    if (strcmp(needle, ap_expr_eval_word(ctx, val)) == 0) {
+                    if (strcmp(needle, ap_expr_eval_word(ctx, val)) == 0)
                         return 1;
-                        break;
-                    }
                     e2 = e2->node_arg2;
                 } while (e2 != NULL);
             }
@@ -248,15 +271,15 @@ static int ap_expr_eval_comp(ap_expr_eval_ctx_t *ctx, const ap_expr_t *node)
                 const ap_expr_t *arg = e2->node_arg2;
                 ap_expr_list_func_t *func = (ap_expr_list_func_t *)info->node_arg1;
                 apr_array_header_t *haystack;
-                int i = 0;
+
                 AP_DEBUG_ASSERT(func != NULL);
                 AP_DEBUG_ASSERT(info->node_op == op_ListFuncInfo);
                 haystack = (*func)(ctx, info->node_arg2, ap_expr_eval_word(ctx, arg));
-                if (haystack == NULL)
+                if (haystack == NULL) {
                     return 0;
-                for (; i < haystack->nelts; i++) {
-                    if (strcmp(needle, APR_ARRAY_IDX(haystack,i,char *)) == 0)
-                        return 1;
+                }
+                if (ap_array_str_contains(haystack, needle)) {
+                    return 1;
                 }
             }
             return 0;
@@ -885,7 +908,7 @@ AP_DECLARE(const char *) ap_expr_str_exec_re(request_rec *r,
 {
     ap_expr_eval_ctx_t ctx;
     int dont_vary, rc;
-    const char *tmp_source = NULL, *vary_this = NULL;
+    const char *tmp_source, *vary_this;
     ap_regmatch_t tmp_pmatch[AP_MAX_REG_MATCH];
     const char *result;
 
@@ -896,6 +919,9 @@ AP_DECLARE(const char *) ap_expr_str_exec_re(request_rec *r,
         *err = NULL;
         return (const char *)info->root_node->node_arg1;
     }
+
+    tmp_source = NULL;
+    vary_this = NULL;
 
     dont_vary = (info->flags & AP_EXPR_FLAG_DONT_VARY);
 
@@ -1228,11 +1254,15 @@ static int op_file_subr(ap_expr_eval_ctx_t *ctx, const void *data, const char *a
 APR_DECLARE_OPTIONAL_FN(int, ssl_is_https, (conn_rec *));
 static APR_OPTIONAL_FN_TYPE(ssl_is_https) *is_https = NULL;
 
+APR_DECLARE_OPTIONAL_FN(int, http2_is_h2, (conn_rec *));
+static APR_OPTIONAL_FN_TYPE(http2_is_h2) *is_http2 = NULL;
+
 static const char *conn_var_names[] = {
     "HTTPS",                    /*  0 */
     "IPV6",                     /*  1 */
     "CONN_LOG_ID",              /*  2 */
     "CONN_REMOTE_ADDR",         /*  3 */
+    "HTTP2",                    /*  4 */
     NULL
 };
 
@@ -1266,6 +1296,11 @@ static const char *conn_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
         return c->log_id;
     case 3:
         return c->client_ip;
+    case 4:
+        if (is_http2 && is_http2(c))
+            return "on";
+        else
+            return "off";
     default:
         ap_assert(0);
         return NULL;
@@ -1322,8 +1357,7 @@ static const char *request_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
     case 3:
         return r->filename;
     case 4:
-        return ap_get_remote_host(r->connection, r->per_dir_config,
-                                  REMOTE_NAME, NULL);
+        return ap_get_useragent_host(r, REMOTE_NAME, NULL);
     case 5:
         return ap_get_remote_logname(r);
     case 6:
@@ -1475,7 +1509,7 @@ static const char *misc_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
     case 8:
         return ap_get_server_banner();
     case 9:
-        return apr_itoa(ctx->p, MODULE_MAGIC_NUMBER);
+        return apr_itoa(ctx->p, MODULE_MAGIC_NUMBER_MAJOR);
     default:
         ap_assert(0);
     }
@@ -1757,6 +1791,7 @@ static int ap_expr_post_config(apr_pool_t *pconf, apr_pool_t *plog,
                                apr_pool_t *ptemp, server_rec *s)
 {
     is_https = APR_RETRIEVE_OPTIONAL_FN(ssl_is_https);
+    is_http2 = APR_RETRIEVE_OPTIONAL_FN(http2_is_h2);
     apr_pool_cleanup_register(pconf, &is_https, ap_pool_cleanup_set_null,
                               apr_pool_cleanup_null);
     return OK;

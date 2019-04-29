@@ -136,6 +136,7 @@ BEGIN {
           print "#LoadModule ext_filter_module modules/mod_ext_filter.so" > dstfl;
           print "#LoadModule file_cache_module modules/mod_file_cache.so" > dstfl;
           print "#LoadModule filter_module modules/mod_filter.so" > dstfl;
+          print "#LoadModule http2_module modules/mod_http2.so" > dstfl;
           print "#LoadModule headers_module modules/mod_headers.so" > dstfl;
           print "#LoadModule heartbeat_module modules/mod_heartbeat.so" > dstfl;
           print "#LoadModule heartmonitor_module modules/mod_heartmonitor.so" > dstfl;
@@ -165,8 +166,10 @@ BEGIN {
           print "#LoadModule proxy_express_module modules/mod_proxy_express.so" > dstfl;
           print "#LoadModule proxy_fcgi_module modules/mod_proxy_fcgi.so" > dstfl;
           print "#LoadModule proxy_ftp_module modules/mod_proxy_ftp.so" > dstfl;
+          print "#LoadModule proxy_hcheck_module modules/mod_proxy_hcheck.so" > dstfl;
           print "#LoadModule proxy_html_module modules/mod_proxy_html.so" > dstfl;
           print "#LoadModule proxy_http_module modules/mod_proxy_http.so" > dstfl;
+          print "#LoadModule proxy_http2_module modules/mod_proxy_http2.so" > dstfl;
           print "#LoadModule proxy_scgi_module modules/mod_proxy_scgi.so" > dstfl;
           print "#LoadModule proxy_wstunnel_module modules/mod_proxy_wstunnel.so" > dstfl;
           print "#LoadModule ratelimit_module modules/mod_ratelimit.so" > dstfl;

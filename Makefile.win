@@ -215,6 +215,34 @@ _trylua:
 
 !ENDIF
 
+!IF EXIST("srclib\nghttp2")
+
+_trynghttp2:
+!IF $(USEMAK) == 1
+	cd modules\http2
+	$(MAKE) $(MAKEOPT) -f mod_http2.mak       CFG="mod_http2 - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	$(MAKE) $(MAKEOPT) -f mod_proxy_http2.mak CFG="mod_proxy_http2 - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	cd ..\..
+!ELSEIF $(USESLN) == 1
+	devenv $(TLP).sln /useenv $(CTARGET) $(LONG) /project mod_http2
+	devenv $(TLP).sln /useenv $(CTARGET) $(LONG) /project mod_proxy_http2
+!ELSE
+	@msdev $(TLP).dsw /USEENV /MAKE \
+		"mod_http2 - Win32 $(LONG)" /NORECURSE $(CTARGET)
+	@msdev $(TLP).dsw /USEENV /MAKE \
+		"mod_proxy_http2 - Win32 $(LONG)" /NORECURSE $(CTARGET)
+!ENDIF
+
+!ELSE
+#     NOT EXIST("srclib\nghttp2")
+
+_trynghttp2:
+	@echo -----
+	@echo mod_http2 will not build unless nghttp2 is installed in srclib\nghttp2.
+	@echo Version 1.0 includes an lib\makefile.msvc that will satisfy this
+	@echo requirement.
+
+!ENDIF
 
 _trydb:
 !IF $(USEMAK) == 1
@@ -525,6 +553,7 @@ _build:
 	 $(MAKE) $(MAKEOPT) -f mod_proxy_express.mak CFG="mod_proxy_express - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_proxy_fcgi.mak  CFG="mod_proxy_fcgi - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_proxy_ftp.mak   CFG="mod_proxy_ftp - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_hcheck.mak  CFG="mod_proxy_hcheck - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_proxy_http.mak  CFG="mod_proxy_http - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_proxy_scgi.mak  CFG="mod_proxy_scgi - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_proxy_wstunnel.mak  CFG="mod_proxy_wstunnel - Win32 $(LONG)" RECURSE=0 $(CTARGET)
@@ -535,10 +564,12 @@ _build:
 	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_bytraffic.mak  CFG="mod_lbmethod_bytraffic - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_heartbeat.mak  CFG="mod_lbmethod_heartbeat - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	cd ..\..\..
-!IFDEF ALL
-	cd modules\proxy\examples
-	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_rr.mak CFG="mod_lbmethod_rr - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	cd ..\..\..
+# mod_proxy_http2 must be built after mod_proxy and mod_http2
+!IF EXIST("srclib\nghttp2")
+	cd modules\http2
+	 $(MAKE) $(MAKEOPT) -f mod_http2.mak         CFG="mod_http2 - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_http2.mak   CFG="mod_proxy_http2 - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	cd ..\..
 !ENDIF
 	cd modules\session
 	 $(MAKE) $(MAKEOPT) -f mod_session.mak        CFG="mod_session - Win32 $(LONG)" RECURSE=0 $(CTARGET)
@@ -754,6 +785,15 @@ _copybin:
 	copy modules\generators\$(LONG)\mod_info.$(src_so) 	"$(inst_so)" <.y
 	copy modules\generators\$(LONG)\mod_status.$(src_so) 	"$(inst_so)" <.y
 	copy modules\http\$(LONG)\mod_mime.$(src_so) 		"$(inst_so)" <.y
+!IF EXIST("srclib\nghttp2")
+	copy modules\http2\$(LONG)\mod_http2.$(src_so) 		"$(inst_so)" <.y
+	copy modules\http2\$(LONG)\mod_proxy_http2.$(src_so) 		"$(inst_so)" <.y
+!IF "$(SHORT)" == "D"
+	copy srclib\nghttp2\lib\MSVC_obj\nghttp2d.$(src_dll)		 	"$(inst_dll)" <.y
+!ELSE
+	copy srclib\nghttp2\lib\MSVC_obj\nghttp2.$(src_dll)		 	"$(inst_dll)" <.y
+!ENDIF
+!ENDIF
 	copy modules\ldap\$(LONG)\mod_ldap.$(src_so)		"$(inst_so)" <.y
 	copy modules\loggers\$(LONG)\mod_log_config.$(src_so) 	"$(inst_so)" <.y
 	copy modules\loggers\$(LONG)\mod_log_debug.$(src_so) 	"$(inst_so)" <.y
@@ -792,6 +832,7 @@ _copybin:
 	copy modules\proxy\$(LONG)\mod_proxy_express.$(src_so) 	"$(inst_so)" <.y
 	copy modules\proxy\$(LONG)\mod_proxy_fcgi.$(src_so) 	"$(inst_so)" <.y
 	copy modules\proxy\$(LONG)\mod_proxy_ftp.$(src_so) 	"$(inst_so)" <.y
+	copy modules\proxy\$(LONG)\mod_proxy_hcheck.$(src_so) 	"$(inst_so)" <.y
 	copy modules\proxy\$(LONG)\mod_proxy_http.$(src_so) 	"$(inst_so)" <.y
 	copy modules\proxy\$(LONG)\mod_proxy_scgi.$(src_so) 	"$(inst_so)" <.y
 	copy modules\proxy\$(LONG)\mod_proxy_wstunnel.$(src_so) 	"$(inst_so)" <.y
@@ -799,9 +840,6 @@ _copybin:
 	copy modules\proxy\balancers\$(LONG)\mod_lbmethod_byrequests.$(src_so) "$(inst_so)" <.y
 	copy modules\proxy\balancers\$(LONG)\mod_lbmethod_bytraffic.$(src_so)  "$(inst_so)" <.y
 	copy modules\proxy\balancers\$(LONG)\mod_lbmethod_heartbeat.$(src_so)  "$(inst_so)" <.y
-!IFDEF ALL
-	copy modules\proxy\examples\$(LONG)\mod_lbmethod_rr.$(src_so) "$(inst_so)" <.y
-!ENDIF
 	copy modules\session\$(LONG)\mod_session.$(src_so)        "$(inst_so)" <.y
 	copy modules\session\$(LONG)\mod_session_cookie.$(src_so) "$(inst_so)" <.y
 	copy modules\session\$(LONG)\mod_session_dbd.$(src_so)    "$(inst_so)" <.y
@@ -1000,6 +1038,46 @@ BEGIN {
 }
 <<
 !ENDIF
+!IF EXIST("srclib\libxml2")
+	type << >> "$(INSTDIR)\NOTICE.txt"
+
+This binary distributions of mod_proxy_html.so and mod_xml2enc.so include the
+libxml2 C library written by Daniel Veillard (daniel veillard.com), Bjorn 
+Reese (breese users.sourceforge.net) and Gary Pennington (Gary.Pennington 
+uk.sun.com). For complete information, visit LibXML2's web site at 
+https://http://www.xmlsoft.org/
+<<
+	-awk -f <<script.awk < "srclib\libxml2\Copyright" >> "$(INSTDIR)\LICENSE.txt"
+BEGIN {
+    print "";
+    print "For the mod_proxy_html and mod_xml2enc components:";
+    print "";
+	    while ( getline > 0 ) {
+	print $$0;
+    }
+    exit 0;
+}
+<<
+!ENDIF
+!IF EXIST("srclib\nghttp2")
+	type << >> "$(INSTDIR)\NOTICE.txt"
+
+This binary distribution of mod_http2.so includes nghttp2 C library written 
+by Tatsuhiro Tsujikawa. For complete information, visit nghttp2's web site 
+at https://nghttp2.org/
+<<
+	-awk -f <<script.awk < "srclib\nghttp2\COPYING" >> "$(INSTDIR)\LICENSE.txt"
+BEGIN {
+    print "";
+    print "For the mod_http2 component:";
+    print "";
+	    while ( getline > 0 ) {
+	print $$0;
+    }
+    exit 0;
+}
+<<
+!ENDIF
 	$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=$(SHORT) LONG=$(LONG) \
 		_copybin src_exe=exe src_dll=dll src_so=so             \
 		inst_exe="$(INSTDIR)\bin"                              \
@@ -1055,6 +1133,7 @@ BEGIN {
 		modules\mappers\mod_rewrite.h \
 		modules\proxy\mod_proxy.h \
 		modules\ssl\mod_ssl.h \
+		modules\ssl\mod_ssl_openssl.h \
           ) do \
 	    @copy %f "$(INSTDIR)\include" < .y > nul
 	copy srclib\apr\Lib$(SHORT)\apr-1.lib		"$(INSTDIR)\lib" <.y
