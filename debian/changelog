@@ -1,3 +1,10 @@
+apache2 (2.4.25-3+deb9u7+hetz1~exp6) jessie-hetz-experimental; urgency=medium
+
+  * Remove proxy_http2 from rules file to avoid broken mod_proxy_http2 which
+    relies on too new a version of nghttp2 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Mon, 29 Apr 2019 11:43:46 +0200
+
 apache2 (2.4.25-3+deb9u7+hetz1~exp5) jessie-hetz-experimental; urgency=medium
 
   * Updating upstream to 2.4.25 
