@@ -2,7 +2,7 @@ Index: apache2/support/suexec.c
 ===================================================================
 --- apache2.orig/support/suexec.c
 +++ apache2/support/suexec.c
-@@ -565,6 +565,8 @@ int main(int argc, char *argv[])
+@@ -577,6 +577,8 @@ int main(int argc, char *argv[])
          exit(119);
      }
  
@@ -11,7 +11,7 @@ Index: apache2/support/suexec.c
      /*
       * Error out if the target name/group is different from
       * the name/group of the cwd or the program.
-@@ -580,6 +582,9 @@ int main(int argc, char *argv[])
+@@ -592,6 +594,9 @@ int main(int argc, char *argv[])
                  (unsigned long)prg_info.st_uid, (unsigned long)prg_info.st_gid);
          exit(120);
      }
