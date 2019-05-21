@@ -274,7 +274,6 @@ static const char* ap_lua_interpolate_string(apr_pool_t* pool, const char* strin
  */
 static int lua_handler(request_rec *r)
 {
-    return DECLINED;
     int rc = OK;
     if (strcmp(r->handler, "lua-script")) {
         return DECLINED;
