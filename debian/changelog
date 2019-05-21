@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u7+hetz1~exp10) jessie-hetz-experimental; urgency=medium
+
+  * Add the lua handler disable as a proper patch 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Tue, 21 May 2019 10:03:24 +0200
+
 apache2 (2.4.25-3+deb9u7+hetz1~exp9) jessie-hetz-experimental; urgency=medium
 
   * Attempt to remove the lua handler for customers 
