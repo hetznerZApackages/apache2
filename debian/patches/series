@@ -40,4 +40,3 @@ CVE-2019-0220-merge-slashes.diff
 
 hetz_relax_ownership_enforcement.diff
 hetz_symlinkprotection.diff
-hetz_lua_handler.diff
