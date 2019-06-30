@@ -30,13 +30,4 @@ mod_http2_mem_usage_32bit.diff
 fcgi_crash.diff
 CVE-2018-1333-mod_http2_DoS.diff
 CVE-2018-11763-mod_http2_DoS-SETTINGS.diff
-CVE-2018-17199-mod-session-ignore-timeout.diff
-mod_http2-keepalive-timeout.diff
-CVE-2018-17189-mod_http2_DoS.diff
-CVE-2019-0196-h2-raf.diff
-CVE-2019-0211-privilege-escalation.diff
-CVE-2019-0217-digest-collusion-in-mod_auth_digest.diff
-CVE-2019-0220-merge-slashes.diff
-
-hetz_relax_ownership_enforcement.diff
 hetz_symlinkprotection.diff

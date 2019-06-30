@@ -1,9 +1,3 @@
-Index: apache2/server/request.c
-===================================================================
---- apache2.orig/server/request.c
-+++ apache2/server/request.c
-@@ -493,7 +493,7 @@ static int resolve_symlink(char *d, apr_
-=======
 #Allways enforce symlink checking
 --- a/server/request.c
 +++ b/server/request.c
@@ -16,7 +10,7 @@ Index: apache2/server/request.c
          if (apr_stat(&fi, d, lfi->valid & ~(APR_FINFO_NAME | APR_FINFO_LINK), p)
              != APR_SUCCESS)
          {
-@@ -1134,6 +1134,7 @@ AP_DECLARE(int) ap_directory_walk(reques
+@@ -1126,6 +1126,7 @@
               * if...we have allowed symlinks
               * skip the lstat and dummy up an APR_DIR value for thisinfo.
               */
@@ -24,11 +18,12 @@ Index: apache2/server/request.c
              if (r->finfo.filetype != APR_NOFILE
  #ifdef CASE_BLIND_FILESYSTEM
                  && (filename_len <= canonical_len)
-@@ -1145,6 +1146,7 @@ AP_DECLARE(int) ap_directory_walk(reques
+@@ -1137,7 +1138,7 @@
                  ++seg;
                  continue;
              }
+-
 +            */
- 
              /* We choose apr_stat with flag APR_FINFO_LINK here, rather that
               * plain apr_stat, so that we capture this path object rather than
+              * its target.  We will replace the info with our target's info

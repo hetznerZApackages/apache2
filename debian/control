@@ -17,7 +17,7 @@ Homepage: http://httpd.apache.org/
 Package: apache2
 Architecture: any
 Pre-Depends: dpkg (>= 1.17.14)
-Depends: ${misc:Depends}, lsb-base, procps [!hurd-any],
+Depends: ${misc:Depends}, lsb-base, procps [!hurd-i386],
  perl, mime-support, apache2-bin (= ${binary:Version}),
  apache2-utils (= ${binary:Version}), apache2-data (= ${source:Version}),
  ${perl:Depends}
@@ -35,7 +35,7 @@ Description: Apache HTTP Server
  configuration files, init scripts and support scripts.
 
 Package: apache2-data
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}
 Multi-Arch: foreign
 Description: Apache HTTP Server (common files)
@@ -52,9 +52,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}
 # MODULE_MAGIC_NUMBER_MAJOR from apache2/include/ap_mmn.h
 Provides: ${apache2:API}
 Suggests: www-browser, apache2-doc, apache2-suexec-pristine | apache2-suexec-custom
-Replaces: apache2.2-bin (<< 2.3~), apache2.2-common (<< 2.3~), apache2-mpm-prefork (<< 2.3~),
- apache2-mpm-itk (<< 2.3~), apache2-mpm-worker (<< 2.3~), apache2-mpm-event (<< 2.3~),
- libapache2-mod-proxy-html (<< 1:2.4.4-2~), libapache2-mod-macro (<< 1:2.4.6-1~)
 Description: Apache HTTP Server (modules and other binary files)
  The Apache HTTP Server Project's goal is to build a secure, efficient and
  extensible HTTP server as standards-compliant open source software. The
@@ -108,7 +105,7 @@ Description: Apache HTTP Server configurable suexec program for mod_suexec
 
 Package: apache2-doc
 Section: doc
-Architecture: any
+Architecture: all
 Pre-Depends: ${misc:Pre-Depends}
 Recommends: apache2
 Depends: ${misc:Depends}
