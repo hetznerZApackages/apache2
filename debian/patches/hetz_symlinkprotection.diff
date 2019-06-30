@@ -3,6 +3,11 @@ Index: apache2/server/request.c
 --- apache2.orig/server/request.c
 +++ apache2/server/request.c
 @@ -493,7 +493,7 @@ static int resolve_symlink(char *d, apr_
+=======
+#Allways enforce symlink checking
+--- a/server/request.c
++++ b/server/request.c
+@@ -485,7 +485,7 @@
      savename = (lfi->valid & APR_FINFO_NAME) ? lfi->name : NULL;
  
      /* if OPT_SYM_OWNER is unset, we only need to check target accessible */
