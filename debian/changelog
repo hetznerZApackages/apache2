@@ -1,8 +1,14 @@
+apache2 (2.4.25-3+deb9u7+deb8hetz1~exp2) jessie-hetz-experimental; urgency=medium
+
+  * Version bump
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 09:50:10 +0200
+
 apache2 (2.4.25-3+deb9u7+deb8hetz1~exp1) jessie-hetz-experimental; urgency=medium
 
   * Implement new Hetzner revisioning scheme
 
- -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Wed, 30 June 2019 09:46:02 +0200
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 09:50:10 +0200
 
 apache2 (2.4.25-3+deb9u7+hetz1~exp11) jessie-hetz-experimental; urgency=medium
 
