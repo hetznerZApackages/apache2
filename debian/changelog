@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u6+deb9hetz1~exp5) stretch-hetz-experimental; urgency=medium
+
+  * Attempt to get proxy_http2 working 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Thu, 18 Jul 2019 13:21:54 +0200
+
 apache2 (2.4.25-3+deb9u6+deb9hetz1~exp4) stretch-hetz-experimental; urgency=medium
 
   * Add hetz_symlinkprotection.diff to stretch
