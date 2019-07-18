@@ -5,7 +5,7 @@ Maintainer: Debian Apache Maintainers <debian-apache@lists.debian.org>
 Uploaders: Stefan Fritsch <sf@debian.org>, Arno Töll <arno@debian.org>
 Build-Depends: debhelper (>= 9.20131213~), lsb-release, dpkg-dev (>= 1.16.1~),
  libaprutil1-dev (>= 1.5.0), libapr1-dev (>= 1.5.0), libpcre3-dev, zlib1g-dev,
- libnghttp2-dev (>= 1.2.1), libssl1.0-dev | libssl-dev (<< 1.1), perl,
+ libnghttp2-dev, libssl1.0-dev | libssl-dev (<< 1.1), perl,
  liblua5.2-dev, libxml2-dev, autotools-dev, gawk | awk,
  dh-systemd
 Build-Conflicts: autoconf2.13
