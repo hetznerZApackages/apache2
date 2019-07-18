@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u6+deb9hetz1~exp7) stretch-hetz-experimental; urgency=medium
+
+  * Problem building against the incorrect COW has been corrected 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Thu, 18 Jul 2019 14:05:30 +0200
+
 apache2 (2.4.25-3+deb9u6+deb9hetz1~exp6) stretch-hetz-experimental; urgency=medium
 
   * Drop proxy_http2 as this appears to build for Jessie as well 
