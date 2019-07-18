@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u6+deb9hetz1) stretch-hetz; urgency=medium
+
+  * Released 2.4.25-3+deb9u6+deb9hetz1~exp7 as 2.4.25-3+deb9u6+deb9hetz1
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Thu, 18 Jul 2019 14:15:32 +0200
+
 apache2 (2.4.25-3+deb9u6+deb9hetz1~exp7) stretch-hetz-experimental; urgency=medium
 
   * Problem building against the incorrect COW has been corrected 
