@@ -18,15 +18,34 @@ my @test_cases = (
     [ 'foo'                     => 'foo'                ],
     [ '%{req:SomeHeader}'       => 'SomeValue'          ],
     [ '%{'                      => undef                ],
-# XXX: this is broken ATM and maybe we want to reserve that syntax for
-# future enhancements, like functions with multiple arguments
-#    [ '%{tolower:"ident"}'      => q{"ident"}           ],
     [ '%'                       => '%'                  ],
     [ '}'                       => '}'                  ],
     [ q{\"}                     => q{"}                 ],
     [ q{\'}                     => q{'}                 ],
     [ q{"\%{req:SomeHeader}"}   => '%{req:SomeHeader}'  ],
+    [ '%{tolower:IDENT}'                => 'ident'      ],
+    [ '%{tolower:%{REQUEST_METHOD}}'    => 'get'        ],
 );
+
+if (have_min_apache_version("2.5")) {
+    my $SAN_one         = "email:<redacted1>, email:<redacted2>, " .
+                          "IP Address:127.0.0.1, IP Address:0:0:0:0:0:0:0:1, " .
+                          "IP Address:192.168.169.170";
+    my $SAN_tuple       = "'email:<redacted1>', 'email:<redacted2>', " .
+                          "'IP Address:127.0.0.1', 'IP Address:0:0:0:0:0:0:0:1', " .
+                          "'IP Address:192.168.169.170'";
+    my $SAN_list_one    = "{ '$SAN_one' }";
+    my $SAN_list_tuple  = "{ $SAN_tuple }";
+
+    push(@test_cases, (
+        [ qq["%{tolower:%{:toupper(%{REQUEST_METHOD}):}}"]  => "get"        ],
+        [ qq["%{: join $SAN_list_one :}"]                   => "$SAN_one"   ],
+        [ qq["%{: join($SAN_list_tuple, ', ') :}"]          => "$SAN_one"   ],
+        [ qq['%{tolower:"IDENT"}']                          => '"ident"'    ],
+        [ qq["%{: 'IP Address:%{REMOTE_ADDR}' -in split/, /, join $SAN_list_one :}"]
+                                                            => "true"       ],
+    ));
+}
 
 my $successful_expected = scalar(grep { defined $_->[1] } @test_cases);
 

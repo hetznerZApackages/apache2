@@ -48,6 +48,7 @@
 #include "mod_core.h"
 #include "mod_proxy.h"
 #include "ap_listen.h"
+#include "ap_regex.h"
 
 #include "mod_so.h" /* for ap_find_loaded_module_symbol */
 
@@ -1252,8 +1253,7 @@ AP_DECLARE(const char *) ap_check_cmd_context(cmd_parms *cmd,
                            " cannot occur within <VirtualHost> section", NULL);
     }
 
-    if ((forbidden & (NOT_IN_LIMIT | NOT_IN_DIR_LOC_FILE))
-        && cmd->limited != -1) {
+    if ((forbidden & NOT_IN_DIR_CONTEXT) && cmd->limited != -1) {
         return apr_pstrcat(cmd->pool, cmd->cmd->name, gt,
                            " cannot occur within <Limit> or <LimitExcept> "
                            "section", NULL);
@@ -1267,8 +1267,7 @@ AP_DECLARE(const char *) ap_check_cmd_context(cmd_parms *cmd,
     if ((forbidden & NOT_IN_DIR_LOC_FILE) == NOT_IN_DIR_LOC_FILE) {
         if (cmd->path != NULL) {
             return apr_pstrcat(cmd->pool, cmd->cmd->name, gt,
-                            " cannot occur within <Directory/Location/Files> "
-                            "section", NULL);
+                            " cannot occur within directory context", NULL);
         }
         if (cmd->cmd->req_override & EXEC_ON_READ) {
             /* EXEC_ON_READ must be NOT_IN_DIR_LOC_FILE, if not, it will
@@ -1289,7 +1288,10 @@ AP_DECLARE(const char *) ap_check_cmd_context(cmd_parms *cmd,
                 || (found = find_parent(cmd->directive, "<FilesMatch"))
                 || (found = find_parent(cmd->directive, "<If"))
                 || (found = find_parent(cmd->directive, "<ElseIf"))
-                || (found = find_parent(cmd->directive, "<Else"))))) {
+                || (found = find_parent(cmd->directive, "<Else"))))
+        || ((forbidden & NOT_IN_PROXY)
+            && ((found = find_parent(cmd->directive, "<Proxy"))
+                || (found = find_parent(cmd->directive, "<ProxyMatch"))))) {
         return apr_pstrcat(cmd->pool, cmd->cmd->name, gt,
                            " cannot occur within ", found->directive,
                            "> section", NULL);
@@ -1304,7 +1306,7 @@ static const char *set_access_name(cmd_parms *cmd, void *dummy,
     void *sconf = cmd->server->module_config;
     core_server_config *conf = ap_get_core_module_config(sconf);
 
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     if (err != NULL) {
         return err;
     }
@@ -1359,7 +1361,7 @@ AP_DECLARE(const char *) ap_resolve_env(apr_pool_t *p, const char * word)
                 if (server_config_defined_vars)
                     word = apr_table_get(server_config_defined_vars, name);
                 if (!word)
-                    word = getenv(name);
+                    word = apr_pstrdup(p, getenv(name));
                 if (word) {
                     current->string = word;
                     current->len = strlen(word);
@@ -1435,18 +1437,20 @@ static const char *set_define(cmd_parms *cmd, void *dummy,
     const char *err = ap_check_cmd_context(cmd, NOT_IN_HTACCESS);
     if (err)
         return err;
-    if (ap_strchr_c(name, ':') != NULL)
+    if (ap_strchr_c(name, ':') != NULL) {
         return "Variable name must not contain ':'";
+    }
 
-    if (!saved_server_config_defines)
+    if (!saved_server_config_defines) {
         init_config_defines(cmd->pool);
+    }
     if (!ap_exists_config_define(name)) {
-        char **newv = (char **)apr_array_push(ap_server_config_defines);
-        *newv = apr_pstrdup(cmd->pool, name);
+        *(const char **)apr_array_push(ap_server_config_defines) = name;
     }
     if (value) {
-        if (!server_config_defined_vars)
+        if (!server_config_defined_vars) {
             server_config_defined_vars = apr_table_make(cmd->pool, 5);
+        }
         apr_table_setn(server_config_defined_vars, name, value);
     }
 
@@ -1457,20 +1461,22 @@ static const char *unset_define(cmd_parms *cmd, void *dummy,
                                 const char *name)
 {
     int i;
-    char **defines;
+    const char **defines;
     const char *err = ap_check_cmd_context(cmd, NOT_IN_HTACCESS);
     if (err)
         return err;
-    if (ap_strchr_c(name, ':') != NULL)
+    if (ap_strchr_c(name, ':') != NULL) {
         return "Variable name must not contain ':'";
+    }
 
-    if (!saved_server_config_defines)
+    if (!saved_server_config_defines) {
         init_config_defines(cmd->pool);
+    }
 
-    defines = (char **)ap_server_config_defines->elts;
+    defines = (const char **)ap_server_config_defines->elts;
     for (i = 0; i < ap_server_config_defines->nelts; i++) {
         if (strcmp(defines[i], name) == 0) {
-            defines[i] = *(char **)apr_array_pop(ap_server_config_defines);
+            defines[i] = *(const char **)apr_array_pop(ap_server_config_defines);
             break;
         }
     }
@@ -1507,7 +1513,7 @@ static const char *set_gprof_dir(cmd_parms *cmd, void *dummy, const char *arg)
     void *sconf = cmd->server->module_config;
     core_server_config *conf = ap_get_core_module_config(sconf);
 
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     if (err != NULL) {
         return err;
     }
@@ -1543,7 +1549,7 @@ static const char *set_document_root(cmd_parms *cmd, void *dummy,
     void *sconf = cmd->server->module_config;
     core_server_config *conf = ap_get_core_module_config(sconf);
 
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     if (err != NULL) {
         return err;
     }
@@ -2262,6 +2268,12 @@ AP_CORE_DECLARE_NONSTD(const char *) ap_limit_section(cmd_parms *cmd,
             /* method has not been registered yet, but resource restriction
              * is always checked before method handling, so register it.
              */
+            if (cmd->pool == cmd->temp_pool) {
+                /* In .htaccess, we can't globally register new methods. */
+                return apr_psprintf(cmd->pool, "Could not register method '%s' "
+                                   "for %s from .htaccess configuration",
+                                    method, cmd->cmd->name);
+            }
             methnum = ap_method_register(cmd->pool,
                                          apr_pstrdup(cmd->pool, method));
         }
@@ -2316,7 +2328,7 @@ static const char *dirsection(cmd_parms *cmd, void *mconfig, const char *arg)
     ap_regex_t *r = NULL;
     const command_rec *thiscmd = cmd->cmd;
 
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     if (err != NULL) {
         return err;
     }
@@ -2417,7 +2429,7 @@ static const char *urlsection(cmd_parms *cmd, void *mconfig, const char *arg)
     ap_regex_t *r = NULL;
     const command_rec *thiscmd = cmd->cmd;
     ap_conf_vector_t *new_url_conf = ap_create_per_dir_config(cmd->pool);
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     if (err != NULL) {
         return err;
     }
@@ -2698,43 +2710,57 @@ static module *find_module(server_rec *s, const char *name)
     return found;
 }
 
+/* Callback function type used by start_cond_section. */
+typedef int (*test_cond_section_fn)(cmd_parms *cmd, const char *arg);
 
-static const char *start_ifmod(cmd_parms *cmd, void *mconfig, const char *arg)
+/* Implementation of <IfXXXXX>-style conditional sections.  Callback
+ * to test condition must be in cmd->info, matching function type
+ * test_cond_section_fn. */
+static const char *start_cond_section(cmd_parms *cmd, void *mconfig, const char *arg)
 {
     const char *endp = ap_strrchr_c(arg, '>');
-    int not = (arg[0] == '!');
-    module *found;
+    int result, not = (arg[0] == '!');
+    test_cond_section_fn testfn = (test_cond_section_fn)cmd->info;
+    const char *arg1;
 
     if (endp == NULL) {
         return unclosed_directive(cmd);
     }
 
-    arg = apr_pstrndup(cmd->temp_pool, arg, endp - arg);
+    arg = apr_pstrmemdup(cmd->temp_pool, arg, endp - arg);
 
     if (not) {
         arg++;
     }
 
-    if (!arg[0]) {
+    arg1 = ap_getword_conf(cmd->temp_pool, &arg);
+
+    if (!arg1[0]) {
         return missing_container_arg(cmd);
     }
 
-    found = find_module(cmd->server, arg);
+    result = testfn(cmd, arg1);
 
-    if ((!not && found) || (not && !found)) {
+    if ((!not && result) || (not && !result)) {
         ap_directive_t *parent = NULL;
         ap_directive_t *current = NULL;
         const char *retval;
 
         retval = ap_build_cont_config(cmd->pool, cmd->temp_pool, cmd,
-                                      &current, &parent, "<IfModule");
+                                      &current, &parent, (char *)cmd->cmd->name);
         *(ap_directive_t **)mconfig = current;
         return retval;
     }
     else {
         *(ap_directive_t **)mconfig = NULL;
-        return ap_soak_end_container(cmd, "<IfModule");
+        return ap_soak_end_container(cmd, (char *)cmd->cmd->name);
     }
+}
+
+/* Callback to implement <IfModule> test for start_cond_section. */
+static int test_ifmod_section(cmd_parms *cmd, const char *arg)
+{
+    return find_module(cmd->server, arg) != NULL;
 }
 
 AP_DECLARE(int) ap_exists_config_define(const char *name)
@@ -2742,43 +2768,29 @@ AP_DECLARE(int) ap_exists_config_define(const char *name)
     return ap_array_str_contains(ap_server_config_defines, name);
 }
 
-static const char *start_ifdefine(cmd_parms *cmd, void *dummy, const char *arg)
+static int test_ifdefine_section(cmd_parms *cmd, const char *arg)
 {
-    const char *endp;
-    int defined;
-    int not = 0;
+    return ap_exists_config_define(arg);
+}
 
-    endp = ap_strrchr_c(arg, '>');
-    if (endp == NULL) {
-        return unclosed_directive(cmd);
-    }
+static int test_iffile_section(cmd_parms *cmd, const char *arg)
+{
+    const char *relative;
+    apr_finfo_t sb;
 
-    arg = apr_pstrndup(cmd->temp_pool, arg, endp - arg);
+    relative = ap_server_root_relative(cmd->temp_pool, arg);
+    return (apr_stat(&sb, relative, 0, cmd->pool) == APR_SUCCESS);
+}
 
-    if (arg[0] == '!') {
-        not = 1;
-        arg++;
-    }
+static int test_ifdirective_section(cmd_parms *cmd, const char *arg)
+{
+    return ap_exists_directive(cmd->temp_pool, arg);
+}
 
-    if (!arg[0]) {
-        return missing_container_arg(cmd);
-    }
-
-    defined = ap_exists_config_define(arg);
-    if ((!not && defined) || (not && !defined)) {
-        ap_directive_t *parent = NULL;
-        ap_directive_t *current = NULL;
-        const char *retval;
-
-        retval = ap_build_cont_config(cmd->pool, cmd->temp_pool, cmd,
-                                      &current, &parent, "<IfDefine");
-        *(ap_directive_t **)dummy = current;
-        return retval;
-    }
-    else {
-        *(ap_directive_t **)dummy = NULL;
-        return ap_soak_end_container(cmd, "<IfDefine");
-    }
+static int test_ifsection_section(cmd_parms *cmd, const char *arg)
+{
+    const char *name = apr_pstrcat(cmd->temp_pool, "<", arg, NULL);
+    return ap_exists_directive(cmd->temp_pool, name);
 }
 
 /* httpd.conf commands... beginning with the <VirtualHost> business */
@@ -2834,6 +2846,58 @@ static const char *virtualhost_section(cmd_parms *cmd, void *dummy,
     cmd->server = main_server;
 
     return errmsg;
+}
+
+static const char *set_regex_default_options(cmd_parms *cmd,
+                                             void *dummy,
+                                             const char *arg)
+{
+    const command_rec *thiscmd = cmd->cmd;
+    int cflags, cflag;
+
+    const char *err = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+    if (err != NULL) {
+        return err;
+    }
+
+    cflags = ap_regcomp_get_default_cflags();
+    while (*arg) {
+        const char *name = ap_getword_conf(cmd->pool, &arg);
+        int how = 0;
+
+        if (strcasecmp(name, "none") == 0) {
+            cflags = 0;
+            continue;
+        }
+
+        if (*name == '+') {
+            name++;
+            how = +1;
+        }
+        else if (*name == '-') {
+            name++;
+            how = -1;
+        }
+
+        cflag = ap_regcomp_default_cflag_by_name(name);
+        if (!cflag) {
+            return apr_psprintf(cmd->pool, "%s: option '%s' unknown",
+                                thiscmd->name, name);
+        }
+
+        if (how > 0) {
+            cflags |= cflag;
+        }
+        else if (how < 0) {
+            cflags &= ~cflag;
+        }
+        else {
+            cflags = cflag;
+        }
+    }
+    ap_regcomp_set_default_cflags(cflags);
+
+    return NULL;
 }
 
 static const char *set_server_alias(cmd_parms *cmd, void *dummy,
@@ -2895,7 +2959,7 @@ AP_DECLARE(void) ap_set_server_protocol(server_rec* s, const char* proto)
 static const char *set_protocol(cmd_parms *cmd, void *dummy,
                                 const char *arg)
 {
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     core_server_config *conf =
         ap_get_core_module_config(cmd->server->module_config);
     char* proto;
@@ -2919,8 +2983,7 @@ static const char *set_server_string_slot(cmd_parms *cmd, void *dummy,
     int offset = (int)(long)cmd->info;
     char *struct_ptr = (char *)cmd->server;
 
-    const char *err = ap_check_cmd_context(cmd,
-                                           NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     if (err != NULL) {
         return err;
     }
@@ -2939,7 +3002,7 @@ static const char *set_server_string_slot(cmd_parms *cmd, void *dummy,
 
 static const char *server_hostname_port(cmd_parms *cmd, void *dummy, const char *arg)
 {
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     const char *portstr, *part;
     char *scheme;
     int port;
@@ -3043,7 +3106,7 @@ static const char *set_runtime_dir(cmd_parms *cmd, void *dummy, const char *arg)
 
 static const char *set_timeout(cmd_parms *cmd, void *dummy, const char *arg)
 {
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
 
     if (err != NULL) {
         return err;
@@ -3098,7 +3161,7 @@ static const char *set_hostname_lookups(cmd_parms *cmd, void *d_,
 static const char *set_serverpath(cmd_parms *cmd, void *dummy,
                                   const char *arg)
 {
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
 
     if (err != NULL) {
         return err;
@@ -3490,7 +3553,7 @@ static const char *set_serv_tokens(cmd_parms *cmd, void *dummy,
 static const char *set_limit_req_line(cmd_parms *cmd, void *dummy,
                                       const char *arg)
 {
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     int lim;
 
     if (err != NULL) {
@@ -3510,7 +3573,7 @@ static const char *set_limit_req_line(cmd_parms *cmd, void *dummy,
 static const char *set_limit_req_fieldsize(cmd_parms *cmd, void *dummy,
                                            const char *arg)
 {
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     int lim;
 
     if (err != NULL) {
@@ -3531,7 +3594,7 @@ static const char *set_limit_req_fieldsize(cmd_parms *cmd, void *dummy,
 static const char *set_limit_req_fields(cmd_parms *cmd, void *dummy,
                                         const char *arg)
 {
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     int lim;
 
     if (err != NULL) {
@@ -3868,7 +3931,7 @@ static const char *set_protocols(cmd_parms *cmd, void *dummy,
     core_server_config *conf =
     ap_get_core_module_config(cmd->server->module_config);
     const char **np;
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
 
     if (err) {
         return err;
@@ -3885,7 +3948,7 @@ static const char *set_protocols_honor_order(cmd_parms *cmd, void *dummy,
 {
     core_server_config *conf =
     ap_get_core_module_config(cmd->server->module_config);
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     
     if (err) {
         return err;
@@ -4243,10 +4306,21 @@ AP_INIT_RAW_ARGS("<LimitExcept", ap_limit_section, (void*)1,
                  OR_LIMIT | OR_AUTHCFG,
   "Container for authentication directives to be applied when any HTTP "
   "method other than those specified is used to access the resource"),
-AP_INIT_TAKE1("<IfModule", start_ifmod, NULL, EXEC_ON_READ | OR_ALL,
+AP_INIT_RAW_ARGS("<IfModule", start_cond_section, (void *)test_ifmod_section,
+              EXEC_ON_READ | OR_ALL,
   "Container for directives based on existence of specified modules"),
-AP_INIT_TAKE1("<IfDefine", start_ifdefine, NULL, EXEC_ON_READ | OR_ALL,
+AP_INIT_RAW_ARGS("<IfDefine", start_cond_section, (void *)test_ifdefine_section,
+              EXEC_ON_READ | OR_ALL,
   "Container for directives based on existence of command line defines"),
+AP_INIT_RAW_ARGS("<IfFile", start_cond_section, (void *)test_iffile_section,
+              EXEC_ON_READ | OR_ALL,
+  "Container for directives based on existence of files on disk"),
+AP_INIT_RAW_ARGS("<IfDirective", start_cond_section, (void *)test_ifdirective_section,
+              EXEC_ON_READ | OR_ALL,
+  "Container for directives based on existence of named directive"),
+AP_INIT_RAW_ARGS("<IfSection", start_cond_section, (void *)test_ifsection_section,
+              EXEC_ON_READ | OR_ALL,
+  "Container for directives based on existence of named section"),
 AP_INIT_RAW_ARGS("<DirectoryMatch", dirsection, (void*)1, RSRC_CONF,
   "Container for directives affecting resources located in the "
   "specified directories"),
@@ -4410,6 +4484,9 @@ AP_INIT_TAKE12("RLimitNPROC", set_limit_nproc,
 AP_INIT_TAKE12("RLimitNPROC", no_set_limit, NULL,
    OR_ALL, "soft/hard limits for max number of processes per uid"),
 #endif
+
+AP_INIT_RAW_ARGS("RegexDefaultOptions", set_regex_default_options, NULL, RSRC_CONF,
+                 "default options for regexes (prefixed by '+' to add, '-' to del)"),
 
 /* internal recursion stopper */
 AP_INIT_TAKE12("LimitInternalRecursion", set_recursion_limit, NULL, RSRC_CONF,
@@ -4801,7 +4878,8 @@ AP_DECLARE(int) ap_sys_privileges_handlers(int inc)
 static int check_errorlog_dir(apr_pool_t *p, server_rec *s)
 {
     if (!s->error_fname || s->error_fname[0] == '|'
-        || strcmp(s->error_fname, "syslog") == 0) {
+        || strcmp(s->error_fname, "syslog") == 0
+        || strncmp(s->error_fname, "syslog:", 7) == 0) {
         return APR_SUCCESS;
     }
     else {
@@ -4845,6 +4923,8 @@ static int core_pre_config(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *ptem
         init_config_defines(pconf);
     apr_pool_cleanup_register(pconf, NULL, reset_config_defines,
                               apr_pool_cleanup_null);
+
+    ap_regcomp_set_default_cflags(AP_REG_DOLLAR_ENDONLY);
 
     mpm_common_pre_config(pconf);
 
@@ -5213,7 +5293,9 @@ static void core_dump_config(apr_pool_t *p, server_rec *s)
     apr_file_printf(out, "ServerRoot: \"%s\"\n", ap_server_root);
     tmp = ap_server_root_relative(p, sconf->ap_document_root);
     apr_file_printf(out, "Main DocumentRoot: \"%s\"\n", tmp);
-    if (s->error_fname[0] != '|' && strcmp(s->error_fname, "syslog") != 0)
+    if (s->error_fname[0] != '|'
+        && strcmp(s->error_fname, "syslog") != 0
+        && strncmp(s->error_fname, "syslog:", 7) != 0)
         tmp = ap_server_root_relative(p, s->error_fname);
     else
         tmp = s->error_fname;

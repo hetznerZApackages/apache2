@@ -3,13 +3,18 @@ use warnings FATAL => 'all';
 
 use Apache::Test;
 use Apache::TestRequest;
+use Apache::TestUtil;
 
 my $vars = Apache::Test::vars();
 my $htdocs = Apache::Test::vars('documentroot');
+my $body;
 
 ##
 ## mod_setenvif tests
 ##
+
+my $good_ua = '^libwww-perl/.*';
+my $bad_ua = 'foo-browser/0.1';
 
 my $page = "/modules/setenvif/htaccess/setenvif.shtml";
 my %var_att =
@@ -38,17 +43,20 @@ my %var_att =
             {
                 'pass' => $page,
                 'fail' => 'foo.html'
+            },
+        # Test with a regex. Looking for 'User-Agent'
+        '^User-Ag' =>
+            {
+                'pass' => $good_ua,
+                'fail' => $bad_ua
             }
     );
 
 my @var = qw(VAR_ONE VAR_TWO VAR_THREE);
 
-my $good_ua = '^libwww-perl/.*';
-my $bad_ua = 'foo-browser/0.1';
-
 my $htaccess = "$htdocs/modules/setenvif/htaccess/.htaccess";
 
-plan tests => @var * 7 + (keys %var_att) * 6 * @var,
+plan tests => @var * 10 + (keys %var_att) * 6 * @var + 4,
     have_module qw(setenvif include);
 
 sub write_htaccess {
@@ -116,9 +124,9 @@ foreach my $attribute (sort keys %var_att) {
 
     ## some 'relaying' variables ##
     test_all_vars(0,
-    "SetEnvIf $attribute $var_att{$attribute}{pass} RELAY=1\nSetEnvIf RELAY 1");
+        "SetEnvIf $attribute $var_att{$attribute}{pass} RELAY=1\nSetEnvIf RELAY 1");
     test_all_vars(1,
-    "SetEnvIf $attribute $var_att{$attribute}{pass} RELAY=1\nSetEnvIf RELAY 0");
+        "SetEnvIf $attribute $var_att{$attribute}{pass} RELAY=1\nSetEnvIf RELAY 0");
 
     ## SetEnvIfNoCase tests ##
     my $uc = uc $var_att{$attribute}{pass};
@@ -130,20 +138,48 @@ foreach my $attribute (sort keys %var_att) {
 ## test 'relaying' variables ##
 test_all_vars(0,"BrowserMatch $good_ua RELAY=1\nSetEnvIf RELAY 1");
 test_all_vars(0,
-"BrowserMatch $good_ua RELAY=1\nSetEnvIf RELAY 1 R2=1\nSetEnvIf R2 1");
+    "BrowserMatch $good_ua RELAY=1\nSetEnvIf RELAY 1 R2=1\nSetEnvIf R2 1");
 test_all_vars(1,
-"BrowserMatch $good_ua RELAY=1\nSetEnvIf RELAY 1 R2=1\nSetEnvIf R2 0");
+    "BrowserMatch $good_ua RELAY=1\nSetEnvIf RELAY 1 R2=1\nSetEnvIf R2 0");
 test_all_vars(1,"BrowserMatch $good_ua RELAY=0\nSetEnvIf RELAY 1");
 test_all_vars(1,"BrowserMatch $good_ua RELAY=1\nSetEnvIf RELAY 0");
+
+## test '!' ##
+# We set then unset 'R2' (see a few lines above for the corresponding test, without the 'unset'
+test_all_vars(1,
+    "BrowserMatch $good_ua RELAY=1\nSetEnvIf RELAY 1 R2=1\nSetEnvIf RELAY 1 !R2\nSetEnvIf R2 1");
+
+## test SetEnvIfExpr ##
+test_all_vars(0, "SetEnvIfExpr \"%{REQUEST_URI} =~ /\.shtml\$/\"");
+test_all_vars(1, "SetEnvIfExpr \"%{REQUEST_URI} =~ /\.foo\$/\"");
+
+## test SetEnvIfExpr with replacement ##
+write_htaccess("SetEnvIfExpr \"%{REQUEST_URI} =~ /\.\(sh\)tml\$/\" VAR_ONE=\$0 VAR_TWO=\$1");
+$body = GET_BODY $page;
+ok t_cmp($body, "1:.shtml\n2:sh\n3:(none)\n");
+
+write_htaccess("SetEnvIfExpr \"%{REQUEST_URI} !~ /\.\(sh\)tml\$/\" VAR_ONE=\$0 VAR_TWO=\$1");
+$body = GET_BODY $page;
+ok t_cmp($body, "1:(none)\n2:(none)\n3:(none)\n");
+
+## test SetEnvIfExpr with replacement when regex does NOT match ##
+write_htaccess("SetEnvIfExpr \"%{REQUEST_URI} =~ /\.\(sh\)tmlXXX\$/\" VAR_ONE=\$0 VAR_TWO=\$1");
+$body = GET_BODY $page;
+ok t_cmp($body, "1:(none)\n2:(none)\n3:(none)\n");
+
+## test SetEnvIfExpr with replacement when regex is REQUIRED to NOT match ##
+write_htaccess("SetEnvIfExpr \"%{REQUEST_URI} !~ /\.\(sh\)tmlXXX\$/\" VAR_ONE=\$0 VAR_TWO=\$1");
+$body = GET_BODY $page;
+ok t_cmp($body, "1:\$0\n2:\$1\n3:(none)\n");
 
 ## i think this should work, but it doesnt.
 ## leaving it commented now pending investigation.
 ## seems you cant override variables that have been previously set.
 ##
 ## test_all_vars(0,
-## "SetEnv RELAY 1\nSetEnvIf RELAY 1 RELAY=2\nSetEnvIf RELAY 2");
+##     "SetEnv RELAY 1\nSetEnvIf RELAY 1 RELAY=2\nSetEnvIf RELAY 2");
 ## test_all_vars(0,
-## "BrowserMatch $good_ua RELAY=1\nSetEnvIf RELAY 1 RELAY=2\nSetEnvIf RELAY 2");
+##     "BrowserMatch $good_ua RELAY=1\nSetEnvIf RELAY 1 RELAY=2\nSetEnvIf RELAY 2");
 ##
 ##
 

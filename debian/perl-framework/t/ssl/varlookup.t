@@ -99,6 +99,10 @@ while (<DATA>) {
     push @vars, $key;
 }
 
+if (not have_min_apache_version('2.4.32')) {
+    @vars = grep(!/_RAW/, @vars);
+}
+
 plan tests => scalar (@vars), need need_lwp, need_module('test_ssl');
 
 for my $key (@vars) {
@@ -169,13 +173,13 @@ SSL_CLIENT_M_VERSION         qr(^\d+$)
 SSL_SERVER_M_VERSION         qr(^\d+$)
 SSL_CLIENT_M_SERIAL          qr(^[0-9A-F]+$)
 SSL_SERVER_M_SERIAL          qr(^[0-9A-F]+$)
-SSL_PROTOCOL                 qr((TLS|SSL)v([1-3]|1\.[0-2])$)
+SSL_PROTOCOL                 qr((TLS|SSL)v([1-3]|1\.[0-3])$)
 SSL_CLIENT_V_START           qr($cert_datefmt);
 SSL_SERVER_V_START           qr($cert_datefmt);
 SSL_SESSION_ID
 SSL_CLIENT_V_END             qr($cert_datefmt);
 SSL_SERVER_V_END             qr($cert_datefmt);
-SSL_CIPHER                   qr(^[A-Z0-9-]+$)
+SSL_CIPHER                   qr(^[A-Z0-9_-]+$)
 SSL_CIPHER_EXPORT            'false'
 SSL_CIPHER_ALGKEYSIZE        qr(^\d+$)
 SSL_CIPHER_USEKEYSIZE        qr(^\d+$)
@@ -228,6 +232,8 @@ SSL_CLIENT_I_DN_OU           "$client_i_dn{OU}"
 SSL_SERVER_I_DN_OU           "$server_i_dn{OU}"
 SSL_CLIENT_I_DN_CN           "$client_i_dn{CN}"
 SSL_SERVER_I_DN_CN           "$server_i_dn{CN}"
+SSL_SERVER_I_DN_CN_RAW       "$server_i_dn{CN}"
+SSL_SERVER_I_DN_CN_0_RAW     "$server_i_dn{CN}"
 SSL_CLIENT_I_DN_T
 SSL_SERVER_I_DN_T
 SSL_CLIENT_I_DN_I

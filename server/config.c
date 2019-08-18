@@ -323,24 +323,34 @@ static ap_conf_vector_t *create_server_config(apr_pool_t *p, server_rec *s)
 }
 
 static void merge_server_configs(apr_pool_t *p, ap_conf_vector_t *base,
-                                 ap_conf_vector_t *virt)
+                                 server_rec *virt)
 {
     /* Can reuse the 'virt' vector for the spine of it, since we don't
      * have to deal with the moral equivalent of .htaccess files here...
      */
 
     void **base_vector = (void **)base;
-    void **virt_vector = (void **)virt;
+    void **virt_vector = (void **)virt->module_config;
     module *modp;
 
     for (modp = ap_top_module; modp; modp = modp->next) {
         merger_func df = modp->merge_server_config;
         int i = modp->module_index;
 
-        if (!virt_vector[i])
-            virt_vector[i] = base_vector[i];
-        else if (df)
+        if (!virt_vector[i]) {
+            if (df && modp->create_server_config
+                   && (ap_get_module_flags(modp) &
+                       AP_MODULE_FLAG_ALWAYS_MERGE)) {
+                virt_vector[i] = (*modp->create_server_config)(p, virt);
+            }
+            else {
+                virt_vector[i] = base_vector[i];
+                df = NULL;
+            }
+        }
+        if (df) {
             virt_vector[i] = (*df)(p, base_vector[i], virt_vector[i]);
+        }
     }
 }
 
@@ -862,6 +872,11 @@ static const char *invoke_cmd(const command_rec *cmd, cmd_parms *parms,
                           "%s in .htaccess forbidden by AllowOverride",
                           cmd->name);
             return NULL;
+        }
+        else if (parms->directive && parms->directive->parent) {
+            return apr_pstrcat(parms->pool, cmd->name, " not allowed in ",
+                               parms->directive->parent->directive, ">",
+                               " context", NULL);
         }
         else {
             return apr_pstrcat(parms->pool, cmd->name,
@@ -1715,14 +1730,14 @@ typedef struct {
 static apr_status_t arr_elts_getstr(void *buf, apr_size_t bufsiz, void *param)
 {
     arr_elts_param_t *arr_param = (arr_elts_param_t *)param;
-    char *elt;
+    const char *elt;
 
     /* End of array reached? */
     if (++arr_param->curr_idx > arr_param->array->nelts)
         return APR_EOF;
 
     /* return the line */
-    elt = ((char **)arr_param->array->elts)[arr_param->curr_idx - 1];
+    elt = ((const char **)arr_param->array->elts)[arr_param->curr_idx - 1];
     if (apr_cpystrn(buf, elt, bufsiz) - (char *)buf >= bufsiz - 1)
         return APR_ENOSPC;
     return APR_SUCCESS;
@@ -1951,6 +1966,15 @@ static const char *process_resource_config_nofnmatch(server_rec *s,
 
         return NULL;
     }
+    else if (optional) {
+        /* If the optinal flag is set (like for IncludeOptional) we can
+         * tolerate that no file or directory is present and bail out.
+         */
+        apr_finfo_t finfo;
+        if (apr_stat(&finfo, fname, APR_FINFO_TYPE, ptemp) != APR_SUCCESS
+            || finfo.filetype == APR_NOFILE)
+            return NULL;
+    }
 
     return ap_process_resource_config(s, fname, conftree, p, ptemp);
 }
@@ -2001,6 +2025,12 @@ static const char *process_resource_config_fnmatch(server_rec *s,
      */
     rv = apr_dir_open(&dirp, path, ptemp);
     if (rv != APR_SUCCESS) {
+        /* If the directory doesn't exist and the optional flag is set
+         * there is no need to return an error.
+         */
+        if (rv == APR_ENOENT && optional) {
+            return NULL;
+        }
         return apr_psprintf(p, "Could not open config directory %s: %pm",
                             path, &rv);
     }
@@ -2016,7 +2046,7 @@ static const char *process_resource_config_fnmatch(server_rec *s,
             /* If matching internal to path, and we happen to match something
              * other than a directory, skip it
              */
-            if (rest && (rv == APR_SUCCESS) && (dirent.filetype != APR_DIR)) {
+            if (rest && (dirent.filetype != APR_DIR)) {
                 continue;
             }
             fnew = (fnames *) apr_array_push(candidates);
@@ -2322,8 +2352,7 @@ AP_DECLARE(void) ap_fixup_virtual_hosts(apr_pool_t *p, server_rec *main_server)
     dconf->log = &main_server->log;
 
     for (virt = main_server->next; virt; virt = virt->next) {
-        merge_server_configs(p, main_server->module_config,
-                             virt->module_config);
+        merge_server_configs(p, main_server->module_config, virt);
 
         virt->lookup_defaults =
             ap_merge_per_dir_configs(p, main_server->lookup_defaults,
@@ -2656,6 +2685,16 @@ AP_DECLARE(void) ap_show_modules(void)
     printf("Compiled in modules:\n");
     for (n = 0; ap_loaded_modules[n]; ++n)
         printf("  %s\n", ap_loaded_modules[n]->name);
+}
+
+AP_DECLARE(int) ap_exists_directive(apr_pool_t *p, const char *name)
+{
+    char *lname = apr_pstrdup(p, name);
+
+    ap_str_tolower(lname);
+    
+    return ap_config_hash &&
+        apr_hash_get(ap_config_hash, lname, APR_HASH_KEY_STRING) != NULL;
 }
 
 AP_DECLARE(void *) ap_retained_data_get(const char *key)

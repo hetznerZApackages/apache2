@@ -48,20 +48,28 @@ dh_apache2 - register configuration snippets to the Apache web server
 
 # auto-generated do not edit
 our $API = "__API__";
+our $OPENSSL = "__OPENSSL__";
 our $MODULE_DIR = "__MODULE_DIR__";
 our $SERVER_VERSION = "__SERVER_VERSION__";
-
-
 
 sub apache_api_version
 {
 	return "apache2-api-$API";
 }
 
+sub apache_api_ssl_version
+{
+	return "apache2-api-$API-$OPENSSL";
+}
+
 sub apache_depends
 {
 	# TODO XXX this should be determined from ap_mmn.h, too.
-	return apache_api_version() . ", apache2-bin ( >= 2.4.16 )";
+	my $ret = apache_api_version() . ", apache2-bin ( >= 2.4.16 )";
+	if (have_apache2_ssl_dev()) {
+		$ret .= ", " . apache_api_ssl_version();
+	}
+	return $ret;
 }
 
 sub apache_version
@@ -78,6 +86,30 @@ sub apache_conf_installdir
 {
 	my $type = shift;
 	return "etc/apache2/${type}-available/"
+}
+
+sub have_apache2_ssl_dev
+{
+	open(my $fd, "<", "debian/control") or die "Cannot open debian/control: $!";
+	my $line;
+	my $builddeps = "";
+	while (defined ($line = <$fd>)) {
+		chomp $line;
+		if ($line =~ m{^Build-Depends:}i) {
+			$builddeps .= $line;
+		} elsif ($builddeps) {
+			if ($line =~ m{^\s}) {
+				$builddeps .= $line;
+			} else {
+				last;
+			}
+		}
+	}
+	if ($builddeps =~ m{\bapache2-ssl-dev\b}) {
+		return 1;
+	} else {
+		return;
+	}
 }
 
 =head1 SYNOPSIS

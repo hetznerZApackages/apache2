@@ -1,18 +1,18 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Apache HTTPD Server
-Source: http://httpd.apache.org/
+Source: https://httpd.apache.org/
 
 Files: *
-Copyright: Copyright 2009 The Apache Software Foundation
+Copyright: Copyright 2019 The Apache Software Foundation
 License: Apache-2.0
 
 Files: include/ap_regex.h
-Copyright: 2009 The Apache Software Foundation
+Copyright: 2019 The Apache Software Foundation
  Copyright: 1997-2004 University of Cambridge
 License: Apache-2.0 and BSD-3-clause-Cambridge
 
 Files: server/util_pcre.c
-Copyright:  1997-2001 University of Cambridge
+Copyright:  1997-2004 University of Cambridge
 License: PCRE
 
 Files: server/util_expr_parse.c
@@ -24,29 +24,35 @@ Copyright: 1998 Dag-Erling Codan Smrgrav
 License: BSD-3-clause-Smrgrav
 
 Files: modules/metadata/mod_mime_magic.c
-Copyright: 2009 The Apache Software Foundation
+Copyright: 2019 The Apache Software Foundation
  1996-1997 Cisco Systems, Inc.
  1987 Ian F. Darwin.
 License: Apache-2.0 and Cisco
+
+Files: modules/proxy/mod_proxy_uwsgi.c
+Copyright: 2019 The Apache Software Foundation
+ 2009-2017 Unbit S.a.s. <info@unbit.it>
+License: Apache-2.0
 
 Files: docs/conf/magic debian/config-dir/magic
 Copyright: Ian F. Darwin 1986, 1987, 1989, 1990, 1991, 1992, 1994, 1995.
 License: BSD-2-clause-Darwin
 
 Files: modules/mappers/mod_imagemap.c
-Copyright: 2009 The Apache Software Foundation
+Copyright: 2019 The Apache Software Foundation
  1992 by Eric Haines, erich@eye.com
 License: Apache-2.0 and Haines
 
 Files: server/util_md5.c
-Copyright: 2009 The Apache Software Foundation
+Copyright: 2019 The Apache Software Foundation
  1995, Board of Trustees of the University of Illinois
+ 1994, Jeff Hostetler, Spyglass, Inc.
  1993,1994 by Carnegie Mellon University
  1991 Bell Communications Research, Inc. (Bellcore)
 License: Apache-2.0 and MD5
 
 Files: support/ab.c
-Copyright: 2009 The Apache Software Foundation
+Copyright: 2019 The Apache Software Foundation
  1996 by Zeus Technology Ltd. http://www.zeustech.net/
 License: Apache-2.0 and Zeus
 
@@ -56,7 +62,7 @@ License: Apache-2.0 or GPL-2+
 
 Files: debian/debhelper/apache2-maintscript-helper
 Copyright: 2012 Arno Töll
-License: MIT
+License: Expat
 
 Files: debian/a2enmod
 Copyright: 2008 Stefan Fritsch
@@ -70,7 +76,7 @@ License: Apache-2.0
  (the "License"); you may not use this file except in compliance with
  the License.  You may obtain a copy of the License at
  .
-      http://www.apache.org/licenses/LICENSE-2.0
+      https://www.apache.org/licenses/LICENSE-2.0
  .
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
@@ -85,7 +91,7 @@ License: Zeus
    This program is based on ZeusBench V1.0 written by Adam Twiss
    which is Copyright (c) 1996 by Zeus Technology Ltd. http://www.zeustech.net/
    .
-   This software is provided "as is" and any express or implied waranties,
+   This software is provided "as is" and any express or implied warranties,
    including but not limited to, the implied warranties of merchantability and
    fitness for a particular purpose are disclaimed.  In no event shall
    Zeus Technology Ltd. be liable for any direct, indirect, incidental, special,
@@ -429,7 +435,7 @@ License: Custom
    C LALR(1) parser skeleton written by Richard Stallman, by
    simplifying the original so-called "semantic" parser.
 
-License: MIT
+License: Expat
  Permission is hereby granted, free of charge, to any person obtaining a copy of
  this software and associated documentation files (the "Software"), to deal in
  the Software without restriction, including without limitation the rights to
@@ -446,4 +452,3 @@ License: MIT
  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
