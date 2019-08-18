@@ -66,7 +66,6 @@ struct wd_server_conf_t
 
 static wd_server_conf_t *wd_server_conf = NULL;
 static apr_interval_time_t wd_interval = AP_WD_TM_INTERVAL;
-static int wd_interval_set = 0;
 static int mpm_is_forked = AP_MPMQ_NOT_SUPPORTED;
 static const char *wd_proc_mutex_type = "watchdog-callback";
 
@@ -436,20 +435,23 @@ static int wd_post_config_hook(apr_pool_t *pconf, apr_pool_t *plog,
 {
     apr_status_t rv;
     const char *pk = "watchdog_init_module_tag";
-    apr_pool_t *pproc = s->process->pool;
+    apr_pool_t *ppconf = pconf;
     const apr_array_header_t *wl;
 
     if (ap_state_query(AP_SQ_MAIN_STATE) == AP_SQ_MS_CREATE_PRE_CONFIG)
         /* First time config phase -- skip. */
         return OK;
 
-    apr_pool_userdata_get((void *)&wd_server_conf, pk, pproc);
+    apr_pool_userdata_get((void *)&wd_server_conf, pk, ppconf);
     if (!wd_server_conf) {
-        if (!(wd_server_conf = apr_pcalloc(pproc, sizeof(wd_server_conf_t))))
+        if (!(wd_server_conf = apr_pcalloc(ppconf, sizeof(wd_server_conf_t))))
             return APR_ENOMEM;
-        apr_pool_create(&wd_server_conf->pool, pproc);
-        apr_pool_userdata_set(wd_server_conf, pk, apr_pool_cleanup_null, pproc);
+        apr_pool_create(&wd_server_conf->pool, ppconf);
+        apr_pool_userdata_set(wd_server_conf, pk, apr_pool_cleanup_null, ppconf);
     }
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(010033)
+                 "Watchdog: Running with WatchdogInterval %"
+                 APR_TIME_T_FMT "ms", apr_time_as_msec(wd_interval));
     wd_server_conf->s = s;
     if ((wl = ap_list_provider_names(pconf, AP_WATCHDOG_PGROUP,
                                             AP_WATCHDOG_PVERSION))) {
@@ -532,11 +534,13 @@ static int wd_post_config_hook(apr_pool_t *pconf, apr_pool_t *plog,
                                                   w->name, s,
                                                   wd_server_conf->pool, 0);
                         if (rv != APR_SUCCESS) {
+                            ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(10095)
+                                         "Watchdog: Failed to create singleton mutex.");
                             return rv;
                         }
+                        ap_log_error(APLOG_MARK, APLOG_DEBUG, rv, s, APLOGNO(02979)
+                                "Watchdog: Created singleton mutex (%s).", w->name);
                     }
-                    ap_log_error(APLOG_MARK, APLOG_DEBUG, rv, s, APLOGNO(02979)
-                            "Watchdog: Created child worker thread (%s).", w->name);
                     wd_server_conf->child_workers++;
                 }
             }
@@ -578,12 +582,12 @@ static void wd_child_init_hook(apr_pool_t *p, server_rec *s)
                  */
                 if ((rv = wd_startup(w, wd_server_conf->pool)) != APR_SUCCESS) {
                     ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(01573)
-                                 "Watchdog: Failed to create worker thread.");
+                                 "Watchdog: Failed to create child worker thread.");
                     /* No point to continue */
                     return;
                 }
                 ap_log_error(APLOG_MARK, APLOG_DEBUG, rv, s, APLOGNO(02981)
-                             "Watchdog: Created worker thread (%s).", wn[i].provider_name);
+                             "Watchdog: Created child worker thread (%s).", wn[i].provider_name);
             }
         }
     }
@@ -597,18 +601,20 @@ static void wd_child_init_hook(apr_pool_t *p, server_rec *s)
 static const char *wd_cmd_watchdog_int(cmd_parms *cmd, void *dummy,
                                        const char *arg)
 {
-    int i;
+    apr_status_t rv;
     const char *errs = ap_check_cmd_context(cmd, GLOBAL_ONLY);
 
     if (errs != NULL)
         return errs;
-    if (wd_interval_set)
-       return "Duplicate WatchdogInterval directives are not allowed";
-    if ((i = atoi(arg)) < 1)
-        return "Invalid WatchdogInterval value";
+    rv = ap_timeout_parameter_parse(arg, &wd_interval, "s");
 
-    wd_interval = apr_time_from_sec(i);
-    wd_interval_set = 1;
+    if (rv != APR_SUCCESS)
+        return "Unparse-able WatchdogInterval setting";
+    if (wd_interval < AP_WD_TM_SLICE) {
+        return apr_psprintf(cmd->pool, "Invalid WatchdogInterval: minimal value %"
+                APR_TIME_T_FMT "ms", apr_time_as_msec(AP_WD_TM_SLICE));
+    }
+
     return NULL;
 }
 

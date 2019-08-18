@@ -116,6 +116,7 @@ BEGIN {
           print "#LoadModule authz_owner_module modules/mod_authz_owner.so" > dstfl;
           print "LoadModule authz_user_module modules/mod_authz_user.so" > dstfl;
           print "LoadModule autoindex_module modules/mod_autoindex.so" > dstfl;
+          print "#LoadModule brotli_module modules/mod_brotli.so" > dstfl;
           print "#LoadModule buffer_module modules/mod_buffer.so" > dstfl;
           print "#LoadModule cache_module modules/mod_cache.so" > dstfl;
           print "#LoadModule cache_disk_module modules/mod_cache_disk.so" > dstfl;
@@ -156,6 +157,7 @@ BEGIN {
           print "#LoadModule log_forensic_module modules/mod_log_forensic.so" > dstfl;
           print "#LoadModule lua_module modules/mod_lua.so" > dstfl;
           print "#LoadModule macro_module modules/mod_macro.so" > dstfl;
+          print "#LoadModule md_module modules/mod_md.so" > dstfl;
           print "LoadModule mime_module modules/mod_mime.so" > dstfl;
           print "#LoadModule mime_magic_module modules/mod_mime_magic.so" > dstfl;
           print "LoadModule negotiation_module modules/mod_negotiation.so" > dstfl;
@@ -171,6 +173,7 @@ BEGIN {
           print "#LoadModule proxy_http_module modules/mod_proxy_http.so" > dstfl;
           print "#LoadModule proxy_http2_module modules/mod_proxy_http2.so" > dstfl;
           print "#LoadModule proxy_scgi_module modules/mod_proxy_scgi.so" > dstfl;
+          print "#LoadModule proxy_uwsgi_module modules/mod_proxy_uwsgi.so" > dstfl;
           print "#LoadModule proxy_wstunnel_module modules/mod_proxy_wstunnel.so" > dstfl;
           print "#LoadModule ratelimit_module modules/mod_ratelimit.so" > dstfl;
           print "#LoadModule reflector_module modules/mod_reflector.so" > dstfl;
@@ -202,15 +205,19 @@ BEGIN {
           print "#LoadModule xml2enc_module modules/mod_xml2enc.so" > dstfl;
           continue;
         }
-        gsub( /@@ServerRoot@@/,   serverroot );
-        gsub( /@exp_cgidir@/,     serverroot "/cgi-bin" );
-        gsub( /@exp_sysconfdir@/, serverroot "/conf" );
-        gsub( /@exp_errordir@/,   serverroot "/error" );
-        gsub( /@exp_htdocsdir@/,  serverroot "/htdocs" );
-        gsub( /@exp_iconsdir@/,   serverroot "/icons" );
-        gsub( /@exp_manualdir@/,  serverroot "/manual" );
-        gsub( /@exp_runtimedir@/, serverroot "/logs" );
-        if ( gsub( /@exp_logfiledir@/, serverroot "/logs" ) ||
+        if ( /^ServerRoot / ) {
+          print "Define SRVROOT \"" serverroot "\"" > dstfl;
+          print "" > dstfl;
+        }
+        gsub( /@@ServerRoot@@/,   "\${SRVROOT}" );
+        gsub( /@exp_cgidir@/,     "\${SRVROOT}" "/cgi-bin" );
+        gsub( /@exp_sysconfdir@/, "\${SRVROOT}" "/conf" );
+        gsub( /@exp_errordir@/,   "\${SRVROOT}" "/error" );
+        gsub( /@exp_htdocsdir@/,  "\${SRVROOT}" "/htdocs" );
+        gsub( /@exp_iconsdir@/,   "\${SRVROOT}" "/icons" );
+        gsub( /@exp_manualdir@/,  "\${SRVROOT}" "/manual" );
+        gsub( /@exp_runtimedir@/, "\${SRVROOT}" "/logs" );
+        if ( gsub( /@exp_logfiledir@/, "\${SRVROOT}" "/logs" ) ||
              gsub( /@rel_logfiledir@/, "logs" ) ) {
           gsub( /_log"/, ".log\"" )
         }

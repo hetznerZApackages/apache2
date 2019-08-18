@@ -1,0 +1,196 @@
+Description: spelling errors
+Author: Xavier Guimard <yadd@debian.org>
+Forwarded: https://bz.apache.org/bugzilla/show_bug.cgi?id=62960
+Last-Update: 2018-11-28
+
+--- a/LICENSE
++++ b/LICENSE
+@@ -516,7 +516,7 @@
+ This program may be used and copied freely providing this copyright notice
+ is not removed.
+ 
+-This software is provided "as is" and any express or implied waranties, 
++This software is provided "as is" and any express or implied warranties, 
+ including but not limited to, the implied warranties of merchantability and
+ fitness for a particular purpose are disclaimed.  In no event shall 
+ Zeus Technology Ltd. be liable for any direct, indirect, incidental, special, 
+--- a/docs/man/httxt2dbm.1
++++ b/docs/man/httxt2dbm.1
+@@ -50,7 +50,7 @@
+ Specify the DBM type to be used for the output\&. If not specified, will use the APR Default\&. Available types are: \fBGDBM\fR for GDBM files, \fBSDBM\fR for SDBM files, \fBDB\fR for berkeley DB files, \fBNDBM\fR for NDBM files, \fBdefault\fR for the default DBM type\&.  
+ .TP
+ \fB-i \fISOURCE_TXT\fR\fR
+-Input file from which the dbm is to be created\&. The file should be formated with one record per line, of the form: \fBkey value\fR\&. See the documentation for RewriteMap for further details of this file's format and meaning\&.  
++Input file from which the dbm is to be created\&. The file should be formatted with one record per line, of the form: \fBkey value\fR\&. See the documentation for RewriteMap for further details of this file's format and meaning\&.  
+ .TP
+ \fB-o \fIOUTPUT_DBM\fR\fR
+ Name of the output dbm files\&.  
+--- a/docs/manual/howto/htaccess.html.ja.utf8
++++ b/docs/manual/howto/htaccess.html.ja.utf8
+@@ -247,7 +247,7 @@
+ 
+     <p>As discussed in the documentation on <a href="../sections.html">Configuration Sections</a>,
+     <code>.htaccess</code> files can override the <code class="directive"><a href="../mod/core.html#directory">&lt;Directory&gt;</a></code> sections for
+-    the corresponding directory, but will be overriden by other types
++    the corresponding directory, but will be overridden by other types
+     of configuration sections from the main configuration files.  This
+     fact can be used to enforce certain configurations, even in the
+     presence of a liberal <code class="directive"><a href="../mod/core.html#allowoverride">AllowOverride</a></code> setting.  For example, to
+@@ -414,4 +414,4 @@
+     prettyPrint();
+ }
+ //--><!]]></script>
+-</body></html>
+\ No newline at end of file
++</body></html>
+--- a/docs/manual/mod/core.html.es
++++ b/docs/manual/mod/core.html.es
+@@ -1211,7 +1211,7 @@
+     error rather than masking it.  More information is available in
+     Microsoft Knowledge Base article <a href="http://support.microsoft.com/default.aspx?scid=kb;en-us;Q294807">Q294807</a>.</p>
+ 
+-    <p>Although most error messages can be overriden, there are certain
++    <p>Although most error messages can be overridden, there are certain
+     circumstances where the internal messages are used regardless of the
+     setting of <code class="directive"><a href="#errordocument">ErrorDocument</a></code>.  In
+     particular, if a malformed request is detected, normal request processing
+@@ -4524,4 +4524,4 @@
+     prettyPrint();
+ }
+ //--><!]]></script>
+-</body></html>
+\ No newline at end of file
++</body></html>
+--- a/docs/manual/programs/httxt2dbm.html.en
++++ b/docs/manual/programs/httxt2dbm.html.en
+@@ -66,7 +66,7 @@
+     </dd>
+ 
+     <dt><code>-i <var>SOURCE_TXT</var></code></dt>
+-    <dd>Input file from which the dbm is to be created. The file should be formated
++    <dd>Input file from which the dbm is to be created. The file should be formatted
+     with one record per line, of the form: <code>key value</code>.
+     See the documentation for <code class="directive"><a href="../mod/mod_rewrite.html#rewritemap">RewriteMap</a></code> for
+     further details of this file's format and meaning.
+@@ -111,4 +111,4 @@
+     prettyPrint();
+ }
+ //--><!]]></script>
+-</body></html>
+\ No newline at end of file
++</body></html>
+--- a/modules/http/http_request.c
++++ b/modules/http/http_request.c
+@@ -376,7 +376,7 @@
+     
+     /* The EOR bucket has either been handled by an output filter (eg.
+      * deleted or moved to a buffered_bb => no more in bb), or an error
+-     * occured before that (eg. c->aborted => still in bb) and we ought
++     * occurred before that (eg. c->aborted => still in bb) and we ought
+      * to destroy it now. So cleanup any remaining bucket along with
+      * the orphan request (if any).
+      */
+@@ -779,7 +779,7 @@
+ 
+     AP_INTERNAL_REDIRECT(r->uri, new_uri);
+ 
+-    /* ap_die was already called, if an error occured */
++    /* ap_die was already called, if an error occurred */
+     if (!new) {
+         return;
+     }
+@@ -803,7 +803,7 @@
+     int access_status;
+     request_rec *new = internal_internal_redirect(new_uri, r);
+ 
+-    /* ap_die was already called, if an error occured */
++    /* ap_die was already called, if an error occurred */
+     if (!new) {
+         return;
+     }
+--- a/modules/http2/h2_config.c
++++ b/modules/http2/h2_config.c
+@@ -419,7 +419,7 @@
+     else if (!strcasecmp("BEFORE", sdependency)) {
+         dependency = H2_DEPENDANT_BEFORE;
+         if (sweight) {
+-            return "dependecy 'Before' does not allow a weight";
++            return "dependency 'Before' does not allow a weight";
+         }
+     } 
+     else if (!strcasecmp("INTERLEAVED", sdependency)) {
+--- a/modules/http2/h2_ngn_shed.c
++++ b/modules/http2/h2_ngn_shed.c
+@@ -281,7 +281,7 @@
+     if (H2_REQ_ENTRIES_EMPTY(&ngn->entries)) {
+         if (want_shutdown) {
+             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, shed->c,
+-                          "h2_ngn_shed(%ld): emtpy queue, shutdown engine %s", 
++                          "h2_ngn_shed(%ld): empty queue, shutdown engine %s", 
+                           shed->c->id, ngn->id);
+             ngn->shutdown = 1;
+         }
+--- a/modules/mappers/mod_imagemap.c
++++ b/modules/mappers/mod_imagemap.c
+@@ -858,7 +858,7 @@
+         /* There's not much else we can do ... we've already sent the headers
+          * to the client.
+          */
+-        ap_rputs("\n\n[an internal server error occured]\n", r);
++        ap_rputs("\n\n[an internal server error occurred]\n", r);
+         menu_footer(r);
+         return OK;
+     }
+--- a/modules/md/md_acme_authz.c
++++ b/modules/md/md_acme_authz.c
+@@ -239,7 +239,7 @@
+     
+     if (md_log_is_level(p, log_level)) {
+         md_log_perror(MD_LOG_MARK, log_level, rv, p, "ACME server authz: %s for %s at %s. "
+-                      "Exact repsonse was: %s", err? err : "", authz->domain, authz->location,
++                      "Exact response was: %s", err? err : "", authz->domain, authz->location,
+                       json? md_json_writep(json, p, MD_JSON_FMT_COMPACT) : "not available");
+     }
+     
+--- a/modules/metadata/mod_remoteip.c
++++ b/modules/metadata/mod_remoteip.c
+@@ -393,7 +393,7 @@
+ 
+     ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, new, APLOGNO(03491)
+                  "RemoteIPProxyProtocol: previous setting for %s:%hu from virtual "
+-                 "host {%s:%hu in %s} is being overriden by virtual host "
++                 "host {%s:%hu in %s} is being overridden by virtual host "
+                  "{%s:%hu in %s}; new setting is '%s'",
+                  buf, prev->addr->port, prev->source->server_hostname,
+                  prev->source->addrs->host_port, prev->source->defn_name,
+--- a/modules/ssl/mod_ssl.c
++++ b/modules/ssl/mod_ssl.c
+@@ -94,7 +94,7 @@
+                 "Enable FIPS-140 mode "
+                 "(`on', `off')")
+     SSL_CMD_ALL(CipherSuite, TAKE12,
+-                "Colon-delimited list of permitted SSL Ciphers, optional preceeded "
++                "Colon-delimited list of permitted SSL Ciphers, optional preceded "
+                 "by protocol identifier ('XXX:...:XXX' - see manual)")
+     SSL_CMD_SRV(CertificateFile, TAKE1,
+                 "SSL Server Certificate file "
+@@ -187,7 +187,7 @@
+                 "('[+-][" SSL_PROTOCOLS "] ...' - see manual)")
+     SSL_CMD_PXY(ProxyCipherSuite, TAKE12,
+                "SSL Proxy: colon-delimited list of permitted SSL ciphers "
+-               ", optionally preceeded by protocol specifier ('XXX:...:XXX' - see manual)")
++               ", optionally preceded by protocol specifier ('XXX:...:XXX' - see manual)")
+     SSL_CMD_PXY(ProxyVerify, TAKE1,
+                "SSL Proxy: whether to verify the remote certificate "
+                "('on' or 'off')")
+--- a/support/ab.c
++++ b/support/ab.c
+@@ -18,7 +18,7 @@
+    ** This program is based on ZeusBench V1.0 written by Adam Twiss
+    ** which is Copyright (c) 1996 by Zeus Technology Ltd. http://www.zeustech.net/
+    **
+-   ** This software is provided "as is" and any express or implied waranties,
++   ** This software is provided "as is" and any express or implied warranties,
+    ** including but not limited to, the implied warranties of merchantability and
+    ** fitness for a particular purpose are disclaimed.  In no event shall
+    ** Zeus Technology Ltd. be liable for any direct, indirect, incidental, special,

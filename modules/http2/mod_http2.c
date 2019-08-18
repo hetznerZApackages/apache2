@@ -1,11 +1,12 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -52,7 +53,10 @@ AP_DECLARE_MODULE(http2) = {
     h2_config_create_svr, /* func to create per server config */
     h2_config_merge_svr,  /* func to merge per server config */
     h2_cmds,              /* command handlers */
-    h2_hooks
+    h2_hooks,
+#if defined(AP_MODULE_FLAG_NONE)
+    AP_MODULE_FLAG_ALWAYS_MERGE
+#endif
 };
 
 static int h2_h2_fixups(request_rec *r);
@@ -61,9 +65,11 @@ typedef struct {
     unsigned int change_prio : 1;
     unsigned int sha256 : 1;
     unsigned int inv_headers : 1;
+    unsigned int dyn_windows : 1;
 } features;
 
 static features myfeats;
+static int mpm_warned;
 
 /* The module initialization. Called once as apache hook, before any multi
  * processing (threaded or not) happens. It is typically at least called twice, 
@@ -96,6 +102,9 @@ static int h2_post_config(apr_pool_t *p, apr_pool_t *plog,
 #ifdef H2_NG2_INVALID_HEADER_CB
     myfeats.inv_headers = 1;
 #endif
+#ifdef H2_NG2_LOCAL_WIN_SIZE
+    myfeats.dyn_windows = 1;
+#endif
     
     apr_pool_userdata_get(&data, mod_h2_init_key, s->process->pool);
     if ( data == NULL ) {
@@ -108,11 +117,12 @@ static int h2_post_config(apr_pool_t *p, apr_pool_t *plog,
     
     ngh2 = nghttp2_version(0);
     ap_log_error( APLOG_MARK, APLOG_INFO, 0, s, APLOGNO(03090)
-                 "mod_http2 (v%s, feats=%s%s%s, nghttp2 %s), initializing...",
+                 "mod_http2 (v%s, feats=%s%s%s%s, nghttp2 %s), initializing...",
                  MOD_HTTP2_VERSION, 
                  myfeats.change_prio? "CHPRIO"  : "", 
                  myfeats.sha256?      "+SHA256" : "",
                  myfeats.inv_headers? "+INVHD"  : "",
+                 myfeats.dyn_windows? "+DWINS"  : "",
                  ngh2?                ngh2->version_str : "unknown");
     
     switch (h2_conn_mpm_type()) {
@@ -134,6 +144,17 @@ static int h2_post_config(apr_pool_t *p, apr_pool_t *plog,
             ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(03091)
                          "post_config: mpm type unknown");
             break;
+    }
+    
+    if (!h2_mpm_supported() && !mpm_warned) {
+        mpm_warned = 1;
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(10034)
+                     "The mpm module (%s) is not supported by mod_http2. The mpm determines "
+                     "how things are processed in your server. HTTP/2 has more demands in "
+                     "this regard and the currently selected mpm will just not do. "
+                     "This is an advisory warning. Your server will continue to work, but "
+                     "the HTTP/2 protocol will be inactive.", 
+                     h2_conn_mpm_name());
     }
     
     status = h2_h2_init(p, s);
@@ -172,6 +193,11 @@ static void http2_req_engine_done(h2_req_engine *ngn, conn_rec *r_conn,
     h2_mplx_req_engine_done(ngn, r_conn, status);
 }
 
+static void http2_get_num_workers(server_rec *s, int *minw, int *maxw)
+{
+    h2_get_num_workers(s, minw, maxw);
+}
+
 /* Runs once per created child process. Perform any process 
  * related initionalization here.
  */
@@ -197,6 +223,7 @@ static void h2_hooks(apr_pool_t *pool)
     APR_REGISTER_OPTIONAL_FN(http2_req_engine_push);
     APR_REGISTER_OPTIONAL_FN(http2_req_engine_pull);
     APR_REGISTER_OPTIONAL_FN(http2_req_engine_done);
+    APR_REGISTER_OPTIONAL_FN(http2_get_num_workers);
 
     ap_log_perror(APLOG_MARK, APLOG_TRACE1, 0, pool, "installing hooks");
     

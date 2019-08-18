@@ -1,2 +1,6 @@
 # Even though one line is very long, it's still hand-editable source code
 source-is-missing docs/manual/style/scripts/prettify.js .*
+# perl-framework is not shipped in any binary package
+missing-notice-file-for-apache-license NOTICE debian/perl-framework/NOTICE
+# Variable not exported by pkg-info.mk
+apache2 source: debian-rules-parses-dpkg-parsechangelog (line 15)

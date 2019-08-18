@@ -166,6 +166,7 @@ static const char* really_last_key = "rewrite_really_last";
 #define RULEFLAG_DISCARDPATHINFO    (1<<15)
 #define RULEFLAG_QSDISCARD          (1<<16)
 #define RULEFLAG_END                (1<<17)
+#define RULEFLAG_ESCAPENOPLUS       (1<<18)
 #define RULEFLAG_QSLAST             (1<<19)
 
 /* return code of the rewrite rule
@@ -197,6 +198,7 @@ static const char* really_last_key = "rewrite_really_last";
 #define OPTION_INHERIT_DOWN_BEFORE  (1<<7)
 #define OPTION_IGNORE_INHERIT       (1<<8)
 #define OPTION_IGNORE_CONTEXT_INFO  (1<<9)
+#define OPTION_LEGACY_PREFIX_DOCROOT (1<<10)
 
 #ifndef RAND_MAX
 #define RAND_MAX 32767
@@ -263,6 +265,8 @@ typedef struct {
     const char *dbdq;              /* SQL SELECT statement for rewritemap */
     const char *checkfile2;        /* filename to check for map existence
                                       NULL if only one file               */
+    const char *user;              /* run RewriteMap program as this user */
+    const char *group;             /* run RewriteMap program as this group */
 } rewritemap_entry;
 
 /* special pattern types for RewriteCond */
@@ -317,6 +321,7 @@ typedef struct {
     data_item *cookie;               /* added cookies                         */
     int        skip;                 /* number of next rules to skip          */
     int        maxrounds;            /* limit on number of loops with N flag  */
+    char       *escapes;             /* specific backref escapes              */
 } rewriterule_entry;
 
 typedef struct {
@@ -411,13 +416,14 @@ static cache *cachep;
 static int proxy_available;
 
 /* Locks/Mutexes */
+static int rewrite_lock_needed = 0;
 static apr_global_mutex_t *rewrite_mapr_lock_acquire = NULL;
 static const char *rewritemap_mutex_type = "rewrite-map";
 
 /* Optional functions imported from mod_ssl when loaded: */
 static APR_OPTIONAL_FN_TYPE(ssl_var_lookup) *rewrite_ssl_lookup = NULL;
 static APR_OPTIONAL_FN_TYPE(ssl_is_https) *rewrite_is_https = NULL;
-static char *escape_uri(apr_pool_t *p, const char *path);
+static char *escape_backref(apr_pool_t *p, const char *path, const char *escapeme, int noplus);
 
 /*
  * +-------------------------------------------------------+
@@ -634,24 +640,44 @@ static APR_INLINE unsigned char *c2x(unsigned what, unsigned char prefix,
 }
 
 /*
- * Escapes a uri in a similar way as php's urlencode does.
+ * Escapes a backreference in a similar way as php's urlencode does.
  * Based on ap_os_escape_path in server/util.c
  */
-static char *escape_uri(apr_pool_t *p, const char *path) {
+static char *escape_backref(apr_pool_t *p, const char *path, const char *escapeme, int noplus) {
     char *copy = apr_palloc(p, 3 * strlen(path) + 3);
     const unsigned char *s = (const unsigned char *)path;
     unsigned char *d = (unsigned char *)copy;
     unsigned c;
 
     while ((c = *s)) {
-        if (apr_isalnum(c) || c == '_') {
-            *d++ = c;
+        if (!escapeme) { 
+            if (apr_isalnum(c) || c == '_') {
+                *d++ = c;
+            }
+            else if (c == ' ' && !noplus) {
+                *d++ = '+';
+            }
+            else {
+                d = c2x(c, '%', d);
+            }
         }
-        else if (c == ' ') {
-            *d++ = '+';
-        }
-        else {
-            d = c2x(c, '%', d);
+        else { 
+            const char *esc = escapeme;
+            while (*esc) { 
+                if (c == *esc) { 
+                    if (c == ' ' && !noplus) { 
+                        *d++ = '+';
+                    }
+                    else { 
+                        d = c2x(c, '%', d);
+                    }
+                    break;
+                }
+                ++esc;
+            }
+            if (!*esc) { 
+                *d++ = c;
+            }
         }
         ++s;
     }
@@ -842,8 +868,15 @@ static void reduce_uri(request_rec *r)
 
         /* now check whether we could reduce it to a local path... */
         if (ap_matches_request_vhost(r, host, port)) {
+            rewrite_server_conf *conf = 
+                ap_get_module_config(r->server->module_config, &rewrite_module);
             rewritelog((r, 3, NULL, "reduce %s -> %s", r->filename, url));
             r->filename = apr_pstrdup(r->pool, url);
+
+            /* remember that the uri was reduced */
+            if(!(conf->options & OPTION_LEGACY_PREFIX_DOCROOT)) {
+                apr_table_setn(r->notes, "mod_rewrite_uri_reduced", "true");
+            }
         }
     }
 
@@ -1161,6 +1194,7 @@ static void rewrite_child_errfn(apr_pool_t *p, apr_status_t err,
 
 static apr_status_t rewritemap_program_child(apr_pool_t *p,
                                              const char *progname, char **argv,
+                                             const char *user, const char *group,
                                              apr_file_t **fpout,
                                              apr_file_t **fpin)
 {
@@ -1173,6 +1207,8 @@ static apr_status_t rewritemap_program_child(apr_pool_t *p,
                                                   APR_FULL_BLOCK, APR_NO_PIPE))
         && APR_SUCCESS == (rc=apr_procattr_dir_set(procattr,
                                              ap_make_dirstr_parent(p, argv[0])))
+        && (!user || APR_SUCCESS == (rc=apr_procattr_user_set(procattr, user, "")))
+        && (!group || APR_SUCCESS == (rc=apr_procattr_group_set(procattr, group)))
         && APR_SUCCESS == (rc=apr_procattr_cmdtype_set(procattr, APR_PROGRAM))
         && APR_SUCCESS == (rc=apr_procattr_child_errfn_set(procattr,
                                                            rewrite_child_errfn))
@@ -1230,6 +1266,7 @@ static apr_status_t run_rewritemap_programs(server_rec *s, apr_pool_t *p)
         }
 
         rc = rewritemap_program_child(p, map->argv[0], map->argv,
+                                      map->user, map->group,
                                       &fpout, &fpin);
         if (rc != APR_SUCCESS || fpin == NULL || fpout == NULL) {
             ap_log_error(APLOG_MARK, APLOG_ERR, rc, s, APLOGNO(00654)
@@ -1766,7 +1803,10 @@ static const char *lookup_header(const char *name, rewrite_ctx *ctx)
 {
     const char *val = apr_table_get(ctx->r->headers_in, name);
 
-    if (val) {
+    /* Skip the 'Vary: Host' header combination
+     * as indicated in rfc7231 section-7.1.4
+     */
+    if (val && strcasecmp(name, "Host") != 0) {
         ctx->vary_this = ctx->vary_this
                          ? apr_pstrcat(ctx->r->pool, ctx->vary_this, ", ",
                                        name, NULL)
@@ -2390,7 +2430,7 @@ static char *do_expand(char *input, rewrite_ctx *ctx, rewriterule_entry *entry)
                     /* escape the backreference */
                     char *tmp2, *tmp;
                     tmp = apr_pstrmemdup(pool, bri->source + bri->regmatch[n].rm_so, span);
-                    tmp2 = escape_uri(pool, tmp);
+                    tmp2 = escape_backref(pool, tmp, entry->escapes, entry->flags & RULEFLAG_ESCAPENOPLUS);
                     rewritelog((ctx->r, 5, ctx->perdir, "escaping backreference '%s' to '%s'",
                             tmp, tmp2));
 
@@ -2648,9 +2688,6 @@ static apr_status_t rewritelock_create(server_rec *s, apr_pool_t *p)
     apr_status_t rc;
 
     /* create the lockfile */
-    /* XXX See if there are any rewrite map programs before creating
-     * the mutex.
-     */
     rc = ap_global_mutex_create(&rewrite_mapr_lock_acquire, NULL,
                                 rewritemap_mutex_type, NULL, s, p, 0);
     if (rc != APR_SUCCESS) {
@@ -2985,6 +3022,9 @@ static const char *cmd_rewriteoptions(cmd_parms *cmd,
         else if (!strcasecmp(w, "ignorecontextinfo")) {
             options |= OPTION_IGNORE_CONTEXT_INFO;
         }
+        else if (!strcasecmp(w, "legacyprefixdocroot")) {
+            options |= OPTION_LEGACY_PREFIX_DOCROOT;
+        }
         else {
             return apr_pstrcat(cmd->pool, "RewriteOptions: unknown option '",
                                w, "'", NULL);
@@ -3015,7 +3055,7 @@ static const char *cmd_rewriteoptions(cmd_parms *cmd,
 }
 
 static const char *cmd_rewritemap(cmd_parms *cmd, void *dconf, const char *a1,
-                                  const char *a2)
+                                  const char *a2, const char *a3)
 {
     rewrite_server_conf *sconf;
     rewritemap_entry *newmap;
@@ -3121,6 +3161,13 @@ static const char *cmd_rewritemap(cmd_parms *cmd, void *dconf, const char *a1,
 
         newmap->type      = MAPTYPE_PRG;
         newmap->checkfile = newmap->argv[0];
+        rewrite_lock_needed = 1;
+
+        if (a3) {
+            char *tok_cntx;
+            newmap->user = apr_strtok(apr_pstrdup(cmd->pool, a3), ":", &tok_cntx);
+            newmap->group = apr_strtok(NULL, ":", &tok_cntx);
+        }
     }
     else if (strncasecmp(a2, "int:", 4) == 0) {
         newmap->type      = MAPTYPE_INT;
@@ -3446,6 +3493,12 @@ static const char *cmd_rewriterule_setflag(apr_pool_t *p, void *_cfg,
     case 'B':
         if (!*key || !strcasecmp(key, "ackrefescaping")) {
             cfg->flags |= RULEFLAG_ESCAPEBACKREF;
+            if (val && *val) { 
+                cfg->escapes = val;
+            }
+        }
+        else if (!strcasecmp(key, "NP") || !strcasecmp(key, "ackrefernoplus")) { 
+            cfg->flags |= RULEFLAG_ESCAPENOPLUS;
         }
         else {
             ++error;
@@ -4416,6 +4469,7 @@ static int pre_config(apr_pool_t *pconf,
 {
     APR_OPTIONAL_FN_TYPE(ap_register_rewrite_mapfunc) *map_pfn_register;
 
+    rewrite_lock_needed = 0; 
     ap_mutex_register(pconf, rewritemap_mutex_type, NULL, APR_LOCK_DEFAULT, 0);
 
     /* register int: rewritemap handlers */
@@ -4441,13 +4495,15 @@ static int post_config(apr_pool_t *p,
     /* check if proxy module is available */
     proxy_available = (ap_find_linked_module("mod_proxy.c") != NULL);
 
-    rv = rewritelock_create(s, p);
-    if (rv != APR_SUCCESS) {
-        return HTTP_INTERNAL_SERVER_ERROR;
-    }
+    if (rewrite_lock_needed) {
+        rv = rewritelock_create(s, p);
+        if (rv != APR_SUCCESS) {
+            return HTTP_INTERNAL_SERVER_ERROR;
+        }
 
-    apr_pool_cleanup_register(p, (void *)s, rewritelock_remove,
-                              apr_pool_cleanup_null);
+        apr_pool_cleanup_register(p, (void *)s, rewritelock_remove,
+                apr_pool_cleanup_null);
+    }
 
     /* if we are not doing the initial config, step through the servers and
      * open the RewriteMap prg:xxx programs,
@@ -4749,6 +4805,7 @@ static int hook_uri2file(request_rec *r)
         }
         else {
             /* it was finally rewritten to a local path */
+            const char *uri_reduced = NULL;
 
             /* expand "/~user" prefix */
 #if APR_HAS_USER
@@ -4784,7 +4841,12 @@ static int hook_uri2file(request_rec *r)
              * because we only do stat() on the first directory
              * and this gets cached by the kernel for along time!
              */
-            if (!prefix_stat(r->filename, r->pool)) {
+
+            if(!(conf->options & OPTION_LEGACY_PREFIX_DOCROOT)) {
+                uri_reduced = apr_table_get(r->notes, "mod_rewrite_uri_reduced");
+            }
+
+            if (!prefix_stat(r->filename, r->pool) || uri_reduced != NULL) {
                 int res;
                 char *tmp = r->uri;
 
@@ -5132,6 +5194,8 @@ static int hook_fixup(request_rec *r)
                 }
             }
 
+            apr_table_setn(r->notes, "redirect-keeps-vary", "");
+
             /* now initiate the internal redirect */
             rewritelog((r, 1, dconf->directory, "internal redirect with %s "
                         "[INTERNAL REDIRECT]", r->filename));
@@ -5220,8 +5284,8 @@ static const command_rec command_table[] = {
                      "an input string and a to be applied regexp-pattern"),
     AP_INIT_RAW_ARGS("RewriteRule",     cmd_rewriterule,     NULL, OR_FILEINFO,
                      "an URL-applied regexp-pattern and a substitution URL"),
-    AP_INIT_TAKE2(   "RewriteMap",      cmd_rewritemap,      NULL, RSRC_CONF,
-                     "a mapname and a filename"),
+    AP_INIT_TAKE23(   "RewriteMap",      cmd_rewritemap,      NULL, RSRC_CONF,
+                     "a mapname and a filename and options"),
     { NULL }
 };
 

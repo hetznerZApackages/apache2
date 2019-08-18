@@ -72,7 +72,9 @@ versions of apache2-threaded-dev did provide apache2-dev.
 A module package that uses openssl specific interfaces in mod_ssl, either by
 using the mod_ssl_openssl.h header, or by using mod_ssl-internal private
 interfaces (don't do that!), must build-depend on apache2-ssl-dev to ensure
-that the correct version of the openssl headers are used.
+that the correct version of the openssl headers are used. In this case,
+dh_apache2 will also create a dependency on a apache2-api-YYYYMMDD-opensslM.M
+virtual package.
 
 The resulting binary package should be called libapache2-mod-<modulename> and
 MUST NOT depend on apache2 or apache2-bin. Instead a module package must depend

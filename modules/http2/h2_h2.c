@@ -1,18 +1,19 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include <assert.h>
 
 #include <apr_strings.h>
@@ -59,7 +60,6 @@ const char *H2_MAGIC_TOKEN = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 /*******************************************************************************
  * The optional mod_ssl functions we need. 
  */
-static APR_OPTIONAL_FN_TYPE(ssl_engine_disable) *opt_ssl_engine_disable;
 static APR_OPTIONAL_FN_TYPE(ssl_is_https) *opt_ssl_is_https;
 static APR_OPTIONAL_FN_TYPE(ssl_var_lookup) *opt_ssl_var_lookup;
 
@@ -445,7 +445,6 @@ apr_status_t h2_h2_init(apr_pool_t *pool, server_rec *s)
 {
     (void)pool;
     ap_log_error(APLOG_MARK, APLOG_TRACE1, 0, s, "h2_h2, child_init");
-    opt_ssl_engine_disable = APR_RETRIEVE_OPTIONAL_FN(ssl_engine_disable);
     opt_ssl_is_https = APR_RETRIEVE_OPTIONAL_FN(ssl_is_https);
     opt_ssl_var_lookup = APR_RETRIEVE_OPTIONAL_FN(ssl_var_lookup);
     
@@ -636,10 +635,10 @@ int h2_h2_process_conn(conn_rec* c)
                 }
                 h2_ctx_protocol_set(ctx, h2_h2_is_tls(c)? "h2" : "h2c");
             }
-            else {
+            else if (APLOGctrace2(c)) {
                 ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, c,
-                              "h2_h2, not detected in %d bytes: %s", 
-                              (int)slen, s);
+                              "h2_h2, not detected in %d bytes(base64): %s", 
+                              (int)slen, h2_util_base64url_encode(s, slen, c->pool));
             }
             
             apr_brigade_destroy(temp);
@@ -652,10 +651,12 @@ int h2_h2_process_conn(conn_rec* c)
             status = h2_conn_setup(ctx, c, NULL);
             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, status, c, "conn_setup");
             if (status != APR_SUCCESS) {
-                return status;
+                h2_ctx_clear(c);
+                return !OK;
             }
         }
-        return h2_conn_run(ctx, c);
+        h2_conn_run(ctx, c);
+        return OK;
     }
     
     ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, c, "h2_h2, declined");
@@ -674,7 +675,7 @@ static int h2_h2_pre_close_conn(conn_rec *c)
     ctx = h2_ctx_get(c, 0);
     if (ctx) {
         /* If the session has been closed correctly already, we will not
-         * fiond a h2_ctx here. The presence indicates that the session
+         * find a h2_ctx here. The presence indicates that the session
          * is still ongoing. */
         return h2_conn_pre_close(ctx, c);
     }
@@ -693,7 +694,7 @@ static void check_push(request_rec *r, const char *tag)
                       tag, conf->push_list->nelts);
         for (i = 0; i < conf->push_list->nelts; ++i) {
             h2_push_res *push = &APR_ARRAY_IDX(conf->push_list, i, h2_push_res);
-            apr_table_addn(r->headers_out, "Link", 
+            apr_table_add(r->headers_out, "Link", 
                            apr_psprintf(r->pool, "<%s>; rel=preload%s", 
                                         push->uri_ref, push->critical? "; critical" : ""));
         }

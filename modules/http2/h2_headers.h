@@ -1,11 +1,12 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,10 +41,12 @@ apr_bucket *h2_bucket_headers_beam(struct h2_bucket_beam *beam,
  * @param status the headers status
  * @param header the headers of the headers
  * @param notes  the notes carried by the headers
+ * @param raw_bytes the raw network bytes (if known) used to transmit these
  * @param pool the memory pool to use
  */
 h2_headers *h2_headers_create(int status, apr_table_t *header, 
-                              apr_table_t *notes, apr_pool_t *pool);
+                              apr_table_t *notes, apr_off_t raw_bytes, 
+                              apr_pool_t *pool);
 
 /**
  * Create the headers from the given request_rec.
@@ -54,6 +57,12 @@ h2_headers *h2_headers_create(int status, apr_table_t *header,
  */
 h2_headers *h2_headers_rcreate(request_rec *r, int status, 
                                  apr_table_t *header, apr_pool_t *pool);
+
+/**
+ * Clone the headers into another pool. This will not copy any
+ * header strings.
+ */
+h2_headers *h2_headers_copy(apr_pool_t *pool, h2_headers *h);
 
 /**
  * Create the headers for the given error.

@@ -273,13 +273,11 @@ static proxy_worker *find_best_hb(proxy_balancer *balancer,
         ap_get_module_config(r->server->module_config,
                              &lbmethod_heartbeat_module);
 
+    ap_proxy_retry_worker_fn =
+            APR_RETRIEVE_OPTIONAL_FN(ap_proxy_retry_worker);
     if (!ap_proxy_retry_worker_fn) {
-        ap_proxy_retry_worker_fn =
-                APR_RETRIEVE_OPTIONAL_FN(ap_proxy_retry_worker);
-        if (!ap_proxy_retry_worker_fn) {
-            /* can only happen if mod_proxy isn't loaded */
-            return NULL;
-        }
+        /* can only happen if mod_proxy isn't loaded */
+        return NULL;
     }
 
     apr_pool_create(&tpool, r->pool);
@@ -300,7 +298,7 @@ static proxy_worker *find_best_hb(proxy_balancer *balancer,
 
     for (i = 0; i < balancer->workers->nelts; i++) {
         worker = &APR_ARRAY_IDX(balancer->workers, i, proxy_worker *);
-        server = apr_hash_get(servers, (*worker)->s->hostname, APR_HASH_KEY_STRING);
+        server = apr_hash_get(servers, (*worker)->s->hostname_ex, APR_HASH_KEY_STRING);
 
         if (!server) {
             ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rv, r, APLOGNO(01214)
@@ -358,7 +356,8 @@ static const proxy_balancer_method heartbeat =
     &find_best_hb,
     NULL,
     &reset,
-    &age
+    &age,
+    NULL
 };
 
 static int lb_hb_init(apr_pool_t *p, apr_pool_t *plog,

@@ -189,8 +189,8 @@ static const char *ap_expr_eval_re_backref(ap_expr_eval_ctx_t *ctx, unsigned int
 {
     int len;
 
-    if (!ctx->re_pmatch || !ctx->re_source || *ctx->re_source == '\0' ||
-        ctx->re_nmatch < n + 1)
+    if (!ctx->re_pmatch || !ctx->re_source || !*ctx->re_source
+        || **ctx->re_source == '\0' || ctx->re_nmatch < n + 1)
         return "";
 
     len = ctx->re_pmatch[n].rm_eo - ctx->re_pmatch[n].rm_so;
@@ -1001,7 +1001,12 @@ static const char *req_table_func(ap_expr_eval_ctx_t *ctx, const void *data,
         t = ctx->r->headers_in;
     else {                          /* req, http */
         t = ctx->r->headers_in;
-        add_vary(ctx, arg);
+        /* Skip the 'Vary: Host' header combination
+         * as indicated in rfc7231 section-7.1.4
+         */
+        if (strcasecmp(arg, "Host")){
+            add_vary(ctx, arg);
+        }
     }
     return apr_table_get(t, arg);
 }
@@ -1337,6 +1342,7 @@ static const char *request_var_names[] = {
     "CONTEXT_DOCUMENT_ROOT",    /* 26 */
     "REQUEST_STATUS",           /* 27 */
     "REMOTE_ADDR",              /* 28 */
+    "REMOTE_PORT",              /* 29 */
     NULL
 };
 
@@ -1405,7 +1411,10 @@ static const char *request_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
             return result;
         }
     case 23:
-        return r->uri;
+        {
+            const char *uri = apr_table_get(r->subprocess_env, "DOCUMENT_URI");
+            return uri ? uri : r->uri;
+        }
     case 24:
         {
             apr_time_exp_t tm;
@@ -1423,6 +1432,8 @@ static const char *request_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
         return r->status ? apr_psprintf(ctx->p, "%d", r->status) : "";
     case 28:
         return r->useragent_ip;
+    case 29:
+        return apr_psprintf(ctx->p, "%u", ctx->c->client_addr->port);
     default:
         ap_assert(0);
         return NULL;
@@ -1461,7 +1472,12 @@ static const char *req_header_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
         return "";
 
     name = req_header_header_names[index];
-    add_vary(ctx, name);
+    /* Skip the 'Vary: Host' header combination
+     * as indicated in rfc7231 section-7.1.4
+     */
+    if (strcasecmp(name, "Host")){
+        add_vary(ctx, name);
+    }
     return apr_table_get(ctx->r->headers_in, name);
 }
 
@@ -1704,7 +1720,7 @@ static int core_expr_lookup(ap_expr_lookup_parms *parms)
     case AP_EXPR_FUNC_STRING:
     case AP_EXPR_FUNC_OP_UNARY:
     case AP_EXPR_FUNC_OP_BINARY: {
-            const struct expr_provider_single *prov;
+            const struct expr_provider_single *prov = NULL;
             switch (parms->type) {
             case AP_EXPR_FUNC_STRING:
                 prov = string_func_providers;
@@ -1718,7 +1734,7 @@ static int core_expr_lookup(ap_expr_lookup_parms *parms)
             default:
                 ap_assert(0);
             }
-            while (prov->func) {
+            while (prov && prov->func) {
                 int match;
                 if (parms->type == AP_EXPR_FUNC_OP_UNARY)
                     match = !strcmp(prov->name, parms->name);

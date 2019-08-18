@@ -1,11 +1,12 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -68,7 +69,6 @@ void h2_ihash_remove_val(h2_ihash_t *ih, void *val);
 void h2_ihash_clear(h2_ihash_t *ih);
 
 size_t h2_ihash_shift(h2_ihash_t *ih, void **buffer, size_t max);
-size_t h2_ihash_ishift(h2_ihash_t *ih, int *buffer, size_t max);
 
 /*******************************************************************************
  * iqueue - sorted list of int with user defined ordering
@@ -119,17 +119,19 @@ int h2_iq_count(h2_iqueue *q);
  * @param q the queue to append the id to
  * @param sid the stream id to add
  * @param cmp the comparator for sorting
- * @param ctx user data for comparator 
+ * @param ctx user data for comparator
+ * @return != 0 iff id was not already there 
  */
-void h2_iq_add(h2_iqueue *q, int sid, h2_iq_cmp *cmp, void *ctx);
+int h2_iq_add(h2_iqueue *q, int sid, h2_iq_cmp *cmp, void *ctx);
 
 /**
  * Append the id to the queue if not already present. 
  *
  * @param q the queue to append the id to
  * @param sid the id to append
+ * @return != 0 iff id was not already there 
  */
-void h2_iq_append(h2_iqueue *q, int sid);
+int h2_iq_append(h2_iqueue *q, int sid);
 
 /**
  * Remove the stream id from the queue. Return != 0 iff task
@@ -184,6 +186,143 @@ size_t h2_iq_mshift(h2_iqueue *q, int *pint, size_t max);
 int h2_iq_contains(h2_iqueue *q, int sid);
 
 /*******************************************************************************
+ * FIFO queue (void* elements)
+ ******************************************************************************/
+
+/**
+ * A thread-safe FIFO queue with some extra bells and whistles, if you
+ * do not need anything special, better use 'apr_queue'.
+ */
+typedef struct h2_fifo h2_fifo;
+
+/**
+ * Create a FIFO queue that can hold up to capacity elements. Elements can
+ * appear several times.
+ */
+apr_status_t h2_fifo_create(h2_fifo **pfifo, apr_pool_t *pool, int capacity);
+
+/**
+ * Create a FIFO set that can hold up to capacity elements. Elements only
+ * appear once. Pushing an element already present does not change the
+ * queue and is successful.
+ */
+apr_status_t h2_fifo_set_create(h2_fifo **pfifo, apr_pool_t *pool, int capacity);
+
+apr_status_t h2_fifo_term(h2_fifo *fifo);
+apr_status_t h2_fifo_interrupt(h2_fifo *fifo);
+
+int h2_fifo_count(h2_fifo *fifo);
+
+/**
+ * Push en element into the queue. Blocks if there is no capacity left.
+ * 
+ * @param fifo the FIFO queue
+ * @param elem the element to push
+ * @return APR_SUCCESS on push, APR_EAGAIN on try_push on a full queue,
+ *         APR_EEXIST when in set mode and elem already there.
+ */
+apr_status_t h2_fifo_push(h2_fifo *fifo, void *elem);
+apr_status_t h2_fifo_try_push(h2_fifo *fifo, void *elem);
+
+apr_status_t h2_fifo_pull(h2_fifo *fifo, void **pelem);
+apr_status_t h2_fifo_try_pull(h2_fifo *fifo, void **pelem);
+
+typedef enum {
+    H2_FIFO_OP_PULL,   /* pull the element from the queue, ie discard it */
+    H2_FIFO_OP_REPUSH, /* pull and immediatley re-push it */
+} h2_fifo_op_t;
+
+typedef h2_fifo_op_t h2_fifo_peek_fn(void *head, void *ctx);
+
+/**
+ * Call given function on the head of the queue, once it exists, and
+ * perform the returned operation on it. The queue will hold its lock during
+ * this time, so no other operations on the queue are possible.
+ * @param fifo the queue to peek at
+ * @param fn   the function to call on the head, once available
+ * @param ctx  context to pass in call to function
+ */
+apr_status_t h2_fifo_peek(h2_fifo *fifo, h2_fifo_peek_fn *fn, void *ctx);
+
+/**
+ * Non-blocking version of h2_fifo_peek.
+ */
+apr_status_t h2_fifo_try_peek(h2_fifo *fifo, h2_fifo_peek_fn *fn, void *ctx);
+
+/**
+ * Remove the elem from the queue, will remove multiple appearances.
+ * @param elem  the element to remove
+ * @return APR_SUCCESS iff > 0 elems were removed, APR_EAGAIN otherwise.
+ */
+apr_status_t h2_fifo_remove(h2_fifo *fifo, void *elem);
+
+/*******************************************************************************
+ * iFIFO queue (int elements)
+ ******************************************************************************/
+
+/**
+ * A thread-safe FIFO queue with some extra bells and whistles, if you
+ * do not need anything special, better use 'apr_queue'.
+ */
+typedef struct h2_ififo h2_ififo;
+
+/**
+ * Create a FIFO queue that can hold up to capacity int. ints can
+ * appear several times.
+ */
+apr_status_t h2_ififo_create(h2_ififo **pfifo, apr_pool_t *pool, int capacity);
+
+/**
+ * Create a FIFO set that can hold up to capacity integers. Ints only
+ * appear once. Pushing an int already present does not change the
+ * queue and is successful.
+ */
+apr_status_t h2_ififo_set_create(h2_ififo **pfifo, apr_pool_t *pool, int capacity);
+
+apr_status_t h2_ififo_term(h2_ififo *fifo);
+apr_status_t h2_ififo_interrupt(h2_ififo *fifo);
+
+int h2_ififo_count(h2_ififo *fifo);
+
+/**
+ * Push an int into the queue. Blocks if there is no capacity left.
+ * 
+ * @param fifo the FIFO queue
+ * @param id  the int to push
+ * @return APR_SUCCESS on push, APR_EAGAIN on try_push on a full queue,
+ *         APR_EEXIST when in set mode and elem already there.
+ */
+apr_status_t h2_ififo_push(h2_ififo *fifo, int id);
+apr_status_t h2_ififo_try_push(h2_ififo *fifo, int id);
+
+apr_status_t h2_ififo_pull(h2_ififo *fifo, int *pi);
+apr_status_t h2_ififo_try_pull(h2_ififo *fifo, int *pi);
+
+typedef h2_fifo_op_t h2_ififo_peek_fn(int head, void *ctx);
+
+/**
+ * Call given function on the head of the queue, once it exists, and
+ * perform the returned operation on it. The queue will hold its lock during
+ * this time, so no other operations on the queue are possible.
+ * @param fifo the queue to peek at
+ * @param fn   the function to call on the head, once available
+ * @param ctx  context to pass in call to function
+ */
+apr_status_t h2_ififo_peek(h2_ififo *fifo, h2_ififo_peek_fn *fn, void *ctx);
+
+/**
+ * Non-blocking version of h2_fifo_peek.
+ */
+apr_status_t h2_ififo_try_peek(h2_ififo *fifo, h2_ififo_peek_fn *fn, void *ctx);
+
+/**
+ * Remove the integer from the queue, will remove multiple appearances.
+ * @param id  the integer to remove
+ * @return APR_SUCCESS iff > 0 ints were removed, APR_EAGAIN otherwise.
+ */
+apr_status_t h2_ififo_remove(h2_ififo *fifo, int id);
+
+/*******************************************************************************
  * common helpers
  ******************************************************************************/
 /* h2_log2(n) iff n is a power of 2 */
@@ -198,15 +337,6 @@ unsigned char h2_log2(int n);
  * @return the number of bytes all key/value pairs have
  */
 apr_size_t h2_util_table_bytes(apr_table_t *t, apr_size_t pair_extra);
-
-/**
- * Return != 0 iff the string s contains the token, as specified in
- * HTTP header syntax, rfc7230.
- */
-int h2_util_contains_token(apr_pool_t *pool, const char *s, const char *token);
-
-const char *h2_util_first_token_match(apr_pool_t *pool, const char *s, 
-                                      const char *tokens[], apr_size_t len);
 
 /** Match a header value against a string constance, case insensitive */
 #define H2_HD_MATCH_LIT(l, name, nlen)  \
@@ -268,19 +398,21 @@ const char *h2_util_base64url_encode(const char *data,
 
 int h2_util_ignore_header(const char *name);
 
+struct h2_headers;
+
 typedef struct h2_ngheader {
     nghttp2_nv *nv;
     apr_size_t nvlen;
 } h2_ngheader;
 
-h2_ngheader *h2_util_ngheader_make(apr_pool_t *p, apr_table_t *header);
-h2_ngheader *h2_util_ngheader_make_res(apr_pool_t *p, 
-                                       int http_status, 
-                                       apr_table_t *header);
-h2_ngheader *h2_util_ngheader_make_req(apr_pool_t *p, 
-                                       const struct h2_request *req);
+apr_status_t h2_res_create_ngtrailer(h2_ngheader **ph, apr_pool_t *p, 
+                                     struct h2_headers *headers); 
+apr_status_t h2_res_create_ngheader(h2_ngheader **ph, apr_pool_t *p, 
+                                    struct h2_headers *headers); 
+apr_status_t h2_req_create_ngheader(h2_ngheader **ph, apr_pool_t *p, 
+                                    const struct h2_request *req);
 
-apr_status_t h2_headers_add_h1(apr_table_t *headers, apr_pool_t *pool, 
+apr_status_t h2_req_add_header(apr_table_t *headers, apr_pool_t *pool, 
                                const char *name, size_t nlen,
                                const char *value, size_t vlen);
 
@@ -379,8 +511,8 @@ do { \
     const char *line = "(null)"; \
     apr_size_t len, bmax = sizeof(buffer)/sizeof(buffer[0]); \
     len = h2_util_bb_print(buffer, bmax, (tag), "", (bb)); \
-    ap_log_cerror(APLOG_MARK, level, 0, (c), "bb_dump(%s): %s", \
-        (c)->log_id, (len? buffer : line)); \
+    ap_log_cerror(APLOG_MARK, level, 0, (c), "bb_dump(%ld): %s", \
+        ((c)->master? (c)->master->id : (c)->id), (len? buffer : line)); \
 } while(0)
 
 

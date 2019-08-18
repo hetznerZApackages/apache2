@@ -2,6 +2,11 @@
                   Testing Apache with the Perl Test Harness
 Prerequisites
 -------------
+These two modules must first be installed;
+
+- perl-ExtUtils-MakeMaker 
+- perl-Test 
+
 You'll need to install the CPAN modules listed in:
 Apache-Test/lib/Bundle/ApacheTest.pm
 All you have to do to install them all in one shot is:
@@ -12,6 +17,9 @@ http://perl.apache.org/~dougm/httpd-test-bundle-0.02.tar.gz
 
 Note: Crypt::SSLeay requires OpenSSL to be installed (only required
 for t/TEST -ssl): http://www.openssl.org/
+More accurate results may be obtained by using the same openssl command
+line and libraries as consumed by APR-util and mod_ssl, due to X509
+formatting behavior differences.
 
 For an extensive documentation see
 http://perl.apache.org/docs/general/testing/testing.html
@@ -19,17 +27,19 @@ http://perl.apache.org/docs/general/testing/testing.html
 http://svn.apache.org/viewvc/perl/modperl/docs/trunk/src/docs/general/testing/testing.pod
 
 To run the tests for all Apache web server modules, some additional 
-CPAN modules will be required:
+CPAN modules will be required. If the tests don't work, make sure
+that you have up to date versions of each of these perl modules:
 - HTTP::DAV (DAV tests)
 - DateTime (mod_include tests)
+- Time::HiRes
 - Protocol::HTTP2::Client and AnyEvent (mod_http2 tests)
-
-If the tests don't work, make sure, that you have up to
-date versions of the following perl modules installed:
+- Test
 - Test::Harness
 - Crypt::SSLeay
 - Net::SSLeay
 - IO::Socket::SSL
+- IO::Socket::IP
+- IO::Select
 - LWP::Protocol::https
 
 Quick Start 
@@ -127,6 +137,11 @@ this to make life easier for others.
    Try the following:
       > t/TEST -clean
       > PATH=<bin dir of correct openssl>:$PATH t/TEST
+   If a lot of ssl tests fail, check in the error log for the presence of
+   a certificate validation error. If you find it, check the expiration date
+   of the TLS/SSL certificates used by the tests, they might be expired.
+   Running TEST -clean should delete the old ssl certificates, so they'll be
+   regenerated during the next run.
 5. If you see failures in the modules/h2.t test cases, please notify the dev
    mailing list with a description of your setup. These tests are quite young,
    currently only valid in 2.4.x and later and interact with quite some other
@@ -139,7 +154,10 @@ this to make life easier for others.
    You planned X tests but ran Y." it usually means that you are missing
    a perl module or the tested httpd module depends on another one
    not loaded in the httpd config.
-
+8. If you see SSL certificate errors, remove t/conf/ssl/ca prior to 
+   t/TEST -clean
+9. perl 5.28 in MacOS homebrew seems to hang the test suite.  Invoking 
+   /usr/bin/perl Makefile.PL -apxs ... will cause an older perl to be used.
 
 Smoking Tests
 -------------
