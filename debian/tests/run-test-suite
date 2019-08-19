@@ -17,6 +17,8 @@ rm t/modules/filter.t
 rm t/modules/info.t
 rm t/protocol/echo.t
 rm t/security/CVE-2009-3555.t
+# this fails due to backports
+rm t/apache/mmn.t
 
 run_tests () {
 	local MPM=$1

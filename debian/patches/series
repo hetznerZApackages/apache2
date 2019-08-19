@@ -24,9 +24,13 @@ CVE-2018-1283-mod_session.diff
 CVE-2018-1301-HTTP-request-read-out-of-bounds.diff
 CVE-2018-1303-mod_cache_socache-oob.diff
 CVE-2018-1312-mod_auth_digest-nonce.diff
-mod_http2-upgrade-to-2.4.33.diff
+mod_http2-upgrade-to-2.4.41.diff
 mod_http2-revert-new-proxy-features.diff
-mod_http2_mem_usage_32bit.diff
+add_AP_STATUS_IS_HEADER_ONLY.diff
 fcgi_crash.diff
-CVE-2018-1333-mod_http2_DoS.diff
-CVE-2018-11763-mod_http2_DoS-SETTINGS.diff
+CVE-2018-17199-mod-session-ignore-timeout.diff
+CVE-2019-0211-privilege-escalation.diff
+CVE-2019-0217-digest-collusion-in-mod_auth_digest.diff
+CVE-2019-0220-merge-slashes.diff
+CVE-2019-10092.patch
+CVE-2019-10098.patch

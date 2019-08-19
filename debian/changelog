@@ -1,3 +1,39 @@
+apache2 (2.4.25-3+deb9u8) stretch-security; urgency=high
+
+  [ Xavier Guimard ]
+  * Add patch to limit cross-site scripting in mod_proxy (Closes: CVE-2019-10092)
+  * Import http2 modules from 2.4.41 (Closes: CVE-2019-9517, CVE-2019-10082, CVE-2019-10081)
+  * Add patch to set PCRE_DOTALL by default (Closes: CVE-2019-10098)
+
+  [ Stefan Fritsch ]
+  * Add -Werror=implicit-function-declaration to compile options to catch
+    problems with backports.
+
+ -- Stefan Fritsch <sf@debian.org>  Mon, 19 Aug 2019 21:25:31 +0200
+
+apache2 (2.4.25-3+deb9u7) stretch-security; urgency=medium
+
+  [ Xavier Guimard ]
+  * CVE-2018-17199: mode_session: Fix missing check for session expiry time.
+    Closes: #920303
+
+  [ Stefan Fritsch ]
+  * mod_http2: Fix keepalive timeout behavior. This fixes a regression with
+    Safari web browsers, introduced in 2.4.25-3+deb9u6. Closes: #915103
+  * Fix typo in apache2_switch_mpm() in apache2-maintscript-helper.
+    Closes: #904150
+  * CVE-2018-17189: mod_http2: Fix DoS via slow, unneeded request bodies.
+    Closes: #920302
+  * CVE-2019-0196: mod_http2: Fix read after free
+  * CVE-2019-0211: All MPMs: privilege escalation from www-data user to root.
+  * CVE-2019-0217: mod_auth_digest: Access control bypass
+  * CVE-2019-0220: URL normalization inconsistincy.
+    Consecutive slashes in URL's are now merged before use in LocationMatch
+    and RewriteRule. The old behavior can be restored with the new directive
+    "MergeSlashes off".
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 02 Apr 2019 21:05:13 +0200
+
 apache2 (2.4.25-3+deb9u6) stretch; urgency=medium
 
   * CVE-2018-1333: mod_http2: Fix DoS by worker exhaustion. Closes: #904106
