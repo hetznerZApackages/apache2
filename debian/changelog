@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u8+deb9hetz1) stretch-hetz; urgency=high
+
+  * Released 2.4.25-3+deb9u8+deb9hetz1~exp3 as 2.4.25-3+deb9u8+deb9hetz1
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Tue, 27 Aug 2019 09:19:56 +0200
+
 apache2 (2.4.25-3+deb9u8+deb9hetz1~exp3) stretch-hetz-experimental; urgency=high
 
   * Correct series file for patches 
