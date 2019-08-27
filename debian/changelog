@@ -1,56 +1,44 @@
-apache2 (2.4.25-3+deb9u6+deb9hetz1) stretch-hetz; urgency=medium
+apache2 (2.4.25-3+deb9u8+deb9hetz1~exp1) stretch-hetz-experimental; urgency=high
 
-  * Released 2.4.25-3+deb9u6+deb9hetz1~exp7 as 2.4.25-3+deb9u6+deb9hetz1
+  * Importing deb9u8 with the below patches 
 
- -- Geoff Robertson <gr@hetzner.co.za>  Thu, 18 Jul 2019 14:15:32 +0200
+ -- Geoff Robertson <gr@hetzner.co.za>  Tue, 27 Aug 2019 08:22:38 +0200
 
-apache2 (2.4.25-3+deb9u6+deb9hetz1~exp7) stretch-hetz-experimental; urgency=medium
+apache2 (2.4.25-3+deb9u8) stretch-security; urgency=high
 
-  * Problem building against the incorrect COW has been corrected 
+  [ Xavier Guimard ]
+  * Add patch to limit cross-site scripting in mod_proxy (Closes: CVE-2019-10092)
+  * Import http2 modules from 2.4.41 (Closes: CVE-2019-9517, CVE-2019-10082, CVE-2019-10081)
+  * Add patch to set PCRE_DOTALL by default (Closes: CVE-2019-10098)
 
- -- Geoff Robertson <gr@hetzner.co.za>  Thu, 18 Jul 2019 14:05:30 +0200
+  [ Stefan Fritsch ]
+  * Add -Werror=implicit-function-declaration to compile options to catch
+    problems with backports.
 
-apache2 (2.4.25-3+deb9u6+deb9hetz1~exp6) stretch-hetz-experimental; urgency=medium
+ -- Stefan Fritsch <sf@debian.org>  Mon, 19 Aug 2019 21:25:31 +0200
 
-  * Drop proxy_http2 as this appears to build for Jessie as well 
+apache2 (2.4.25-3+deb9u7) stretch-security; urgency=medium
 
- -- Geoff Robertson <gr@hetzner.co.za>  Thu, 18 Jul 2019 13:36:10 +0200
+  [ Xavier Guimard ]
+  * CVE-2018-17199: mode_session: Fix missing check for session expiry time.
+    Closes: #920303
 
-apache2 (2.4.25-3+deb9u6+deb9hetz1~exp5) stretch-hetz-experimental; urgency=medium
+  [ Stefan Fritsch ]
+  * mod_http2: Fix keepalive timeout behavior. This fixes a regression with
+    Safari web browsers, introduced in 2.4.25-3+deb9u6. Closes: #915103
+  * Fix typo in apache2_switch_mpm() in apache2-maintscript-helper.
+    Closes: #904150
+  * CVE-2018-17189: mod_http2: Fix DoS via slow, unneeded request bodies.
+    Closes: #920302
+  * CVE-2019-0196: mod_http2: Fix read after free
+  * CVE-2019-0211: All MPMs: privilege escalation from www-data user to root.
+  * CVE-2019-0217: mod_auth_digest: Access control bypass
+  * CVE-2019-0220: URL normalization inconsistincy.
+    Consecutive slashes in URL's are now merged before use in LocationMatch
+    and RewriteRule. The old behavior can be restored with the new directive
+    "MergeSlashes off".
 
-  * Attempt to get proxy_http2 working 
-
- -- Geoff Robertson <gr@hetzner.co.za>  Thu, 18 Jul 2019 13:21:54 +0200
-
-apache2 (2.4.25-3+deb9u6+deb9hetz1~exp4) stretch-hetz-experimental; urgency=medium
-
-  * Add hetz_symlinkprotection.diff to stretch
-
- -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Thu, 18 Jul 2019 12:03:11 +0200
-
-apache2 (2.4.25-3+deb9u6+deb9hetz1~exp3) stretch-hetz-experimental; urgency=medium
-
-  * Version bump
-
- -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 13:14:20 +0200
-
-apache2 (2.4.25-3+deb9u6+deb9hetz1~exp2) stretch-hetz-experimental; urgency=medium
-
-  * Bump version to build again
-
- -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 13:14:20 +0200
-
-apache2 (2.4.25-3+deb9u6+deb9hetz1~exp1) stretch-hetz-experimental; urgency=medium
-
-  * First custom Apache2.4.25 build for Stretch managed hosting servers
-
- -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Tue, 25 Jun 2019 14:36:34 +0200
-
-apache2 (2.4.25-3+deb9u6+hetz1~exp1) stretch-hetz-experimental; urgency=medium
-
-  * First custom Apache2.4.25 build for Stretch managed hosting servers
-
- -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 17 Feb 2019 11:09:31 +0200
+ -- Stefan Fritsch <sf@debian.org>  Tue, 02 Apr 2019 21:05:13 +0200
 
 apache2 (2.4.25-3+deb9u6) stretch; urgency=medium
 

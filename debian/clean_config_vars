@@ -20,7 +20,7 @@ sub clean_and_deduplicate
 	{
 		#print("FLAG: $flag\n");
 		$return_flags .= "$flag " unless
-			$flag =~ m/PLATFORM/;
+			$flag =~ m/PLATFORM|Werror=implicit-function-declaration/;
 	}
 	return $return_flags;
 }
