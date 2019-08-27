@@ -1,3 +1,16 @@
+apache2 (2.4.25-3+deb9u8) stretch-security; urgency=high
+
+  [ Xavier Guimard ]
+  * Add patch to limit cross-site scripting in mod_proxy (Closes: CVE-2019-10092)
+  * Import http2 modules from 2.4.41 (Closes: CVE-2019-9517, CVE-2019-10082, CVE-2019-10081)
+  * Add patch to set PCRE_DOTALL by default (Closes: CVE-2019-10098)
+
+  [ Stefan Fritsch ]
+  * Add -Werror=implicit-function-declaration to compile options to catch
+    problems with backports.
+
+ -- Stefan Fritsch <sf@debian.org>  Mon, 19 Aug 2019 21:25:31 +0200
+
 apache2 (2.4.25-3+deb9u7) stretch-security; urgency=medium
 
   [ Xavier Guimard ]
