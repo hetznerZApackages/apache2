@@ -28,16 +28,13 @@ mod_http2-upgrade-to-2.4.41.diff
 mod_http2-revert-new-proxy-features.diff
 add_AP_STATUS_IS_HEADER_ONLY.diff
 fcgi_crash.diff
-<<<<<<< HEAD
 CVE-2018-1333-mod_http2_DoS.diff
 CVE-2018-11763-mod_http2_DoS-SETTINGS.diff
 hetz_symlinkprotection.diff
 hetz_relax_ownership_enforcement.diff
-=======
 CVE-2018-17199-mod-session-ignore-timeout.diff
 CVE-2019-0211-privilege-escalation.diff
 CVE-2019-0217-digest-collusion-in-mod_auth_digest.diff
 CVE-2019-0220-merge-slashes.diff
 CVE-2019-10092.patch
 CVE-2019-10098.patch
->>>>>>> 7c76fbd2e40c4f5c5f6ed9f1cc3bdcd0dc6ef583
