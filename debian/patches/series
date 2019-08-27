@@ -28,8 +28,6 @@ mod_http2-upgrade-to-2.4.41.diff
 mod_http2-revert-new-proxy-features.diff
 add_AP_STATUS_IS_HEADER_ONLY.diff
 fcgi_crash.diff
-CVE-2018-1333-mod_http2_DoS.diff
-CVE-2018-11763-mod_http2_DoS-SETTINGS.diff
 hetz_symlinkprotection.diff
 hetz_relax_ownership_enforcement.diff
 CVE-2018-17199-mod-session-ignore-timeout.diff

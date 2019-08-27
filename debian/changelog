@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u8+deb9hetz1~exp3) stretch-hetz-experimental; urgency=high
+
+  * Correct series file for patches 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Tue, 27 Aug 2019 08:35:58 +0200
+
 apache2 (2.4.25-3+deb9u8+deb9hetz1~exp2) stretch-hetz-experimental; urgency=high
 
   * Correct bad git conflict 
