@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u8+deb8hetz1) jessie-hetz; urgency=high
+
+  * Released 2.4.25-3+deb9u8+deb8hetz1~exp1 as 2.4.25-3+deb9u8+deb8hetz1
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Tue, 03 Sep 2019 08:29:22 +0200
+
 apache2 (2.4.25-3+deb9u8+deb8hetz1~exp1) jessie-hetz-experimental; urgency=high
 
   * Importing deb9u8 for security patches 
