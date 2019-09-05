@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u8+deb8hetz2) jessie-hetz; urgency=high
+
+  * Released 2.4.25-3+deb9u8+deb8hetz2~exp2 as 2.4.25-3+deb9u8+deb8hetz2
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Thu, 05 Sep 2019 14:37:18 +0200
+
 apache2 (2.4.25-3+deb9u8+deb8hetz2~exp2) jessie-hetz-experimental; urgency=high
 
   * Do the backport from 2.4.26 for mod_proxy from 2.4.26 as a quilt patch 
