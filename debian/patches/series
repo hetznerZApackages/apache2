@@ -30,6 +30,7 @@ add_AP_STATUS_IS_HEADER_ONLY.diff
 fcgi_crash.diff
 hetz_symlinkprotection.diff
 hetz_relax_ownership_enforcement.diff
+hetz_proxy_fcgi_backport.diff
 CVE-2018-17199-mod-session-ignore-timeout.diff
 CVE-2019-0211-privilege-escalation.diff
 CVE-2019-0217-digest-collusion-in-mod_auth_digest.diff
