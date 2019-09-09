@@ -1,8 +1,15 @@
+apache2 (2.4.25-3+deb9u8+deb9hetz2~exp1) stretch-hetz-experimental; urgency=high
+
+  * Bump hetz version to rebase to the stretch version after numerous failed
+    attempts at getting proxy_fcgi to play fair.
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 09 Sep 2019 13:36:20 +0200
+
 apache2 (2.4.25-3+deb9u8+deb9hetz1) stretch-hetz; urgency=high
 
   * Released 2.4.25-3+deb9u8+deb9hetz1~exp3 as 2.4.25-3+deb9u8+deb9hetz1
 
- -- Geoff Robertson <gr@hetzner.co.za>  Tue, 27 Aug 2019 09:19:56 +0200
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 09 Sep 2019 13:36:20 +0200
 
 apache2 (2.4.25-3+deb9u8+deb9hetz1~exp3) stretch-hetz-experimental; urgency=high
 
