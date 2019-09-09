@@ -224,6 +224,14 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
     int do_alloc = (*s == NULL), saw_eos = 0;
     int fold = flags & AP_GETLINE_FOLD;
     int crlf = flags & AP_GETLINE_CRLF;
+    int nospc_eol = flags & AP_GETLINE_NOSPC_EOL;
+    int saw_eol = 0, saw_nospc = 0;
+
+    if (!n) {
+        /* Needs room for NUL byte at least */
+        *read = 0;
+        return APR_BADARG;
+    }
 
     /*
      * Initialize last_char as otherwise a random value will be compared
@@ -233,19 +241,20 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
     if (last_char)
         *last_char = '\0';
 
-    for (;;) {
+    do {
         apr_brigade_cleanup(bb);
         rv = ap_get_brigade(r->proto_input_filters, bb, AP_MODE_GETLINE,
                             APR_BLOCK_READ, 0);
         if (rv != APR_SUCCESS) {
-            return rv;
+            goto cleanup;
         }
 
         /* Something horribly wrong happened.  Someone didn't block! 
          * (this also happens at the end of each keepalive connection)
          */
         if (APR_BRIGADE_EMPTY(bb)) {
-            return APR_EGENERAL;
+            rv = APR_EGENERAL;
+            goto cleanup;
         }
 
         for (e = APR_BRIGADE_FIRST(bb);
@@ -263,7 +272,7 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
 
             rv = apr_bucket_read(e, &str, &len, APR_BLOCK_READ);
             if (rv != APR_SUCCESS) {
-                return rv;
+                goto cleanup;
             }
 
             if (len == 0) {
@@ -276,17 +285,52 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
 
             /* Would this overrun our buffer?  If so, we'll die. */
             if (n < bytes_handled + len) {
-                *read = bytes_handled;
-                if (*s) {
-                    /* ensure this string is NUL terminated */
-                    if (bytes_handled > 0) {
-                        (*s)[bytes_handled-1] = '\0';
-                    }
-                    else {
-                        (*s)[0] = '\0';
-                    }
+                /* Before we die, let's fill the buffer up to its limit (i.e.
+                 * fall through with the remaining length, if any), setting
+                 * saw_eol on LF to stop the outer loop appropriately; we may
+                 * come back here once the buffer is filled (no LF seen), and
+                 * either be done at that time or continue to wait for LF here
+                 * if nospc_eol is set.
+                 *
+                 * But there is also a corner cases which we want to address,
+                 * namely if the buffer is overrun by the final LF only (i.e.
+                 * the CR fits in); this is not really an overrun since we'll
+                 * strip the CR finally (and use it for NUL byte), but anyway
+                 * we have to handle the case so that it's not returned to the
+                 * caller as part of the truncated line (it's not!). This is
+                 * easier to consider that LF is out of counting and thus fall
+                 * through with no error (saw_eol is set to 2 so that we later
+                 * ignore LF handling already done here), while folding and
+                 * nospc_eol logics continue to work (or fail) appropriately.
+                 */
+                saw_eol = (str[len - 1] == APR_ASCII_LF);
+                if (/* First time around */
+                    saw_eol && !saw_nospc
+                    /*  Single LF completing the buffered CR, */
+                    && ((len == 1 && ((*s)[bytes_handled - 1] == APR_ASCII_CR))
+                    /*  or trailing CRLF overuns by LF only */
+                        || (len > 1 && str[len - 2] == APR_ASCII_CR
+                            && n - bytes_handled + 1 == len))) {
+                    /* In both cases *last_char is (to be) the CR stripped by
+                     * later 'bytes_handled = last_char - *s'.
+                     */
+                    saw_eol = 2;
                 }
-                return APR_ENOSPC;
+                else {
+                    /* In any other case we'd lose data. */
+                    rv = APR_ENOSPC;
+                    saw_nospc = 1;
+                }
+                len = n - bytes_handled;
+                if (!len) {
+                    if (saw_eol) {
+                        break;
+                    }
+                    if (nospc_eol) {
+                        continue;
+                    }
+                    goto cleanup;
+                }
             }
 
             /* Do we have to handle the allocation ourselves? */
@@ -294,7 +338,7 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
                 /* We'll assume the common case where one bucket is enough. */
                 if (!*s) {
                     current_alloc = len;
-                    *s = apr_palloc(r->pool, current_alloc);
+                    *s = apr_palloc(r->pool, current_alloc + 1);
                 }
                 else if (bytes_handled + len > current_alloc) {
                     /* Increase the buffer size */
@@ -305,7 +349,7 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
                         new_size = (bytes_handled + len) * 2;
                     }
 
-                    new_buffer = apr_palloc(r->pool, new_size);
+                    new_buffer = apr_palloc(r->pool, new_size + 1);
 
                     /* Copy what we already had. */
                     memcpy(new_buffer, *s, bytes_handled);
@@ -325,23 +369,29 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
 
         /* If we got a full line of input, stop reading */
         if (last_char && (*last_char == APR_ASCII_LF)) {
-            break;
+            saw_eol = 1;
+        }
+    } while (!saw_eol);
+
+    if (rv != APR_SUCCESS) {
+        /* End of line after APR_ENOSPC above */
+        goto cleanup;
+    }
+
+    /* Now terminate the string at the end of the line;
+     * if the last-but-one character is a CR, terminate there.
+     * LF is handled above (not accounted) when saw_eol == 2,
+     * the last char is CR to terminate at still.
+     */
+    if (saw_eol < 2) {
+        if (last_char > *s && last_char[-1] == APR_ASCII_CR) {
+            last_char--;
+        }
+        else if (crlf) {
+            rv = APR_EINVAL;
+            goto cleanup;
         }
     }
-
-    if (crlf && (last_char <= *s || last_char[-1] != APR_ASCII_CR)) {
-        *last_char = '\0';
-        bytes_handled = last_char - *s;
-        *read = bytes_handled;
-        return APR_EINVAL;
-    }
-
-    /* Now NUL-terminate the string at the end of the line;
-     * if the last-but-one character is a CR, terminate there */
-    if (last_char > *s && last_char[-1] == APR_ASCII_CR) {
-        last_char--;
-    }
-    *last_char = '\0';
     bytes_handled = last_char - *s;
 
     /* If we're folding, we have more work to do.
@@ -361,7 +411,7 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
             rv = ap_get_brigade(r->proto_input_filters, bb, AP_MODE_SPECULATIVE,
                                 APR_BLOCK_READ, 1);
             if (rv != APR_SUCCESS) {
-                return rv;
+                goto cleanup;
             }
 
             if (APR_BRIGADE_EMPTY(bb)) {
@@ -378,7 +428,7 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
             rv = apr_bucket_read(e, &str, &len, APR_BLOCK_READ);
             if (rv != APR_SUCCESS) {
                 apr_brigade_cleanup(bb);
-                return rv;
+                goto cleanup;
             }
 
             /* Found one, so call ourselves again to get the next line.
@@ -395,10 +445,8 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
             if (c == APR_ASCII_BLANK || c == APR_ASCII_TAB) {
                 /* Do we have enough space? We may be full now. */
                 if (bytes_handled >= n) {
-                    *read = n;
-                    /* ensure this string is terminated */
-                    (*s)[n-1] = '\0';
-                    return APR_ENOSPC;
+                    rv = APR_ENOSPC;
+                    goto cleanup;
                 }
                 else {
                     apr_size_t next_size, next_len;
@@ -411,16 +459,15 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
                         tmp = NULL;
                     }
                     else {
-                        /* We're null terminated. */
                         tmp = last_char;
                     }
 
                     next_size = n - bytes_handled;
 
-                    rv = ap_rgetline_core(&tmp, next_size,
-                                          &next_len, r, 0, bb);
+                    rv = ap_rgetline_core(&tmp, next_size, &next_len, r,
+                                          flags & ~AP_GETLINE_FOLD, bb);
                     if (rv != APR_SUCCESS) {
-                        return rv;
+                        goto cleanup;
                     }
 
                     if (do_alloc && next_len > 0) {
@@ -434,7 +481,7 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
                         memcpy(new_buffer, *s, bytes_handled);
 
                         /* copy the new line, including the trailing null */
-                        memcpy(new_buffer + bytes_handled, tmp, next_len + 1);
+                        memcpy(new_buffer + bytes_handled, tmp, next_len);
                         *s = new_buffer;
                     }
 
@@ -447,14 +494,27 @@ AP_DECLARE(apr_status_t) ap_rgetline_core(char **s, apr_size_t n,
             }
         }
     }
-    *read = bytes_handled;
 
-    /* PR#43039: We shouldn't accept NULL bytes within the line */
-    if (strlen(*s) < bytes_handled) {
-        return APR_EINVAL;
+cleanup:
+    if (bytes_handled >= n) {
+        bytes_handled = n - 1;
     }
 
-    return APR_SUCCESS;
+    *read = bytes_handled;
+    if (*s) {
+        /* ensure the string is NUL terminated */
+        (*s)[*read] = '\0';
+
+        /* PR#43039: We shouldn't accept NULL bytes within the line */
+        bytes_handled = strlen(*s);
+        if (bytes_handled < *read) {
+            *read = bytes_handled;
+            if (rv == APR_SUCCESS) {
+                rv = APR_EINVAL;
+            }
+        }
+    }
+    return rv;
 }
 
 #if APR_CHARSET_EBCDIC
@@ -473,7 +533,7 @@ AP_DECLARE(apr_status_t) ap_rgetline(char **s, apr_size_t n,
     apr_status_t rv;
 
     rv = ap_rgetline_core(s, n, read, r, fold, bb);
-    if (rv == APR_SUCCESS) {
+    if (rv == APR_SUCCESS || APR_STATUS_IS_ENOSPC(rv)) {
         ap_xlate_proto_from_ascii(*s, *read);
     }
     return rv;
@@ -486,6 +546,11 @@ AP_DECLARE(int) ap_getline(char *s, int n, request_rec *r, int flags)
     apr_status_t rv;
     apr_size_t len;
     apr_bucket_brigade *tmp_bb;
+
+    if (n < 1) {
+        /* Can't work since we always NUL terminate */
+        return -1;
+    }
 
     tmp_bb = apr_brigade_create(r->pool, r->connection->bucket_alloc);
     rv = ap_rgetline(&tmp_s, n, &len, r, flags, tmp_bb);
@@ -521,7 +586,7 @@ AP_CORE_DECLARE(void) ap_parse_uri(request_rec *r, const char *uri)
      *
      * This is not in fact a URI, it's a path.  That matters in the
      * case of a leading double-slash.  We need to resolve the issue
-     * by normalising that out before treating it as a URI.
+     * by normalizing that out before treating it as a URI.
      */
     while ((uri[0] == '/') && (uri[1] == '/')) {
         ++uri ;
@@ -751,7 +816,7 @@ static int read_request_line(request_rec *r, apr_bucket_brigade *bb)
     *((char *)r->protocol + len) = '\0';
 
 rrl_done:
-    /* For internal integrety and palloc efficiency, reconstruct the_request
+    /* For internal integrity and palloc efficiency, reconstruct the_request
      * in one palloc, using only single SP characters, per spec.
      */
     r->the_request = apr_pstrcat(r->pool, r->method, *uri ? " " : NULL, uri,
@@ -794,7 +859,7 @@ rrl_done:
     }
 
     /* Determine the method_number and parse the uri prior to invoking error
-     * handling, such that these fields are available for subsitution
+     * handling, such that these fields are available for substitution
      */
     r->method_number = ap_method_number_of(r->method);
     if (r->method_number == M_GET && r->method[0] == 'H')
@@ -829,7 +894,7 @@ rrl_done:
         else if (deferred_error == rrl_baduri)
             ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(03454)
                           "HTTP Request Line; URI incorrectly encoded: '%.*s'",
-                          field_name_len(r->uri), r->uri);
+                          field_name_len(r->unparsed_uri), r->unparsed_uri);
         else if (deferred_error == rrl_badwhitespace)
             ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(03447)
                           "HTTP Request Line; Invalid whitespace");
@@ -1059,7 +1124,7 @@ AP_DECLARE(void) ap_get_mime_headers_core(request_rec *r, apr_bucket_brigade *bb
         else if (last_field != NULL) {
 
             /* Process the previous last_field header line with all obs-folded
-             * segments already concatinated (this is not operating on the
+             * segments already concatenated (this is not operating on the
              * most recently read input line).
              */
 
@@ -1088,8 +1153,12 @@ AP_DECLARE(void) ap_get_mime_headers_core(request_rec *r, apr_bucket_brigade *bb
                     return;
                 }
 
-                /* last character of field-name */
-                tmp_field = value - (value > last_field ? 1 : 0);
+                if (value == last_field) {
+                    r->status = HTTP_BAD_REQUEST;
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(03453)
+                                  "Request header field name was empty");
+                    return;
+                }
 
                 *value++ = '\0'; /* NUL-terminate at colon */
 
@@ -1110,13 +1179,6 @@ AP_DECLARE(void) ap_get_mime_headers_core(request_rec *r, apr_bucket_brigade *bb
                     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(03451)
                                   "Request header field value presented"
                                   " bad whitespace");
-                    return;
-                }
-
-                if (tmp_field == last_field) {
-                    r->status = HTTP_BAD_REQUEST;
-                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(03453)
-                                  "Request header field name was empty");
                     return;
                 }
             }
@@ -1593,11 +1655,59 @@ AP_DECLARE(int) ap_get_basic_auth_pw(request_rec *r, const char **pw)
 
     t = ap_pbase64decode(r->pool, auth_line);
     r->user = ap_getword_nulls (r->pool, &t, ':');
+    apr_table_setn(r->notes, AP_GET_BASIC_AUTH_PW_NOTE, "1");
     r->ap_auth_type = "Basic";
 
     *pw = t;
 
     return OK;
+}
+
+AP_DECLARE(apr_status_t) ap_get_basic_auth_components(const request_rec *r,
+                                                      const char **username,
+                                                      const char **password)
+{
+    const char *auth_header;
+    const char *credentials;
+    const char *decoded;
+    const char *user;
+
+    auth_header = (PROXYREQ_PROXY == r->proxyreq) ? "Proxy-Authorization"
+                                                  : "Authorization";
+    credentials = apr_table_get(r->headers_in, auth_header);
+
+    if (!credentials) {
+        /* No auth header. */
+        return APR_EINVAL;
+    }
+
+    if (ap_cstr_casecmp(ap_getword(r->pool, &credentials, ' '), "Basic")) {
+        /* These aren't Basic credentials. */
+        return APR_EINVAL;
+    }
+
+    while (*credentials == ' ' || *credentials == '\t') {
+        credentials++;
+    }
+
+    /* XXX Our base64 decoding functions don't actually error out if the string
+     * we give it isn't base64; they'll just silently stop and hand us whatever
+     * they've parsed up to that point.
+     *
+     * Since this function is supposed to be a drop-in replacement for the
+     * deprecated ap_get_basic_auth_pw(), don't fix this for 2.4.x.
+     */
+    decoded = ap_pbase64decode(r->pool, credentials);
+    user = ap_getword_nulls(r->pool, &decoded, ':');
+
+    if (username) {
+        *username = user;
+    }
+    if (password) {
+        *password = decoded;
+    }
+
+    return APR_SUCCESS;
 }
 
 struct content_length_ctx {
@@ -1629,62 +1739,88 @@ AP_CORE_DECLARE_NONSTD(apr_status_t) ap_content_length_filter(
         ctx->tmpbb = apr_brigade_create(r->pool, r->connection->bucket_alloc);
     }
 
-    /* Loop through this set of buckets to compute their length
-     */
+    /* Loop through the brigade to count the length. To avoid
+     * arbitrary memory consumption with morphing bucket types, this
+     * loop will stop and pass on the brigade when necessary. */
     e = APR_BRIGADE_FIRST(b);
     while (e != APR_BRIGADE_SENTINEL(b)) {
+        apr_status_t rv;
+
         if (APR_BUCKET_IS_EOS(e)) {
             eos = 1;
             break;
         }
-        if (e->length == (apr_size_t)-1) {
+        /* For a flush bucket, fall through to pass the brigade and
+         * flush now. */
+        else if (APR_BUCKET_IS_FLUSH(e)) {
+            e = APR_BUCKET_NEXT(e);
+        }
+        /* For metadata bucket types other than FLUSH, loop. */
+        else if (APR_BUCKET_IS_METADATA(e)) {
+            e = APR_BUCKET_NEXT(e);
+            continue;
+        }
+        /* For determinate length data buckets, count the length and
+         * continue. */
+        else if (e->length != (apr_size_t)-1) {
+            r->bytes_sent += e->length;
+            e = APR_BUCKET_NEXT(e);
+            continue;
+        }
+        /* For indeterminate length data buckets, perform one read. */
+        else /* e->length == (apr_size_t)-1 */ {
             apr_size_t len;
             const char *ignored;
-            apr_status_t rv;
-
-            /* This is probably a pipe bucket.  Send everything
-             * prior to this, and then read the data for this bucket.
-             */
+        
             rv = apr_bucket_read(e, &ignored, &len, eblock);
-            if (rv == APR_SUCCESS) {
-                /* Attempt a nonblocking read next time through */
-                eblock = APR_NONBLOCK_READ;
-                r->bytes_sent += len;
-            }
-            else if (APR_STATUS_IS_EAGAIN(rv)) {
-                /* Output everything prior to this bucket, and then
-                 * do a blocking read on the next batch.
-                 */
-                if (e != APR_BRIGADE_FIRST(b)) {
-                    apr_bucket *flush;
-                    apr_brigade_split_ex(b, e, ctx->tmpbb);
-                    flush = apr_bucket_flush_create(r->connection->bucket_alloc);
-
-                    APR_BRIGADE_INSERT_TAIL(b, flush);
-                    rv = ap_pass_brigade(f->next, b);
-                    if (rv != APR_SUCCESS || f->c->aborted) {
-                        return rv;
-                    }
-                    apr_brigade_cleanup(b);
-                    APR_BRIGADE_CONCAT(b, ctx->tmpbb);
-                    e = APR_BRIGADE_FIRST(b);
-
-                    ctx->data_sent = 1;
-                }
-                eblock = APR_BLOCK_READ;
-                continue;
-            }
-            else {
+            if ((rv != APR_SUCCESS) && !APR_STATUS_IS_EAGAIN(rv)) {
                 ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00574)
                               "ap_content_length_filter: "
                               "apr_bucket_read() failed");
                 return rv;
             }
+            if (rv == APR_SUCCESS) {
+                eblock = APR_NONBLOCK_READ;
+                e = APR_BUCKET_NEXT(e);
+                r->bytes_sent += len;
+            }
+            else if (APR_STATUS_IS_EAGAIN(rv)) {
+                apr_bucket *flush;
+
+                /* Next read must block. */
+                eblock = APR_BLOCK_READ;
+
+                /* Ensure the last bucket to pass down is a flush if
+                 * the next read will block. */
+                flush = apr_bucket_flush_create(f->c->bucket_alloc);
+                APR_BUCKET_INSERT_BEFORE(e, flush);
+            }
         }
-        else {
-            r->bytes_sent += e->length;
+
+        /* Optimization: if the next bucket is EOS (directly after a
+         * bucket morphed to the heap, or a flush), short-cut to
+         * handle EOS straight away - allowing C-L to be determined
+         * for content which is already entirely in memory. */
+        if (e != APR_BRIGADE_SENTINEL(b) && APR_BUCKET_IS_EOS(e)) {
+            continue;
         }
-        e = APR_BUCKET_NEXT(e);
+
+        /* On reaching here, pass on everything in the brigade up to
+         * this point. */
+        apr_brigade_split_ex(b, e, ctx->tmpbb);
+        
+        rv = ap_pass_brigade(f->next, b);
+        if (rv != APR_SUCCESS) {
+            return rv;
+        }
+        else if (f->c->aborted) {
+            return APR_ECONNABORTED;
+        }
+        apr_brigade_cleanup(b);
+        APR_BRIGADE_CONCAT(b, ctx->tmpbb);
+        e = APR_BRIGADE_FIRST(b);
+        
+        ctx->data_sent = 1;
     }
 
     /* If we've now seen the entire response and it's otherwise
@@ -1704,7 +1840,7 @@ AP_CORE_DECLARE_NONSTD(apr_status_t) ap_content_length_filter(
          * such filters update or remove the C-L header, and just use it
          * if present.
          */
-        !(r->header_only && r->bytes_sent == 0 &&
+        !((r->header_only || AP_STATUS_IS_HEADER_ONLY(r->status)) && r->bytes_sent == 0 &&
             apr_table_get(r->headers_out, "Content-Length"))) {
         ap_set_content_length(r, r->bytes_sent);
     }
@@ -2016,12 +2152,27 @@ typedef struct hdr_ptr {
     ap_filter_t *f;
     apr_bucket_brigade *bb;
 } hdr_ptr;
+ 
+#if APR_CHARSET_EBCDIC
 static int send_header(void *data, const char *key, const char *val)
 {
-    ap_fputstrs(((hdr_ptr*)data)->f, ((hdr_ptr*)data)->bb,
-                key, ": ", val, CRLF, NULL);
+    char *header_line = NULL;
+    hdr_ptr *hdr = (hdr_ptr*)data;
+
+    header_line = apr_pstrcat(hdr->bb->p, key, ": ", val, CRLF, NULL);
+    ap_xlate_proto_to_ascii(header_line, strlen(header_line));
+    ap_fputs(hdr->f, hdr->bb, header_line);
     return 1;
 }
+#else
+static int send_header(void *data, const char *key, const char *val)
+{
+     ap_fputstrs(((hdr_ptr*)data)->f, ((hdr_ptr*)data)->bb,
+                 key, ": ", val, CRLF, NULL);
+     return 1;
+ }
+#endif
+
 AP_DECLARE(void) ap_send_interim_response(request_rec *r, int send_headers)
 {
     hdr_ptr x;

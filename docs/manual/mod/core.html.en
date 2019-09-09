@@ -37,7 +37,7 @@
 available</td></tr>
 <tr><th><a href="module-dict.html#Status">Status:</a></th><td>Core</td></tr></table>
 </div>
-<div id="quickview"><h3 class="directives">Directives</h3>
+<div id="quickview"><a href="https://www.apache.org/foundation/contributing.html" class="badge"><img src="https://www.apache.org/images/SupportApache-small.png" alt="Support Apache!" /></a><h3 class="directives">Directives</h3>
 <ul id="toc">
 <li><img alt="" src="../images/down.gif" /> <a href="#acceptfilter">AcceptFilter</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#acceptpathinfo">AcceptPathInfo</a></li>
@@ -74,7 +74,10 @@ available</td></tr>
 <li><img alt="" src="../images/down.gif" /> <a href="#httpprotocoloptions">HttpProtocolOptions</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#if">&lt;If&gt;</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#ifdefine">&lt;IfDefine&gt;</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#ifdirective">&lt;IfDirective&gt;</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#iffile">&lt;IfFile&gt;</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#ifmodule">&lt;IfModule&gt;</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#ifsection">&lt;IfSection&gt;</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#include">Include</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#includeoptional">IncludeOptional</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#keepalive">KeepAlive</a></li>
@@ -102,6 +105,7 @@ available</td></tr>
 <li><img alt="" src="../images/down.gif" /> <a href="#protocols">Protocols</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#protocolshonororder">ProtocolsHonorOrder</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#qualifyredirecturl">QualifyRedirectURL</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#regexdefaultoptions">RegexDefaultOptions</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#registerhttpmethod">RegisterHttpMethod</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#rlimitcpu">RLimitCPU</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#rlimitmem">RLimitMEM</a></li>
@@ -445,10 +449,12 @@ NoDecode option available in 2.3.12 and later.</td></tr>
     <code>.htaccess</code> files.</p>
 
     <p>The <var>directive-type</var> can be one of the following
-    groupings of directives.</p>
+    groupings of directives. (See the <a href="overrides.html">override class
+    index</a> for an up-to-date listing of which directives are enabled by each
+    <var>directive-type</var>.)</p>
 
     <dl>
-      <dt>AuthConfig</dt>
+      <dt><a href="overrides.html#override-authconfig">AuthConfig</a></dt>
 
       <dd>
 
@@ -458,7 +464,7 @@ NoDecode option available in 2.3.12 and later.</td></tr>
       <code class="directive"><a href="../mod/mod_authn_core.html#authname">AuthName</a></code>,
       <code class="directive"><a href="../mod/mod_authn_core.html#authtype">AuthType</a></code>, <code class="directive"><a href="../mod/mod_authn_file.html#authuserfile">AuthUserFile</a></code>, <code class="directive"><a href="../mod/mod_authz_core.html#require">Require</a></code>, <em>etc.</em>).</dd>
 
-      <dt>FileInfo</dt>
+      <dt><a href="overrides.html#override-fileinfo">FileInfo</a></dt>
 
       <dd>
       Allow use of the directives controlling document types
@@ -476,7 +482,7 @@ NoDecode option available in 2.3.12 and later.</td></tr>
       <code class="module"><a href="../mod/mod_actions.html">mod_actions</a></code>.
       </dd>
 
-      <dt>Indexes</dt>
+      <dt><a href="overrides.html#override-indexes">Indexes</a></dt>
 
       <dd>
       Allow use of the directives controlling directory indexing
@@ -486,7 +492,7 @@ NoDecode option available in 2.3.12 and later.</td></tr>
       <code class="directive"><a href="../mod/mod_autoindex.html#defaulticon">DefaultIcon</a></code>, <code class="directive"><a href="../mod/mod_dir.html#directoryindex">DirectoryIndex</a></code>, <a href="mod_autoindex.html#indexoptions.fancyindexing"><code>FancyIndexing</code></a>, <code class="directive"><a href="../mod/mod_autoindex.html#headername">HeaderName</a></code>, <code class="directive"><a href="../mod/mod_autoindex.html#indexignore">IndexIgnore</a></code>, <code class="directive"><a href="../mod/mod_autoindex.html#indexoptions">IndexOptions</a></code>, <code class="directive"><a href="../mod/mod_autoindex.html#readmename">ReadmeName</a></code>,
       <em>etc.</em>).</dd>
 
-      <dt>Limit</dt>
+      <dt><a href="overrides.html#override-limit">Limit</a></dt>
 
       <dd>
       Allow use of the directives controlling host access (<code class="directive"><a href="../mod/mod_access_compat.html#allow">Allow</a></code>, <code class="directive"><a href="../mod/mod_access_compat.html#deny">Deny</a></code> and <code class="directive"><a href="../mod/mod_access_compat.html#order">Order</a></code>).</dd>
@@ -515,7 +521,7 @@ NoDecode option available in 2.3.12 and later.</td></tr>
       </div>
       </dd>
 
-      <dt>Options[=<var>Option</var>,...]</dt>
+      <dt><a href="overrides.html#override-options">Options</a>[=<var>Option</var>,...]</dt>
 
       <dd>
       Allow use of the directives controlling specific directory
@@ -561,6 +567,7 @@ NoDecode option available in 2.3.12 and later.</td></tr>
 <li><code class="directive"><a href="#allowoverridelist">AllowOverrideList</a></code></li>
 <li><a href="../configuring.html">Configuration Files</a></li>
 <li><a href="../howto/htaccess.html">.htaccess Files</a></li>
+<li><a href="overrides.html">Override Class Index for .htaccess</a></li>
 </ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -824,12 +831,12 @@ which no other media type configuration could be found.
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
 </table>
-    <p>In its one parameter form, <code class="directive">Define</code> is equivalent
-    to passing the <code>-D</code> argument to <code class="program"><a href="../programs/httpd.html">httpd</a></code>. It
-    can be used to toggle the use of
-    <code class="directive"><a href="#ifdefine">&lt;IfDefine&gt;</a></code> sections
-    without needing to alter <code>-D</code> arguments in any startup
-    scripts.</p>
+    <p>In its one parameter form, <code class="directive">Define</code> is
+    equivalent to passing the <code>-D</code> argument to
+    <code class="program"><a href="../programs/httpd.html">httpd</a></code>. It can be used to toggle the use of
+    <code class="directive"><a href="#ifdefine">&lt;IfDefine&gt;</a></code>
+    sections without needing to alter <code>-D</code> arguments in any
+    startup scripts.</p>
 
     <p>In addition to that, if the second parameter is given, a config variable
     is set to this value. The variable can be used in the configuration using
@@ -850,13 +857,17 @@ DocumentRoot "/var/www/${servername}/htdocs"</pre>
     <p>Variable names may not contain colon ":" characters, to avoid clashes
     with <code class="directive"><a href="../mod/mod_rewrite.html#rewritemap">RewriteMap</a></code>'s syntax.</p>
 
-    <p>While this directive is supported in virtual host and directory context,
-       the changes it makes are visible to any later configuration
-       directives, beyond any enclosing configuration section (matching or not).
-       Support for the other configuration sections was erroneously permitted by the initial
-       implementation of this directive and is only preserved (with unintuitive 
-       results) to maintain backward compatibility.</p>
+    <div class="note"><h3>Virtual Host scope and pitfalls</h3>
+      <p>While this directive is supported in virtual host context,
+         the changes it makes are visible to any later configuration
+         directives, beyond any enclosing virtual host.</p>
+    </div>
 
+<h3>See also</h3>
+<ul>
+<li><code class="directive"><a href="#undefine">UnDefine</a></code></li>
+<li><code class="directive"><a href="#ifdefine">IfDefine</a></code></li>
+</ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="Directory" id="Directory">&lt;Directory&gt;</a> <a name="directory" id="directory">Directive</a></h2>
@@ -1014,7 +1025,7 @@ the contents of file-system directories matching a regular expression.</td></tr>
     <p>matches directories in <code>/www/</code> (or any subdirectory thereof)
     that consist of three numbers.</p>
 
-   <div class="note"><h3>Compatability</h3>
+   <div class="note"><h3>Compatibility</h3>
       Prior to 2.3.9, this directive implicitly applied to sub-directories
       (like <code class="directive"><a href="#directory">&lt;Directory&gt;</a></code>) and
       could not match the end of line symbol ($).  In 2.3.9 and later,
@@ -1095,6 +1106,7 @@ satisfied by a request at runtime</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>All</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Nested conditions are evaluated in 2.4.26 and later</td></tr>
 </table>
     <p>The <code class="directive">&lt;Else&gt;</code> applies the enclosed
     directives if and only if the most recent
@@ -1142,6 +1154,7 @@ satisfied</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>All</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Nested conditions are evaluated in 2.4.26 and later</td></tr>
 </table>
     <p>The <code class="directive">&lt;ElseIf&gt;</code> applies the enclosed
     directives if and only if both the given condition evaluates to true and
@@ -1431,7 +1444,7 @@ ErrorDocument 403 /errors/forbidden.py?referrer=%{escape:%{HTTP_REFERER}}</pre>
 <div class="directive-section"><h2><a name="ErrorLog" id="ErrorLog">ErrorLog</a> <a name="errorlog" id="errorlog">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Location where the server will log errors</td></tr>
-<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code> ErrorLog <var>file-path</var>|syslog[:<var>facility</var>]</code></td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code> ErrorLog <var>file-path</var>|syslog[:[<var>facility</var>][:<var>tag</var>]]</code></td></tr>
 <tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>ErrorLog logs/error_log (Unix) ErrorLog logs/error.log (Windows and OS/2)</code></td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
@@ -1462,9 +1475,14 @@ ErrorDocument 403 /errors/forbidden.py?referrer=%{escape:%{HTTP_REFERER}}</pre>
     <var>facility</var> can be one of the names usually documented in
     syslog(1).  The facility is effectively global, and if it is changed
     in individual virtual hosts, the final facility specified affects the
-    entire server.</p>
+    entire server. Same rules apply for the syslog tag, which by default
+    uses the Apache binary name, <code>httpd</code> in most cases. You can
+    also override this by using the <code>syslog::<var>tag</var></code>
+    syntax.</p>
 
-    <pre class="prettyprint lang-config">ErrorLog syslog:user</pre>
+    <pre class="prettyprint lang-config">ErrorLog syslog:user
+ErrorLog syslog:user:httpd.srv1
+ErrorLog syslog::httpd.srv2</pre>
 
 
     <p>Additional modules can provide their own ErrorLog providers. The syntax
@@ -1862,7 +1880,7 @@ filenames</td></tr>
     (unnamed) backreferences are ignored. Use named groups instead.</p>
 
     <pre class="prettyprint lang-config">&lt;FilesMatch "^(?&lt;sitename&gt;[^/]+)"&gt;
-    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+    Require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/FilesMatch&gt;</pre>
 
 
@@ -2017,56 +2035,106 @@ media type in the HTTP Content-Type header field</td></tr>
     (<a href="https://tools.ietf.org/html/rfc7230#section-3.1.1">RFC 7230 §3.1.1</a>) and the HTTP Request Header Fields
     (<a href="https://tools.ietf.org/html/rfc7230#section-3.2">RFC 7230 §3.2</a>), which are now applied by default or using
     the <code>Strict</code> option. Due to legacy modules, applications or
-    custom user-agents which must be deperecated the <code>Unsafe</code>
-    option has been added to revert to the legacy behaviors. These rules
-    are applied prior to request processing, so must be configured at the
-    global or default (first) matching virtual host section, by IP/port
-    interface (and not by name) to be honored.</p>
+    custom user-agents which must be deprecated the <code>Unsafe</code>
+    option has been added to revert to the legacy behaviors.</p>
 
-    <p>Prior to the introduction of this directive, the Apache HTTP Server
-    request message parsers were tolerant of a number of forms of input
-    which did not conform to the protocol.
-    <a href="https://tools.ietf.org/html/rfc7230#section-9.4">RFC 7230 §9.4 Request Splitting</a> and
-    <a href="https://tools.ietf.org/html/rfc7230#section-9.5">§9.5 Response Smuggling</a> call out only two of the potential
-    risks of accepting non-conformant request messages, while
-    <a href="https://tools.ietf.org/html/rfc7230#section-3.5">RFC 7230 §3.5</a> "Message Parsing Robustness" identify the
-    risks of accepting obscure whitespace and request message formatting. 
-    As of the introduction of this directive, all grammer rules of the
-    specification are enforced in the default <code>Strict</code> operating
-    mode, and the strict whitespace suggested by section 3.5 is enforced
-    and cannot be relaxed.</p>
+    <p>These rules are applied prior to request processing,
+    so must be configured at the global or default (first) matching
+    virtual host section, by IP/port interface (and not by name)
+    to be honored.</p>
 
-    <p>Users are strongly cautioned against toggling the <code>Unsafe</code>
-    mode of operation, particularly on outward-facing, publicly accessible
-    server deployments.  If an interface is required for faulty monitoring
-    or other custom service consumers running on an intranet, users should
-    toggle the Unsafe option only on a specific virtual host configured
-    to service their internal private network.</p>
+    <p>The directive accepts three parameters from the following list
+       of choices, applying the default to the ones not specified:</p>
 
-    <p>Reviewing the messages logged to the <code class="directive">ErrorLog</code>,
-    configured with <code class="directive">LogLevel</code> <code>debug</code> level,
+    <dl>
+    <dt>Strict|Unsafe</dt>
+    <dd>
+      <p>Prior to the introduction of this directive, the Apache HTTP Server
+      request message parsers were tolerant of a number of forms of input
+      which did not conform to the protocol.
+      <a href="https://tools.ietf.org/html/rfc7230#section-9.4">RFC 7230 §9.4 Request Splitting</a> and
+      <a href="https://tools.ietf.org/html/rfc7230#section-9.5">§9.5 Response Smuggling</a> call out only two of the potential
+      risks of accepting non-conformant request messages, while
+      <a href="https://tools.ietf.org/html/rfc7230#section-3.5">RFC 7230 §3.5</a> "Message Parsing Robustness" identify the
+      risks of accepting obscure whitespace and request message formatting. 
+      As of the introduction of this directive, all grammar rules of the
+      specification are enforced in the default <code>Strict</code> operating
+      mode, and the strict whitespace suggested by section 3.5 is enforced
+      and cannot be relaxed.</p>
+
+      <div class="warning"><h3>Security risks of Unsafe</h3>
+        <p>Users are strongly cautioned against toggling the <code>Unsafe</code>
+        mode of operation, particularly on outward-facing, publicly accessible
+        server deployments.  If an interface is required for faulty monitoring
+        or other custom service consumers running on an intranet, users should
+        toggle the Unsafe option only on a specific virtual host configured
+        to service their internal private network.</p>
+      </div>
+
+      <div class="example"><h3>Example of a request leading to HTTP 400 with Strict mode</h3><p><code>
+        
+        # Missing CRLF<br />
+        GET / HTTP/1.0\n\n
+      </code></p></div>
+      <div class="warning"><h3>Command line tools and CRLF</h3>
+        <p>Some tools need to be forced to use CRLF, otherwise httpd will return
+        a HTTP 400 response like described in the above use case. For example,
+        the <strong>OpenSSL s_client needs the -crlf parameter to work
+        properly</strong>.</p>
+        <p>The <code class="directive"><a href="../mod/mod_dumpio.html#dumpioinput">DumpIOInput</a></code> directive
+        can help while reviewing the HTTP request to identify issues like the
+        absence of CRLF.</p>
+      </div>
+    </dd>
+    <dt>RegisteredMethods|LenientMethods</dt>
+    <dd>
+      <p><a href="https://tools.ietf.org/html/rfc7231#section-4.1">RFC 7231 §4.1</a> "Request Methods" "Overview" requires that
+      origin servers shall respond with a HTTP 501 status code when an
+      unsupported method is encountered in the request line.
+      This already happens when the <code>LenientMethods</code> option is used,
+      but administrators may wish to toggle the <code>RegisteredMethods</code>
+      option and register any non-standard methods using the
+      <code class="directive"><a href="#registerhttpmethod">RegisterHttpMethod</a></code>
+      directive, particularly if the <code>Unsafe</code>
+      option has been toggled.</p>
+
+      <div class="warning"><h3>Forward Proxy compatibility</h3>
+        <p>The <code>RegisteredMethods</code> option should <strong>not</strong>
+        be toggled for forward proxy hosts, as the methods supported by the
+        origin servers are unknown to the proxy server.</p>
+      </div>
+
+      <div class="example"><h3>Example of a request leading to HTTP 501 with LenientMethods mode</h3><p><code>
+        
+        # Unknown HTTP method<br />
+        WOW / HTTP/1.0\r\n\r\n<br /><br />
+        # Lowercase HTTP method<br />
+        get / HTTP/1.0\r\n\r\n<br />
+      </code></p></div>
+      </dd>
+      <dt>Allow0.9|Require1.0</dt>
+      <dd>
+      <p><a href="https://tools.ietf.org/html/rfc2616#section-19.6">RFC 2616 §19.6</a> "Compatibility With Previous Versions" had
+      encouraged HTTP servers to support legacy HTTP/0.9 requests. RFC 7230
+      supersedes this with "The expectation to support HTTP/0.9 requests has
+      been removed" and offers additional comments in 
+      <a href="https://tools.ietf.org/html/rfc7230#appendix-A">RFC 7230 Appendix A</a>. The <code>Require1.0</code> option allows
+      the user to remove support of the default <code>Allow0.9</code> option's
+      behavior.</p>
+
+      <div class="example"><h3>Example of a request leading to HTTP 400 with Require1.0 mode</h3><p><code>
+        
+        # Unsupported HTTP version<br />
+        GET /\r\n\r\n
+      </code></p></div>
+    </dd>
+    </dl>
+    <p>Reviewing the messages logged to the
+    <code class="directive"><a href="#errorlog">ErrorLog</a></code>, configured with
+    <code class="directive"><a href="#loglevel">LogLevel</a></code> <code>debug</code> level,
     can help identify such faulty requests along with their origin.
     Users should pay particular attention to the 400 responses in the access
     log for invalid requests which were unexpectedly rejected.</p>
-
-    <p><a href="https://tools.ietf.org/html/rfc7231#section-4.1">RFC 7231 §4.1</a> "Request Methods" "Overview" requires that
-    origin servers shall respond with an error when an unsupported method
-    is encountered in the request line. This already happens when the
-    <code>LenientMethods</code> option is used, but administrators may wish
-    to toggle the <code>RegisteredMethods</code> option and register any
-    non-standard methods using the <code class="directive">RegisterHttpMethod</code>
-    directive, particularly if the <code>Unsafe</code> option has been toggled.
-    The <code>RegisteredMethods</code> option should <strong>not</strong>
-    be toggled for forward proxy hosts, as the methods supported by the
-    origin servers are unknown to the proxy server.</p>
-
-    <p><a href="https://tools.ietf.org/html/rfc2616#section-19.6">RFC 2616 §19.6</a> "Compatibility With Previous Versions" had
-    encouraged HTTP servers to support legacy HTTP/0.9 requests. RFC 7230
-    superceeds this with "The expectation to support HTTP/0.9 requests has
-    been removed" and offers additional comments in 
-    <a href="https://tools.ietf.org/html/rfc7230#appendix-A">RFC 7230 Appendix A</a>. The <code>Require1.0</code> option allows
-    the user to remove support of the default <code>Allow0.9</code> option's
-    behavior.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -2079,6 +2147,7 @@ satisfied by a request at runtime</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>All</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Nested conditions are evaluated in 2.4.26 and later</td></tr>
 </table>
     <p>The <code class="directive">&lt;If&gt;</code> directive
     evaluates an expression at runtime, and applies the enclosed
@@ -2187,6 +2256,87 @@ if a test is true at startup</td></tr>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="IfDirective" id="IfDirective">&lt;IfDirective&gt;</a> <a name="ifdirective" id="ifdirective">Directive</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Encloses directives that are processed conditional on the
+presence or absence of a specific directive</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>&lt;IfDirective [!]<var>directive-name</var>&gt; ...
+    &lt;/IfDirective&gt;</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host, directory, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Override">Override:</a></th><td>All</td></tr>
+<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
+<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in 2.4.34 and later.</td></tr>
+</table>
+    <p>The <code>&lt;IfDirective <var>test</var>&gt;...&lt;/IfDirective&gt;</code>
+    section is used to mark directives that are conditional on the presence of
+    a specific directive. The directives within an <code class="directive">&lt;IfDirective&gt;</code> section are only processed if the <var>test</var>
+    is true. If <var>test</var> is false, everything between the start and
+    end markers is ignored.</p>
+
+    <p>The <var>test</var> in the <code class="directive">&lt;IfDirective&gt;</code> section can be one of two forms:</p>
+
+    <ul>
+      <li><var>directive-name</var></li>
+
+      <li>!<var>directive-name</var></li>
+    </ul>
+
+    <p>In the former case, the directives between the start and end
+    markers are only processed if a directive of the given name is
+    available at the time of processing.  The second format reverses the test,
+    and only processes the directives if <var>directive-name</var> is
+    <strong>not</strong> available.</p>
+
+    <div class="note">This section should only be used if you need to have one
+    configuration file that works across multiple versions of
+    <code class="program"><a href="../programs/httpd.html">httpd</a></code>, regardless of whether a particular
+    directive is available. In normal operation, directives need not
+    be placed in <code class="directive">&lt;IfDirective&gt;</code>
+    sections.</div>
+
+<h3>See also</h3>
+<ul>
+<li><code class="directive"><a href="#ifsection">&lt;IfSection&gt;</a></code></li>
+</ul>
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="IfFile" id="IfFile">&lt;IfFile&gt;</a> <a name="iffile" id="iffile">Directive</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Encloses directives that will be processed only
+if file exists at startup</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>&lt;IfFile [!]<var>filename</var>&gt; ...
+    &lt;/IfFile&gt;</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host, directory, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Override">Override:</a></th><td>All</td></tr>
+<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
+<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in 2.4.34 and later.</td></tr>
+</table>
+    <p>The <code>&lt;IfFile <var>filename</var>&gt;...&lt;/IfFile&gt;
+    </code> section is used to mark directives that are conditional on
+    the existence of a file on disk. The directives within an
+    <code class="directive">&lt;IfFile&gt;</code> section are only
+    processed if <var>filename</var> exists. If <var>filename</var>
+    doesn't exist, everything between the start and end markers is
+    ignored. <var>filename</var> can be an absolute path or a path
+    relative to the server root.</p>
+
+    <p>The <var>filename</var> in the <code class="directive">&lt;IfFile&gt;</code> section directive can take the same forms as the
+    <var>test</var> variable in the <code class="directive"><a href="#ifdefine">&lt;IfDefine&gt;</a></code> section, i.e. the test can be negated if the <code>
+    !</code> character is placed directly before <var>filename</var>.
+    </p>
+   
+    <p>If a relative <var>filename</var> is supplied, the check is
+    <code class="directive"><a href="#serverroot">ServerRoot</a></code> relative. In the case where
+    this directive occurs before the <code class="directive"><a href="#serverroot">ServerRoot</a></code>,
+    the path will be checked relative to the compiled-in server root or
+    the server root passed in on the command line via the <code>-d</code>
+    parameter.</p>
+    
+
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="IfModule" id="IfModule">&lt;IfModule&gt;</a> <a name="ifmodule" id="ifmodule">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Encloses directives that are processed conditional on the
@@ -2238,6 +2388,66 @@ later.</td></tr>
     placed in <code class="directive">&lt;IfModule&gt;</code>
     sections.</div>
 
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="IfSection" id="IfSection">&lt;IfSection&gt;</a> <a name="ifsection" id="ifsection">Directive</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Encloses directives that are processed conditional on the
+presence or absence of a specific section directive</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>&lt;IfSection [!]<var>section-name</var>&gt; ...
+    &lt;/IfSection&gt;</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host, directory, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Override">Override:</a></th><td>All</td></tr>
+<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
+<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in 2.4.34 and later.</td></tr>
+</table>
+    <p>The <code>&lt;IfSection
+    <var>test</var>&gt;...&lt;/IfSection&gt;</code> section is used
+    to mark directives that are conditional on the presence of a
+    specific section directive.  A section directive is any directive
+    such as <code class="directive">&lt;VirtualHost&gt;</code> which
+    encloses other directives, and has a directive name with a leading
+    "&lt;".</p>
+
+    <p>The directives within an <code class="directive">&lt;IfSection&gt;</code> section are only processed if the <var>test</var>
+    is true. If <var>test</var> is false, everything between the start and
+    end markers is ignored.</p>
+
+    <p>The <var>section-name</var> must be specified without either
+    the leading "&lt;" or closing "&gt;".  The <var>test</var> in the
+    <code class="directive">&lt;IfSection&gt;</code> section can be one
+    of two forms:</p>
+
+    <ul>
+      <li><var>section-name</var></li>
+      <li>!<var>section-name</var></li>
+    </ul>
+
+    <p>In the former case, the directives between the start and end
+    markers are only processed if a section directive of the given
+    name is available at the time of processing.  The second format
+    reverses the test, and only processes the directives if
+    <var>section-name</var> is <strong>not</strong> an available
+    section directive.</p>
+
+    <p>For example:</p>
+
+    <pre class="prettyprint lang-config">&lt;IfSection VirtualHost&gt;
+   ...
+&lt;/IfSection&gt;</pre>
+
+    
+    <div class="note">This section should only be used if you need to have one
+    configuration file that works across multiple versions of <code class="program"><a href="../programs/httpd.html">httpd</a></code>,
+    regardless of whether a particular section directive is
+    available. In normal operation, directives need not be placed in
+    <code class="directive">&lt;IfSection&gt;</code> sections.</div>
+
+<h3>See also</h3>
+<ul>
+<li><code class="directive"><a href="#ifdirective">&lt;IfDirective&gt;</a></code></li>
+</ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="Include" id="Include">Include</a> <a name="include" id="include">Directive</a></h2>
@@ -2314,14 +2524,15 @@ the server configuration files</td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host, directory</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
-<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in 2.3.6 and later</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in 2.3.6 and later. Not existent file paths without wildcards
+               do not cause SyntaxError after 2.4.30</td></tr>
 </table>
     <p>This directive allows inclusion of other configuration files
     from within the server configuration files. It works identically to the
-    <code class="directive"><a href="#include">Include</a></code> directive, with the
-    exception that if wildcards do not match any file or directory, the
-    <code class="directive"><a href="#includeoptional">IncludeOptional</a></code> directive will be
-    silently ignored instead of causing an error.</p>
+    <code class="directive"><a href="#include">Include</a></code> directive, but it will be
+    silently ignored (instead of causing an error) if wildcards are used and
+    they do not match any file or directory or if a file path does not exist
+    on the file system.</p>
 
 <h3>See also</h3>
 <ul>
@@ -2907,7 +3118,7 @@ matching URLs</td></tr>
     (unnamed) backreferences are ignored. Use named groups instead.</p>
 
     <pre class="prettyprint lang-config">&lt;LocationMatch "^/combined/(?&lt;sitename&gt;[^/]+)"&gt;
-    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+    Require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/LocationMatch&gt;</pre>
 
 
@@ -3808,6 +4019,53 @@ as if 'QualifyRedirectURL ON' was configured.</td></tr>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="RegexDefaultOptions" id="RegexDefaultOptions">RegexDefaultOptions</a> <a name="regexdefaultoptions" id="regexdefaultoptions">Directive</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Allow to configure global/default options for regexes</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>RegexDefaultOptions [none] [+|-]<var>option</var> [[+|-]<var>option</var>] ...</code></td></tr>
+<tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>RegexDefaultOptions DOLLAR_ENDONLY</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
+<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
+<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Only available from Apache 2.4.30 and later.</td></tr>
+</table>
+        <p>This directive adds some default behavior to ANY regular expression
+        used afterwards.</p>
+
+        <p>Any option preceded by a '+' is added to the already set options.<br />
+        Any option preceded by a '-' is removed from the already set options.<br />
+        Any option without a '+' or a '-' will be set, removing any other
+        already set option.<br />
+        The <code>none</code> keyword resets any already set options.</p>
+
+        <p><var>option</var> can be:</p>
+        <dl>
+            <dt><code>ICASE</code></dt>
+            <dd>Use a case-insensitive match.</dd>
+
+            <dt><code>DOTALL</code></dt>
+            <dd>Perl's /s flag.</dd>
+
+            <dt><code>DOLLAR_ENDONLY</code></dt>
+            <dd>'$' matches at end of subject string only.</dd>
+            <dd>.</dd>
+        </dl>
+        <pre class="prettyprint lang-config"># 
+RegexDefaultOptions +ICASE +DOLLAR_ENDONLY
+...
+# Remove the ICASE option, but keep all the other already set options
+RegexDefaultOptions -ICASE
+...
+# Set the default option to DOTALL, resetting any other option
+RegexDefaultOptions DOTALL
+...
+# Reset all defined option
+RegexDefaultOptions none
+...</pre>
+
+    
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="RegisterHttpMethod" id="RegisterHttpMethod">RegisterHttpMethod</a> <a name="registerhttpmethod" id="registerhttpmethod">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Register non-standard HTTP methods</td></tr>
@@ -3815,14 +4073,19 @@ as if 'QualifyRedirectURL ON' was configured.</td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in Apache HTTP Server 2.4.24 and later</td></tr>
 </table>
-<p>HTTP Methods that are not conforming to the relvant RFCs are normally
-rejected by request processing in Apache HTTPD. To avoid this, modules
-can register non-standard HTTP methods they support.
-The <code class="directive">RegisterHttpMethod</code> allows to register such
-methods manually. This can be useful for if such methods are forwared
-for external processing, e.g. to a CGI script.</p>
+<p>This directive may be used to register additional HTTP methods.  This is
+necessary if non-standard methods need to be used with directives that accept 
+method names as parameters, or to allow particular non-standard methods to be 
+used via proxy or CGI script when the server has been configured to only pass 
+recognized methods to modules.</p>
 
+<h3>See also</h3>
+<ul>
+<li><code class="directive"><a href="#httpprotocoloptions">HTTPProtocolOptions</a></code></li>
+<li><code class="directive"><a href="../mod/mod_allowmethods.html#allowmethods">AllowMethods</a></code></li>
+</ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="RLimitCPU" id="RLimitCPU">RLimitCPU</a> <a name="rlimitcpu" id="rlimitcpu">Directive</a></h2>
@@ -4508,8 +4771,9 @@ certain events before failing a request</td></tr>
       for an acknowledgement of a packet if the send buffer is
       full.</li>
 
-      <li>In <code class="module"><a href="../mod/mod_cgi.html">mod_cgi</a></code>, the length of time to wait for
-      output from a CGI script.</li>
+      <li>In <code class="module"><a href="../mod/mod_cgi.html">mod_cgi</a></code> and <code class="module"><a href="../mod/mod_cgid.html">mod_cgid</a></code>,
+      the length of time to wait for any individual block of output
+      from a CGI script.</li>
 
       <li>In <code class="module"><a href="../mod/mod_ext_filter.html">mod_ext_filter</a></code>, the length of time to
       wait for output from a filtering process.</li>
@@ -4574,6 +4838,11 @@ certain events before failing a request</td></tr>
        the changes it makes are visible to any later configuration
        directives, beyond any enclosing virtual host.</p>
 
+<h3>See also</h3>
+<ul>
+<li><code class="directive"><a href="#define">Define</a></code></li>
+<li><code class="directive"><a href="#ifdefine">IfDefine</a></code></li>
+</ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="UseCanonicalName" id="UseCanonicalName">UseCanonicalName</a> <a name="usecanonicalname" id="usecanonicalname">Directive</a></h2>
@@ -4831,7 +5100,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/core.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -611,6 +611,12 @@ div#directive-list ul {
     padding: 0;
 }
 
+/* override index */
+/* ============== */
+div#override-list td.module {
+    width: 20%;
+}
+
 /* indextable */
 /* ========== */
 table#indextable td ul {
@@ -687,6 +693,17 @@ div#page-header img {
     margin: -70px 0 1px 2em;
     width: 248px;
     height: 70px;
+}
+
+div#quickview a.badge {
+    /* Temporary hack for the Support Apache badge */
+    background-color: transparent;
+}
+
+div#quickview a.badge img {
+    /* Temporary hack for the Support Apache badge */
+    width: 95px;
+    height: 95px;
 }
 
 div#page-header p.apache {

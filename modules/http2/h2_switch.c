@@ -1,18 +1,19 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include <assert.h>
 
 #include <apr_strings.h>
@@ -55,6 +56,10 @@ static int h2_protocol_propose(conn_rec *c, request_rec *r,
     const char **protos = is_tls? h2_tls_protos : h2_clear_protos;
     
     (void)s;
+    if (!h2_mpm_supported()) {
+        return DECLINED;
+    }
+    
     if (strcmp(AP_PROTOCOL_HTTP1, ap_get_protocol(c))) {
         /* We do not know how to switch from anything else but http/1.1.
          */
@@ -127,6 +132,10 @@ static int h2_protocol_switch(conn_rec *c, request_rec *r, server_rec *s,
     const char **p = protos;
     
     (void)s;
+    if (!h2_mpm_supported()) {
+        return DECLINED;
+    }
+
     while (*p) {
         if (!strcmp(*p, protocol)) {
             found = 1;
@@ -160,13 +169,13 @@ static int h2_protocol_switch(conn_rec *c, request_rec *r, server_rec *s,
             if (status != APR_SUCCESS) {
                 ap_log_rerror(APLOG_MARK, APLOG_DEBUG, status, r, APLOGNO(03088)
                               "session setup");
-                return status;
+                h2_ctx_clear(c);
+                return !OK;
             }
             
             h2_conn_run(ctx, c);
-            return DONE;
         }
-        return DONE;
+        return OK;
     }
     
     return DECLINED;
