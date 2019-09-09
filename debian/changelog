@@ -1,3 +1,9 @@
+apache2 (2.4.25-3+deb9u8+deb8hetz3~exp1) jessie-hetz-experimental; urgency=high
+
+  * Bump to hetz3 to ensure a cleaner start
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 09 Sep 2019 13:43:43 +0200
+
 apache2 (2.4.25-3+deb9u8+deb8hetz2~exp1) jessie-hetz; urgency=high
 
   * Rerelease just to rebuild the same version after hard reset
