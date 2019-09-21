@@ -585,7 +585,7 @@ not required between runs.  [Geoffrey Young]
 
 Apache::TestSmoke imrovements: [Stas]
  o the command line option -iterations=N should always be respected
-   (previously it was internally overriden for order!='random').
+   (previously it was internally overridden for order!='random').
  o since IPC::Run3 broke the Ctrl-C handler, we started to loose any
    intermediate results, should the run be aborted. So for now, try to
    always store those results in the temp file:
@@ -1111,7 +1111,7 @@ filename and the line number the function was called from. If the
 with the name of the subroutine the function was called from. [Stas]
 
 add support for a new env var APACHE_TEST_TRACE_LEVEL, used to
-override the tracing level. It propogates the overriden (either by env
+override the tracing level. It propogates the overridden (either by env
 var APACHE_TEST_TRACE_LEVEL or -trace option) value to the
 server-side, so we can use Apache::TestTrace in mod_perl handlers, and
 be able enable/disable tracing from the commmand line. This way we

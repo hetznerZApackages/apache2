@@ -7,7 +7,9 @@ reproducible_builds.diff
 
 # This patch is applied manually
 #suexec-custom.patch
+spelling-errors.patch
 
+<<<<<<< HEAD
 fix_logresolve_segfault.patch
 mpm_event_restart_segfault_PR60487.patch
 
@@ -35,4 +37,17 @@ CVE-2019-0211-privilege-escalation.diff
 CVE-2019-0217-digest-collusion-in-mod_auth_digest.diff
 CVE-2019-0220-merge-slashes.diff
 CVE-2019-10092.patch
+=======
+CVE-2019-0196.patch
+CVE-2019-0211.patch
+CVE-2019-0215.patch
+CVE-2019-0217.patch
+CVE-2019-0220-1.patch
+CVE-2019-0220-2.patch
+CVE-2019-0220-3.patch
+CVE-2019-0197.patch
+CVE-2019-10092.patch
+CVE-2019-10097.patch
+import-http2-module-from-2.4.41.patch
+>>>>>>> jessie
 CVE-2019-10098.patch

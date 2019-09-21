@@ -23,6 +23,7 @@ use DirHandle ();
 use File::Path ();
 use File::Copy 'cp';
 use File::Basename;
+use Net::SSLeay;
 use Apache::TestConfig ();
 use Apache::TestTrace;
 
@@ -70,6 +71,20 @@ if (Apache::Test::normalize_vstring($version) <
     $san_msupn = $san_dnssrv = "";
 }
 
+my $sslproto = "all";
+
+if (Apache::Test::normalize_vstring($version) >= 
+    Apache::Test::normalize_vstring("1.1.1")
+    && !defined(&Net::SSLeay::CTX_set_post_handshake_auth)) {
+    # OpenSSL 1.1.1 disables PHA by default client-side in TLSv1.3 but
+    # most clients are not updated to enable it (at time of writing).
+    # Many mod_ssl tests require working PHA, so disable v1.3 unless
+    # using an updated Net::SSLeay. This is strictly insufficient
+    # since an updated IO::Socket::SSL is also needed; to be
+    # continued.  Ref: https://github.com/openssl/openssl/issues/6933
+    $sslproto = "all -TLSv1.3";
+}
+
 my $ca_dn = {
     asf => {
         C  => 'US',
@@ -91,6 +106,9 @@ my $cert_dn = {
         OU => 'Staff',
     },
     client_ok => {
+    },
+    client_colon => {
+        CN => "user:colon",
     },
     client_revoked => {
     },
@@ -215,9 +233,9 @@ sub config_file {
     return $file if -e $file;
 
     my $dn = dn($name);
-    my $db = sslca_db($name);
+    my $db = SSLCA_DB;
 
-    writefile($db, '', 1);
+    writefile($db, '', 1) unless -e $db;
 
     writefile($file, <<EOF);
 mail                   = $dn->{$email_field}
@@ -366,11 +384,6 @@ sub export_cert {
                       "-out export/$name.p12", $passin, $passout;
 }
 
-sub sslca_db {
-    my $name = shift;
-    return "$name-" . SSLCA_DB;
-}
-
 sub revoke_cert {
     my $name = shift;
 
@@ -378,15 +391,6 @@ sub revoke_cert {
 
     #revokes in the SSLCA_DB database
     openssl ca => "-revoke certs/$name.crt", @args;
-
-    my $db = sslca_db($name);
-    unless (-e $db) {
-        #hack required for win32
-        my $new = join '.', $db, 'new';
-        if (-e $new) {
-            cp $new, $db;
-        }
-    }
 
     #generates crl from the index.txt database
     openssl ca => "-gencrl -out $cacrl", @args;
@@ -579,6 +583,10 @@ sub dgst {
 
 sub email_field {
     return $email_field;
+}
+
+sub sslproto {
+    return $sslproto;
 }
 
 1;

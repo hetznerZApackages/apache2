@@ -6,6 +6,11 @@ fatal () {
 	exit 1
 }
 
+skip () {
+	echo "ERROR: $@" >&2
+	exit 77
+}
+
 htc_enabled () {
 	if ls /etc/rc[2345].d/S*apache-htcacheclean > /dev/null 2>&1 ; then
 		return 0
@@ -40,9 +45,10 @@ if ! service apache-htcacheclean status ; then
 fi
 
 service apache-htcacheclean stop
+sleep 1
 
 if $PGREP ; then
-	fatal "htcacheclean did not stop"
+	skip "htcacheclean did not stop"
 fi
 
 if service apache-htcacheclean status ; then
