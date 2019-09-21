@@ -14,14 +14,9 @@ include /usr/share/dpkg/pkg-info.mk
 LSB_RELEASE := $(shell lsb_release -i -s)
 BUILD_DATETIME := $(shell date -u --date="`dpkg-parsechangelog -S Date`" +%FT%T)
 MODULE_DIR := /usr/lib/apache2/modules/
-#<<<<<<< HEAD
-#API = $(shell perl -ne 'print $$1 if m/define\s+MODULE_MAGIC_NUMBER_MAJOR\s+?(.*)$$/' < include/ap_mmn.h)
-#AP2_CFLAGS = -pipe -Werror=implicit-function-declaration $(CFLAGS)
-#=======
 API := $(shell perl -ne 'print $$1 if m/define\s+MODULE_MAGIC_NUMBER_MAJOR\s+?(.*)$$/' < include/ap_mmn.h)
 OPENSSL := openssl1.1
 AP2_CFLAGS = -pipe $(CFLAGS)
-#>>>>>>> jessie
 AP2_LDFLAGS = -Wl,--as-needed $(LDFLAGS)
 AP2_CPPFLAGS = -DPLATFORM='\"$(LSB_RELEASE)\"' -DBUILD_DATETIME='\"$(BUILD_DATETIME)\"' $(CPPFLAGS)
 AP2_LTFLAGS = --no-silent
@@ -118,11 +113,7 @@ configure-stamp: prebuild-checks-stamp support/suexec-custom.c
 		--with-pcre=yes \
 		--enable-pie \
 		--enable-mpms-shared=all \
-#<<<<<<< HEAD
 		--enable-mods-shared="all cgi ident authnz_fcgi imagemap cern_meta proxy_fdpass bucketeer case_filter case_filter_in" \
-#=======
-#		--enable-mods-shared="all brotli cgi ident authnz_fcgi imagemap cern_meta proxy_fdpass proxy_http2 bucketeer case_filter case_filter_in" \
-#>>>>>>> jessie
 		--enable-mods-static="unixd logio watchdog version" \
 		CFLAGS="$(AP2_CFLAGS)" CPPFLAGS="$(AP2_CPPFLAGS)" LDFLAGS="$(AP2_LDFLAGS)" \
 		LTFLAGS="$(AP2_LTFLAGS)" SHELL=/bin/bash
