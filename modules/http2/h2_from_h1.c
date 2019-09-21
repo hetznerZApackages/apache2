@@ -1,18 +1,19 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include <assert.h>
 #include <stdio.h>
 
@@ -163,7 +164,7 @@ static int copy_header(void *ctx, const char *name, const char *value)
 {
     apr_table_t *headers = ctx;
     
-    apr_table_addn(headers, name, value);
+    apr_table_add(headers, name, value);
     return 1;
 }
 
@@ -208,10 +209,18 @@ static h2_headers *create_response(h2_task *task, request_rec *r)
     /* determine the protocol and whether we should use keepalives. */
     ap_set_keepalive(r);
     
-    if (r->chunked) {
+    if (AP_STATUS_IS_HEADER_ONLY(r->status)) {
+        apr_table_unset(r->headers_out, "Transfer-Encoding");
+        apr_table_unset(r->headers_out, "Content-Length");
+        r->content_type = r->content_encoding = NULL;
+        r->content_languages = NULL;
+        r->clength = r->chunked = 0;
+    }
+    else if (r->chunked) {
+        apr_table_mergen(r->headers_out, "Transfer-Encoding", "chunked");
         apr_table_unset(r->headers_out, "Content-Length");
     }
-    
+
     ctype = ap_make_content_type(r, r->content_type);
     if (ctype) {
         apr_table_setn(r->headers_out, "Content-Type", ctype);
@@ -249,7 +258,7 @@ static h2_headers *create_response(h2_task *task, request_rec *r)
     if (r->no_cache && !apr_table_get(r->headers_out, "Expires")) {
         char *date = apr_palloc(r->pool, APR_RFC822_DATE_LEN);
         ap_recent_rfc822_date(date, r->request_time);
-        apr_table_addn(r->headers_out, "Expires", date);
+        apr_table_add(r->headers_out, "Expires", date);
     }
     
     /* This is a hack, but I can't find anyway around it.  The idea is that
@@ -412,7 +421,7 @@ static apr_status_t pass_response(h2_task *task, ap_filter_t *f,
     
     h2_headers *response = h2_headers_create(parser->http_status, 
                                              make_table(parser),
-                                             NULL, task->pool);
+                                             NULL, 0, task->pool);
     apr_brigade_cleanup(parser->tmp);
     b = h2_bucket_headers_create(task->c->bucket_alloc, response);
     APR_BRIGADE_INSERT_TAIL(parser->tmp, b);
@@ -449,7 +458,14 @@ static apr_status_t parse_status(h2_task *task, char *line)
         
         return APR_SUCCESS;
     }
-    ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, task->c, APLOGNO(03467)
+    /* Seems like there is garbage on the connection. May be a leftover
+     * from a previous proxy request. 
+     * This should only happen if the H2_RESPONSE filter is not yet in 
+     * place (post_read_request has not been reached and the handler wants
+     * to write something. Probably just the interim response we are
+     * waiting for. But if there is other data hanging around before
+     * that, this needs to fail. */
+    ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, task->c, APLOGNO(03467)
                   "h2_task(%s): unable to parse status line: %s", 
                   task->id, line);
     return APR_EINVAL;
@@ -513,11 +529,11 @@ apr_status_t h2_filter_headers_out(ap_filter_t *f, apr_bucket_brigade *bb)
     apr_bucket *b, *bresp, *body_bucket = NULL, *next;
     ap_bucket_error *eb = NULL;
     h2_headers *response = NULL;
-
+    int headers_passing = 0;
     ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, f->c,
                   "h2_task(%s): output_filter called", task->id);
     
-    if (!task->output.sent_response) {
+    if (!task->output.sent_response && !f->c->aborted) {
         /* check, if we need to send the response now. Until we actually
          * see a DATA bucket or some EOS/EOR, we do not do so. */
         for (b = APR_BRIGADE_FIRST(bb);
@@ -536,7 +552,10 @@ apr_status_t h2_filter_headers_out(ap_filter_t *f, apr_bucket_brigade *bb)
                               "h2_task(%s): eoc bucket passed", task->id);
                 return ap_pass_brigade(f->next, bb);
             }
-            else if (!H2_BUCKET_IS_HEADERS(b) && !APR_BUCKET_IS_FLUSH(b)) { 
+            else if (H2_BUCKET_IS_HEADERS(b)) {
+                headers_passing = 1;
+            }
+            else if (!APR_BUCKET_IS_FLUSH(b)) { 
                 body_bucket = b;
                 break;
             }
@@ -553,8 +572,9 @@ apr_status_t h2_filter_headers_out(ap_filter_t *f, apr_bucket_brigade *bb)
             return AP_FILTER_ERROR;
         }
         
-        if (body_bucket) {
-            /* time to insert the response bucket before the body */
+        if (body_bucket || !headers_passing) {
+            /* time to insert the response bucket before the body or if
+             * no h2_headers is passed, e.g. the response is empty */
             response = create_response(task, r);
             if (response == NULL) {
                 ap_log_cerror(APLOG_MARK, APLOG_NOTICE, 0, f->c, APLOGNO(03048)
@@ -563,7 +583,12 @@ apr_status_t h2_filter_headers_out(ap_filter_t *f, apr_bucket_brigade *bb)
             }
             
             bresp = h2_bucket_headers_create(f->c->bucket_alloc, response);
-            APR_BUCKET_INSERT_BEFORE(body_bucket, bresp);
+            if (body_bucket) {
+                APR_BUCKET_INSERT_BEFORE(body_bucket, bresp);
+            }
+            else {
+                APR_BRIGADE_INSERT_HEAD(bb, bresp);
+            }
             task->output.sent_response = 1;
             r->sent_bodyct = 1;
         }
@@ -730,6 +755,9 @@ apr_status_t h2_filter_request_in(ap_filter_t* f,
     request_rec *r = f->r;
     apr_status_t status = APR_SUCCESS;
     apr_bucket *b, *next;
+    core_server_config *conf =
+        (core_server_config *) ap_get_module_config(r->server->module_config,
+                                                    &core_module);
 
     ap_log_rerror(APLOG_MARK, APLOG_TRACE2, 0, f->r,
                   "h2_task(%s): request filter, exp=%d", task->id, r->expecting_100);
@@ -744,10 +772,18 @@ apr_status_t h2_filter_request_in(ap_filter_t* f,
                 ap_assert(headers);
                 ap_log_rerror(APLOG_MARK, APLOG_TRACE2, 0, r,
                               "h2_task(%s): receiving trailers", task->id);
-                r->trailers_in = apr_table_clone(r->pool, headers->headers);
+                r->trailers_in = headers->headers;
+                if (conf && conf->merge_trailers == AP_MERGE_TRAILERS_ENABLE) {
+                    r->headers_in = apr_table_overlay(r->pool, r->headers_in,
+                                                      r->trailers_in);                    
+                }
                 APR_BUCKET_REMOVE(b);
                 apr_bucket_destroy(b);
                 ap_remove_input_filter(f);
+                
+                if (headers->raw_bytes && h2_task_logio_add_bytes_in) {
+                    h2_task_logio_add_bytes_in(task->c, headers->raw_bytes);
+                }
                 break;
             }
         }

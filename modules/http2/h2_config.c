@@ -1,18 +1,19 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include <assert.h>
 
 #include <apr_hash.h>
@@ -48,12 +49,11 @@ static h2_config defconf = {
     -1,                     /* min workers */
     -1,                     /* max workers */
     10 * 60,                /* max workers idle secs */
-    64 * 1024,              /* stream max mem size */
+    32 * 1024,              /* stream max mem size */
     NULL,                   /* no alt-svcs */
     -1,                     /* alt-svc max age */
     0,                      /* serialize headers */
     -1,                     /* h2 direct mode */
-    -1,                     /* # session extra files */
     1,                      /* modern TLS only */
     -1,                     /* HTTP/1 Upgrade support */
     1024*1024,              /* TLS warmup size */
@@ -88,7 +88,6 @@ static void *h2_config_create(apr_pool_t *pool,
     conf->alt_svc_max_age      = DEF_VAL;
     conf->serialize_headers    = DEF_VAL;
     conf->h2_direct            = DEF_VAL;
-    conf->session_extra_files  = DEF_VAL;
     conf->modern_tls_only      = DEF_VAL;
     conf->h2_upgrade           = DEF_VAL;
     conf->tls_warmup_size      = DEF_VAL;
@@ -130,7 +129,6 @@ static void *h2_config_merge(apr_pool_t *pool, void *basev, void *addv)
     n->alt_svc_max_age      = H2_CONFIG_GET(add, base, alt_svc_max_age);
     n->serialize_headers    = H2_CONFIG_GET(add, base, serialize_headers);
     n->h2_direct            = H2_CONFIG_GET(add, base, h2_direct);
-    n->session_extra_files  = H2_CONFIG_GET(add, base, session_extra_files);
     n->modern_tls_only      = H2_CONFIG_GET(add, base, modern_tls_only);
     n->h2_upgrade           = H2_CONFIG_GET(add, base, h2_upgrade);
     n->tls_warmup_size      = H2_CONFIG_GET(add, base, tls_warmup_size);
@@ -194,8 +192,6 @@ apr_int64_t h2_config_geti64(const h2_config *conf, h2_config_var_t var)
             return H2_CONFIG_GET(conf, &defconf, h2_upgrade);
         case H2_CONF_DIRECT:
             return H2_CONFIG_GET(conf, &defconf, h2_direct);
-        case H2_CONF_SESSION_FILES:
-            return H2_CONFIG_GET(conf, &defconf, session_extra_files);
         case H2_CONF_TLS_WARMUP_SIZE:
             return H2_CONFIG_GET(conf, &defconf, tls_warmup_size);
         case H2_CONF_TLS_COOLDOWN_SECS:
@@ -309,7 +305,7 @@ static const char *h2_conf_set_stream_max_mem_size(cmd_parms *parms,
 static const char *h2_add_alt_svc(cmd_parms *parms,
                                   void *arg, const char *value)
 {
-    if (value && strlen(value)) {
+    if (value && *value) {
         h2_config *cfg = (h2_config *)h2_config_sget(parms->server);
         h2_alt_svc *as = h2_alt_svc_parse(value, parms->pool);
         if (!as) {
@@ -336,13 +332,11 @@ static const char *h2_conf_set_alt_svc_max_age(cmd_parms *parms,
 static const char *h2_conf_set_session_extra_files(cmd_parms *parms,
                                                    void *arg, const char *value)
 {
-    h2_config *cfg = (h2_config *)h2_config_sget(parms->server);
-    apr_int64_t max = (int)apr_atoi64(value);
-    if (max < 0) {
-        return "value must be a non-negative number";
-    }
-    cfg->session_extra_files = (int)max;
+    /* deprecated, ignore */
     (void)arg;
+    (void)value;
+    ap_log_perror(APLOG_MARK, APLOG_WARNING, 0, parms->pool, /* NO LOGNO */
+                  "H2SessionExtraFiles is obsolete and will be ignored");
     return NULL;
 }
 
@@ -407,7 +401,7 @@ static const char *h2_conf_add_push_priority(cmd_parms *cmd, void *_cfg,
     h2_priority *priority;
     int weight;
     
-    if (!strlen(ctype)) {
+    if (!*ctype) {
         return "1st argument must be a mime-type, like 'text/css' or '*'";
     }
     
@@ -610,6 +604,30 @@ static const char *h2_conf_set_early_hints(cmd_parms *parms,
     return "value must be On or Off";
 }
 
+void h2_get_num_workers(server_rec *s, int *minw, int *maxw)
+{
+    int threads_per_child = 0;
+    const h2_config *config = h2_config_sget(s);
+
+    *minw = h2_config_geti(config, H2_CONF_MIN_WORKERS);
+    *maxw = h2_config_geti(config, H2_CONF_MAX_WORKERS);    
+    ap_mpm_query(AP_MPMQ_MAX_THREADS, &threads_per_child);
+
+    if (*minw <= 0) {
+        *minw = threads_per_child;
+    }
+    if (*maxw <= 0) {
+        /* As a default, this seems to work quite well under mpm_event. 
+         * For people enabling http2 under mpm_prefork, start 4 threads unless 
+         * configured otherwise. People get unhappy if their http2 requests are 
+         * blocking each other. */
+        *maxw = 3 * (*minw) / 2;
+        if (*maxw < 4) {
+            *maxw = 4;
+        }
+    }
+}
+
 #define AP_END_CMD     AP_INIT_TAKE1(NULL, NULL, NULL, RSRC_CONF, NULL)
 
 const command_rec h2_cmds[] = {
@@ -638,7 +656,7 @@ const command_rec h2_cmds[] = {
     AP_INIT_TAKE1("H2Direct", h2_conf_set_direct, NULL,
                   RSRC_CONF, "on to enable direct HTTP/2 mode"),
     AP_INIT_TAKE1("H2SessionExtraFiles", h2_conf_set_session_extra_files, NULL,
-                  RSRC_CONF, "number of extra file a session might keep open"),
+                  RSRC_CONF, "number of extra file a session might keep open (obsolete)"),
     AP_INIT_TAKE1("H2TLSWarmUpSize", h2_conf_set_tls_warmup_size, NULL,
                   RSRC_CONF, "number of bytes on TLS connection before doing max writes"),
     AP_INIT_TAKE1("H2TLSCoolDownSecs", h2_conf_set_tls_cooldown_secs, NULL,
