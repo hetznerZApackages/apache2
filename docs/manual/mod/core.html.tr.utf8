@@ -37,7 +37,7 @@
  özellikler</td></tr>
 <tr><th><a href="module-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr></table>
 </div>
-<div id="quickview"><h3 class="directives">Yönergeler</h3>
+<div id="quickview"><a href="https://www.apache.org/foundation/contributing.html" class="badge"><img src="https://www.apache.org/images/SupportApache-small.png" alt="Support Apache!" /></a><h3 class="directives">Yönergeler</h3>
 <ul id="toc">
 <li><img alt="" src="../images/down.gif" /> <a href="#acceptfilter">AcceptFilter</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#acceptpathinfo">AcceptPathInfo</a></li>
@@ -74,7 +74,10 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#httpprotocoloptions">HttpProtocolOptions</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#if">&lt;If&gt;</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#ifdefine">&lt;IfDefine&gt;</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#ifdirective">&lt;IfDirective&gt;</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#iffile">&lt;IfFile&gt;</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#ifmodule">&lt;IfModule&gt;</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#ifsection">&lt;IfSection&gt;</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#include">Include</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#includeoptional">IncludeOptional</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#keepalive">KeepAlive</a></li>
@@ -102,6 +105,7 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#protocols">Protocols</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#protocolshonororder">ProtocolsHonorOrder</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#qualifyredirecturl">QualifyRedirectURL</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#regexdefaultoptions">RegexDefaultOptions</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#registerhttpmethod">RegisterHttpMethod</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#rlimitcpu">RLimitCPU</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#rlimitmem">RLimitMEM</a></li>
@@ -440,13 +444,16 @@ AcceptFilter https connect</pre>
       dosyalarını okumaya dahi çalışmayacaktır.</p>
 
     <p>Bu yönergeye <code>All</code> değeri atanırsa, .htaccess <a href="directive-dict.html#Context">bağlamında</a> kullanılabilecek her
-      yönergeye <code>.htaccess</code> dosyalarında izin verilir.</p>
+      yönergeye <code>.htaccess</code> dosyalarında izin verilir. (Hangi 
+      <var>yönerge-türü</var> türü için hangi yönergelerin etkin olduğunu görmek 
+      için <a href="overrides.html">.htaccess için Geçersizleştirme Sınıfları</a> 
+      sayfasına bakınız)</p>
 
     <p><code><var>yönerge-türü</var></code> olarak aşağıdaki yönerge grup
       isimlerinden biri belirtilebilir:</p>
 
     <dl>
-      <dt>AuthConfig</dt>
+      <dt><a href="overrides.html#override-authconfig">AuthConfig</a></dt>
 
       <dd><code class="directive"><a href="../mod/mod_authz_dbm.html#authdbmgroupfile">AuthDBMGroupFile</a></code>,
         <code class="directive"><a href="../mod/mod_authn_dbm.html#authdbmuserfile">AuthDBMUserFile</a></code>,
@@ -458,7 +465,7 @@ AcceptFilter https connect</pre>
         <em>ve benzeri</em> yetkilendirme yönergelerinin kullanımını izin
         verilir.</dd>
 
-      <dt>FileInfo</dt>
+      <dt><a href="overrides.html#override-fileinfo">FileInfo</a></dt>
 
       <dd>Belge türünü denetleyen <code class="module"><a href="../mod/mod_mime.html">mod_mime</a></code>
         <code>Add*</code> ve <code>Remove*</code> yönergeleri,
@@ -496,7 +503,7 @@ AcceptFilter https connect</pre>
         yönergesinin kullanımına izin verilir.
       </dd>
 
-      <dt>Indexes</dt>
+      <dt><a href="overrides.html#override-indexes">Indexes</a></dt>
 
       <dd>Dizin içeriğinin listelenmesini denetleyen
         <code class="directive"><a href="../mod/mod_autoindex.html#adddescription">AddDescription</a></code>,
@@ -513,7 +520,7 @@ AcceptFilter https connect</pre>
         yönergelerinin <em>ve benzerlerinin</em> kullanımına izin
         verilir.</dd>
 
-      <dt>Limit</dt>
+      <dt><a href="overrides.html#override-limit">Limit</a></dt>
 
       <dd>Konak erişimini denetleyen
         <code class="directive"><a href="../mod/mod_access_compat.html#allow">Allow</a></code>,
@@ -548,8 +555,8 @@ AcceptFilter https connect</pre>
       </div>
       </dd>
 
-      <dt>Options[=<var>seçenek</var>,...]</dt>
-
+      <dt><a href="overrides.html#override-options">Options</a>[=<var>seçenek</var>,...]</dt>
+      
       <dd>Dizinlere özgü özellikleri denetleyen
         <code class="directive"><a href="#options">Options</a></code> ve
         <code class="directive"><a href="../mod/mod_include.html#xbithack">XBitHack</a></code> yönergelerinin
@@ -594,6 +601,7 @@ AcceptFilter https connect</pre>
 <li><code class="directive"><a href="#allowoverridelist">AllowOverrideList</a></code></li>
 <li><a href="../configuring.html">Yapılandırma Dosyaları</a></li>
 <li><a href="../howto/htaccess.html">.htaccess Dosyaları</a></li>
+<li><a href="overrides.html">.htaccess için Geçersizleştirme Sınıfları</a></li>
 </ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -876,14 +884,17 @@ DocumentRoot "/var/www/${servername}/htdocs"</pre>
     <p><code class="directive"><a href="../mod/mod_rewrite.html#rewritemap">RewriteMap</a></code> sözdizimi ile
       karışmalardan kaçınmak için değişken isimleri ikinokta ":" karakterleri
       içeremez.</p>
-    
-    <p>Bu yönerge sanal konakta ve dizin içeriğinde desteklenirken yapılan 
+    <div class="note"><h3>Sanal konak bağlamı ve tuzaklar</h3>
+      <p>Bu yönerge sanal konakta ve dizin içeriğinde desteklendiğinden yapılan 
       değişiklikler (eşleşsin eşleşmesin) yönergeyi sarmalayan yapılandırma 
-      bölümünün ötesinde, sonraki yapılandırma yönergelerine de görünür olur. Diğer 
-      yapılandırma bölümleri için sağlanan bu desteğe bu yönergenin ilk 
-      gerçekleniminde hatalı olarak izin verilmişti. Geriye uyumluluk amacıyla 
-      (önceden sezilmeyen sonuçlarıyla) bu durum muhafaza edilmiştir.</p>
+      bölümünden başka, sonraki yapılandırma yönergelerine de görünür olur.</p>
+    </div>
 
+<h3>Ayrıca bakınız:</h3>
+<ul>
+<li><code class="directive"><a href="#undefine">UnDefine</a></code></li>
+<li><code class="directive"><a href="#ifdefine">IfDefine</a></code></li>
+</ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="Directory" id="Directory">&lt;Directory&gt;</a> <a name="directory" id="directory">Yönergesi</a></h2>
@@ -1114,6 +1125,7 @@ DocumentRoot "/var/www/${servername}/htdocs"</pre>
 <tr><th><a href="directive-dict.html#Override">Geçersizleştirme:</a></th><td>All</td></tr>
 <tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
 <tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>İç içe geçmiş koşullar 2.4.26 ve sonrasında değerlendirilmeye alınır</td></tr>
 </table>
     <p><code class="directive">&lt;Else&gt;</code> sadece ve sadece aynı etki
       alanındaki en son <code class="directive">&lt;If&gt;</code> veya
@@ -1156,6 +1168,7 @@ DocumentRoot "/var/www/${servername}/htdocs"</pre>
 <tr><th><a href="directive-dict.html#Override">Geçersizleştirme:</a></th><td>All</td></tr>
 <tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
 <tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>İç içe geçmiş koşullar 2.4.26 ve sonrasında değerlendirilmeye alınır</td></tr>
 </table>
     <p><code class="directive">&lt;ElseIf&gt;</code> kapsadığı yönergeleri
       sadece ve sadece belirtilen koşulun doğrulandığı ancak aynı etki
@@ -1449,7 +1462,7 @@ ErrorDocument 403 /errors/forbidden.pl?referrer=%{escape:%{HTTP_REFERER}}</pre>
 <div class="directive-section"><h2><a name="ErrorLog" id="ErrorLog">ErrorLog</a> <a name="errorlog" id="errorlog">Yönergesi</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Açıklama:</a></th><td>Sunucunun hata günlüğünü tutacağı yeri belirler.</td></tr>
-<tr><th><a href="directive-dict.html#Syntax">Sözdizimi:</a></th><td><code> ErrorLog <var>dosya-yolu</var>|syslog[:<var>oluşum</var>]</code></td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Sözdizimi:</a></th><td><code> ErrorLog <var>dosya-yolu</var>|syslog[:[<var>oluşum</var>][:<var>etiket</var>]]</code></td></tr>
 <tr><th><a href="directive-dict.html#Default">Öntanımlı:</a></th><td><code>ErrorLog logs/error_log (Unix) ErrorLog logs/error.log (Windows ve OS/2)</code></td></tr>
 <tr><th><a href="directive-dict.html#Context">Bağlam:</a></th><td>sunucu geneli, sanal konak</td></tr>
 <tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
@@ -1482,9 +1495,15 @@ ErrorDocument 403 /errors/forbidden.pl?referrer=%{escape:%{HTTP_REFERER}}</pre>
       syslog.conf(5) kılavuz sayfasında belirtilen oluşum isimlerinden biri
       olabilir. Oluşum aslında küreseldir ve sanal konaklardan bazılarında
       değiştirilmişse, belirtilen en son oluşum tüm sunucuyu
-      etkileyecektir.</p>
+      etkileyecektir. <code><var>etiket</var></code> için de aynı kurallar 
+      uygulanır. Genellikle, öntanımlı etiket olarak Apache çalıştırılabilirinin 
+      ismi olan <code>httpd</code> kullanılır. Öntanımlı etiketi 
+      <code>syslog::<var>etiket</var></code> sözdizimini kullanarak 
+      değiştirebilirsiniz </p>
 
-    <pre class="prettyprint lang-config">ErrorLog syslog:user</pre>
+    <pre class="prettyprint lang-config">ErrorLog syslog:user
+ErrorLog syslog:user:httpd.srv1
+ErrorLog syslog::httpd.srv2</pre>
 
 
     <p>Buna ek olarak, modüller kendi günlük kaydı oluşturucusunu sağlayabilir.
@@ -1887,7 +1906,7 @@ ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"</pre>
       kullanılmalıdır.</p>
 
 <pre class="prettyprint lang-config">&lt;FilesMatch "^(?&lt;sitename&gt;[^/]+)"&gt;
-    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+    Require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/FilesMatch&gt;</pre>
 
 
@@ -2046,28 +2065,100 @@ ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"</pre>
       (<a href="https://tools.ietf.org/html/rfc7230#section-3.2">RFC 7230 §3.2</a>) uygulanmış kuralları öntanımlı olarak veya 
       <code>Strict</code> seçeneği kullanılarak  değiştirir. Eski modüller, 
       uygulamalar veya kullanımı önerilmeyen özel istemciler için eski davranışlara 
-      dönmeyi sağlamak üzere <code>Unsafe</code> seçeneği eklenmiştir. Bu kurallar 
-      istek işlenmeden önce uygulanır. Dolayısıyla yönerge, ana bölümde veya 
-      öntanımlı (ilk) eşleşen sanal konak bölümünde yapılandırılmalıdır.</p>
+      dönmeyi sağlamak üzere <code>Unsafe</code> seçeneği eklenmiştir.</p>
+      
+    <p>Bu kurallar istek işlenmeden önce uygulanır. Dolayısıyla yönerge, IP/port  
+      arabirimine göre ana bölümde veya öntanımlı (ilk) eşleşen sanal konak 
+      bölümünde yapılandırılmalıdır.</p>
+    
+    <p>Bu yönergeye aşağıdaki parametrelerden seçilen üç tanesi uygulanabilir.      
+      Belirtilmeyenlerin yerine öntanımlılar uygulanır.</p>
+    
+    <dl>
+      <dt>Strict|Unsafe</dt>
+      <dd>
+        <p>Bu yönerge devreye girmeden önce, Apache HTTP Sunucusunun istek iletisi 
+        ayrıştırıcıları protokolle uyumlu olmayan bir dizi girdi şekline 
+        toleranslıydı. <a href="https://tools.ietf.org/html/rfc7230#section-9.4">RFC 7230 §9.4 İstek bölme</a> ve
+        <a href="https://tools.ietf.org/html/rfc7230#section-9.5">§9.5 Yanıt kaçırma</a> çağrıları uyumsuz istek iletilerinin 
+        kabulündeki olası risklerden yalnızca iki tanesidir.
+        <a href="https://tools.ietf.org/html/rfc7230#section-3.5">RFC 7230 
+        §3.5</a> "İleti Ayrıştırma Sağlamlığı" belirsiz boşlukların kabul ve 
+        istek iletisi biçimleme risklerini tanımlar. Bu yönergenin devreye 
+        girmesini takiben belirtimin tüm imla kurallarına öntanımlı 
+        <code>Strict</code> işlem kipi ve 3.5 bölümünde tavsiye edilen hoşgörüsüz 
+        boşluk uygulanır ve esnekliğe müsamaha edilmez.</p>
 
-    <p>Bu yönerge devreye girmeden önce, Apache HTTP Sunucusunun istek iletisi 
-      ayrıştırıcıları protokolle uyumlu olmayan bir dizi girdi şekline 
-      toleranslıydı. <a href="https://tools.ietf.org/html/rfc7230#section-9.4">RFC 7230 §9.4 İstek bölme</a> ve
-      <a href="https://tools.ietf.org/html/rfc7230#section-9.5">§9.5 Yanıt kaçırma</a> çağrıları uyumsuz istek iletilerinin kabulündeki 
-      olası risklerden yalnızca iki tanesidir.
-      <a href="https://tools.ietf.org/html/rfc7230#section-3.5">RFC 7230 
-      §3.5</a> "İleti Ayrıştırma Sağlamlığı" belirsiz boşlukların kabul ve 
-      istek iletisi biçimleme risklerini tanımlar. Bu yönergenin devreye girmesini 
-      takiben belirtimin tüm imla kurallarına öntanımlı <code>Strict</code> işlem 
-      kipi ve 3.5 bölümünde tavsiye edilen hoşgörüsüz boşluk uygulanır ve esnekliğe 
-      müsamaha edilmez.</p>
-
-    <p>Kullanıcılar, özellikle dışa bakan, herkes tarafından erişilebilen sunucu 
-      konuşlandırmalarında  <code>Unsafe</code> işlem kipine geçiş yapmaya karşı 
-      kesinlikle uyarılır. Eğer bir arayüz hataları izlemek veya bir intranette 
-      çalışan özel hizmet tüketicileri için gerekliyse, kullanıcılar, sadece, 
-      dahili özel ağlarına hizmet etmek üzere yapılandırılmış özel bir sanal konak 
-      üzerinde <code>Unsafe</code> işlem kipine geçiş yapmalıdır.</p>
+        <div class="warning"><h3>Unsafe için güvenlik riskleri</h3>
+          <p>Kullanıcılar, özellikle dışa bakan, herkes tarafından erişilebilen 
+          sunucu konuşlandırmalarında  <code>Unsafe</code> işlem kipine geçiş 
+          yapmaya karşı kesinlikle uyarılır. Eğer bir arayüz hataları izlemek 
+          veya bir intranette çalışan özel hizmet tüketicileri için gerekliyse, 
+          kullanıcılar, sadece, dahili özel ağlarına hizmet etmek üzere 
+          yapılandırılmış özel bir sanal konak üzerinde <code>Unsafe</code> işlem 
+          kipine geçiş yapmalıdır.</p>
+        </div>
+        
+        <div class="example"><h3>Strict kipte HTTP 400 ile sonuçlanan bir istek örneği</h3><p><code>
+          
+          # Eksik CRLF<br />
+          GET / HTTP/1.0\n\n
+        </code></p></div>
+        <div class="warning"><h3>Komut satırı araçları ve CRLF</h3>
+          <p>Bazı araçların CRLF kullanmaya zorlanması gerekir, aksi takdirde httpd 
+          yukarıdaki örnekte belirtildiği gibi bir HTTP 400 yanıtı ile döner. 
+          Örneğin,  <strong>OpenSSL s_client düzgün çalışmak için -crlf 
+          değiştirgesine ihtiyaç duyar</strong>.</p>
+          <p>CRLF yokluğu gibi durumları saptamak için HTTP isteğini görünümlemek 
+          isterseniz <code class="directive"><a href="../mod/mod_dumpio.html#dumpioinput">DumpIOInput</a></code> 
+          yönergesi yardımcı olabilir.</p>
+        </div>
+      </dd>
+      <dt>RegisteredMethods|LenientMethods</dt>
+      <dd>
+        <p><a href="https://tools.ietf.org/html/rfc7231#section-4.1">RFC 7231 
+        §4.1</a> "İstek Yöntemleri" "Genel Bakış" bölümlerinde bir istek 
+        satırında desteklenmeyen bir yöntem saptadığında özgün sunucuların bir 
+        hatayla yanıt vermesini gerekli görmüştür. <code>LenientMethods</code> 
+        seçeneği kullanıldığında olan zaten budur. <code>RegisteredMethods</code> 
+        seçeneğine geçiş yapmak isteyen yöneticiler 
+        <code class="directive">RegisterHttpMethod</code> yönergesini kullanarak standart 
+        olmayan yöntemleri belirlemelidir. Özellikle <code>Unsafe</code> seçeneğine 
+        geçiş yapılacaksa bu yol izlenmelidir.</p>
+      
+        <div class="warning"><h3>İleri Vekil Uyumluluğu</h3>
+          <p>Özgün sunucunun kullandığı yöntemleri vekil sunucu bilemeyeceği için 
+          ileri vekil konaklarda <code>RegisteredMethods</code> seçeneğine geçiş 
+          yapılmamalıdır.</p>
+        </div>
+  
+        <div class="example"><h3>Example of a request leading to HTTP 501 with LenientMethods mode</h3><p><code>
+          
+          # Unknown HTTP method<br />
+          WOW / HTTP/1.0\r\n\r\n<br /><br />
+          # Lowercase HTTP method<br />
+          get / HTTP/1.0\r\n\r\n<br />
+        </code></p></div>
+      </dd>
+      <dt>Allow0.9|Require1.0</dt>
+      <dd>
+        <p><a href="https://tools.ietf.org/html/rfc2616#section-19.6">RFC 2616 
+        §19.6</a> "Önceki Sürümlerle Uyumluluk" bölümünde HTTP sunucularının 
+        eski HTTP/0.9 isteklerini desteklemesi tavsiye edilmektedir. RFC 7230 
+        "HTTP/0.9 isteklerini destekleme beklentisi kaldırılmıştır." cümlesiyle 
+        bunu  geçersiz kılmış ve <a href="https://tools.ietf.org/html/rfc7230#appendix-A">RFC 7230 Ek A</a> bölümünde bununla ilgili yorumlar yer almıştır. 
+        <code>Require1.0</code> seçeneği kullanıcıya öntanımlı 
+        <code>Allow0.9</code> seçeneğinin davranışına verilen desteği kaldırma 
+        imkanını vermektedir.</p>
+      
+        <div class="example"><h3>Require1.0 kipinde HTTP 400 ile sonuçlanan bir istek 
+          örneği</h3><p><code>
+          
+          # Desteklenmeyen HTTP sürümü<br />
+          GET /\r\n\r\n
+        </code></p></div>
+      </dd>
+    </dl>
 
     <p><code class="directive">LogLevel</code> <code>debug</code> seviyesiyle 
       yapılandırılmış <code class="directive">ErrorLog</code> ile kaydedilmiş günlüklerin  
@@ -2075,26 +2166,6 @@ ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"</pre>
       belirlenmesine yardımcı olabilir. Kullanıcılar, beklenmedik bir şekilde 
       reddedilmiş geçersiz istekleri bulmak için erişim günlüklerindeki 400 
       yanıtlarına özellikle dikkat etmelidir.</p>
-
-    <p><a href="https://tools.ietf.org/html/rfc7231#section-4.1">RFC 7231 
-      §4.1</a> "İstek Yöntemleri" "Genel Bakış" bölümlerinde bir istek 
-      satırında desteklenmeyen bir yöntem saptadığında özgün sunucuların bir 
-      hatayla yanıt vermesini gerekli görmüştür. <code>LenientMethods</code> 
-      seçeneği kullanıldığında olan zaten budur. <code>RegisteredMethods</code> 
-      seçeneğine geçiş yapmak isteyen yöneticiler 
-      <code class="directive">RegisterHttpMethod</code> yönergesini kullanarak standart 
-      olmayan yöntemleri belirlemelidir. Özellikle <code>Unsafe</code> seçeneğine 
-      geçiş yapılacaksa bu yol izlenmelidir. Özgün sunucunun kullandığı yöntemleri 
-      vekil sunucu bilemeyeceği için ileri vekil konaklarda 
-      <code>RegisteredMethods</code> seçeneğine geçiş yapılmamalıdır.</p>
-
-    <p><a href="https://tools.ietf.org/html/rfc2616#section-19.6">RFC 2616 
-      §19.6</a> "Önceki Sürümlerle Uyumluluk" bölümünde HTTP sunucularının 
-      eski HTTP/0.9 isteklerini desteklemesi tavsiye edilmektedir. RFC 7230 
-      "HTTP/0.9 isteklerini destekleme beklentisi kaldırılmıştır." cümlesiyle bunu 
-      geçersiz kılmış ve <a href="https://tools.ietf.org/html/rfc7230#appendix-A">RFC 7230 Ek A</a> bölümünde bununla ilgili yorumlar yer almıştır. 
-      <code>Require1.0</code> seçeneği kullanıcıya öntanımlı <code>Allow0.9</code> 
-      seçeneğinin davranışına verilen desteği kaldırma imkanını vermektedir.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -2107,6 +2178,7 @@ takdirde uygulanacak yönergeleri barındırır.</td></tr>
 <tr><th><a href="directive-dict.html#Override">Geçersizleştirme:</a></th><td>All</td></tr>
 <tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
 <tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>İç içe geçmiş koşullar 2.4.26 ve sonrasında değerlendirilmeye alınır</td></tr>
 </table>
     <p><code class="directive">&lt;If&gt;</code> yönergesi bir ifadeyi çalışma
       anında değerlendirir ve ifadenin sonucu doğru olduğu takdirde içerdiği
@@ -2140,6 +2212,7 @@ takdirde uygulanacak yönergeleri barındırır.</td></tr>
     değişkenler ve diğer yanıt başlıkları zaten yorumlanmış olacaklarından bu
     yönerge için kullanılabilir olmayacaktır.
     </div>
+
 
 <h3>Ayrıca bakınız:</h3>
 <ul>
@@ -2218,6 +2291,83 @@ sokulacak yönergeleri sarmalar.</td></tr>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="IfDirective" id="IfDirective">&lt;IfDirective&gt;</a> <a name="ifdirective" id="ifdirective">Yönergesi</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Açıklama:</a></th><td>Belirtilen yönerge adının varlığı veya yokluğuna bağlı olarak çalıştırılacak yönergeleri sarmalar.</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Sözdizimi:</a></th><td><code>&lt;IfDirective [!]<var>yönerge-adı</var>&gt; ...
+    &lt;/IfDirective&gt;</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Bağlam:</a></th><td>sunucu geneli, sanal konak, dizin, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Override">Geçersizleştirme:</a></th><td>All</td></tr>
+<tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
+<tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>2.4.34 ve sonrasında kullanılabilir.</td></tr>
+</table>
+    <p><code>&lt;IfDirective <var>yönerge-adı</var>&gt; 
+    ...&lt;/IfDirective&gt;</code> bölümü içindeki yönergeler 
+    <var>yönerge-adı</var> ile belirtilen yönerge mevcutsa çalıştırılır yoksa 
+    yok sayılır.</p>
+
+    <p><code class="directive">&lt;IfDirective&gt;</code> yönergenide sınama iki türlü yapılır:</p>
+
+    <ul>
+      <li><var>yönerge-adı</var></li>
+
+      <li>!<var>yönerge-adı</var></li>
+    </ul>
+
+    <p>İlk durumda bölüm içinde kalan yönergeler, yönerge başlangıç satırına 
+    belirtilen yönerge işlem sırasında mevcutsa çalıştırılır, değilse 
+    çalıştırılmaz. İkinci durumda ise, bölüm içinde kalan yönergeler, yönerge 
+    başlangıç satırına belirtilen yönerge işlem sırasında mevcut 
+    <strong>değilse</strong> çalıştırılır, mevcutsa çalıştırılmaz.</p>
+
+  <div class="note">Bu yönergeyi kullanma ihtiyacı sadece çok sayıda  
+    <code class="program"><a href="../programs/httpd.html">httpd</a></code> tek bir yapılandırma dosyası ile çalıştırılmak 
+    zorundaysa ortaya çıkar. Böyle bir ihtiyacın olmadığı normal durumlarda 
+    yönergelerin <code class="directive">&lt;IfDirective&gt;</code> bölümlerine 
+    yerleştirlmesine gerek yoktur.</div>
+
+<h3>Ayrıca bakınız:</h3>
+<ul>
+<li><code class="directive"><a href="#ifsection">&lt;IfSection&gt;</a></code></li>
+</ul>
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="IfFile" id="IfFile">&lt;IfFile&gt;</a> <a name="iffile" id="iffile">Yönergesi</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Açıklama:</a></th><td>Başlatma sırasında bir dosyanın varlığı durumunda işleme
+sokulacak yönergeleri sarmalar.</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Sözdizimi:</a></th><td><code>&lt;IfFile [!]<var>dosyaadı</var>&gt; ...
+    &lt;/IfFile&gt;</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Bağlam:</a></th><td>sunucu geneli, sanal konak, dizin, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Override">Geçersizleştirme:</a></th><td>All</td></tr>
+<tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
+<tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>2.4.34 ve sonrsında kullanılabilir.</td></tr>
+</table>
+    <p><code>&lt;IfFile <var>dosyaadı</var>&gt;...&lt;/IfFile&gt;
+    </code> bölümü bir dosyanın diskteki mevcudiyetine bağlı olarak 
+    çalıştırılacak yönergeleri belirtmekte kullanılır.
+    <code class="directive">&lt;IfFile&gt;</code> bölümü içindeki yönergeler 
+    sadece diskte <var>dosyaadı</var> mevcutsa çalıştırılır. <var>dosyaadı</var>
+    mevcut değilse bölüm içindeki yönergeler yok sayılır. <var>dosyaadı</var> 
+    sunucu kök dizinine göreli veya mutlak bir yol olarak belirtilebilir.</p>
+
+    <p><code class="directive">&lt;IfFile&gt;</code> bölüm yönergesindeki 
+    <var>dosyaadı</var>, <code class="directive"><a href="#ifdefine">&lt;IfDefine&gt;</a></code> yönergesindeki <var>sınama</var> değişkenindeki gibi 
+    ele alınır, yani <var>dosyaadı</var> bir ! ile öncelenirse bölüm içindeki 
+    yonergeler dosyanın yokluğu durumunda çalıştırılır. 
+    </p>
+   
+    <p>Göreli bir <var>dosyaadı</var> belirtilmişse sınama <code class="directive"><a href="#serverroot">ServerRoot</a></code> yönergesinde belirtilen dizinde göre 
+    yapılır. <code class="directive">&lt;IfFile&gt;</code> yönergesinin 
+    <code class="directive"><a href="#serverroot">ServerRoot</a></code> yönergesinde önce yer alması 
+    durumunda dosya yolu derleme sırasında kullanılan sunucu köküne veya komut 
+    satırında <code>-d</code> seçeneği ile belirtilen dizine göre sınanır.</p>
+    
+
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="IfModule" id="IfModule">&lt;IfModule&gt;</a> <a name="ifmodule" id="ifmodule">Yönergesi</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Açıklama:</a></th><td>Belli bir modülün varlığına veya yokluğuna göre işleme sokulacak
@@ -2267,6 +2417,63 @@ yönergeleri sarmalar.</td></tr>
       kullanmalısınız. Normal işlemlerde yönergelerin <code class="directive">&lt;IfModule&gt;</code> bölümlerine yerleştirilmeleri
       gerekmez.</div>
 
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="IfSection" id="IfSection">&lt;IfSection&gt;</a> <a name="ifsection" id="ifsection">Yönergesi</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Açıklama:</a></th><td>Belirtilen bölüm adının varlığı veya yokluğuna bağlı olarak çalıştırılacak yönergeleri sarmalar.</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Sözdizimi:</a></th><td><code>&lt;IfSection [!]<var>bölüm-adı</var>&gt; ...
+    &lt;/IfSection&gt;</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Bağlam:</a></th><td>sunucu geneli, sanal konak, dizin, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Override">Geçersizleştirme:</a></th><td>All</td></tr>
+<tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
+<tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>2.4.34 ve sonrasında kullanılabilir.</td></tr>
+</table>
+    <p><code>&lt;IfSection <var>bölüm-adı</var>&gt; 
+    ...&lt;/IfSection&gt;</code> bölümü içindeki yönergeler 
+    <var>bölüm-adı</var> ile belirtilen bölüm mevcutsa çalıştırılır yoksa 
+    yok sayılır. Bir bölüm yönergesi "&lt;" ile öncelenmiş bir yönerge adına 
+    sahip olmalı ve <code class="directive">&lt;VirtualHost&gt;</code> gibi başka 
+    yönergeleri sarmalayan bir yönerge olmalıdır.</p>
+
+    <p><code class="directive">&lt;IfSection&gt;</code> bölümü içindeki 
+    yönergeler sadece <var>sınama</var> doğru ise çalıştırılır, 
+    <var>sınama</var> yanlışsa çalıştırılmaz.</p>
+
+    <p><var>bölüm-adı</var> başında "&lt;" veya sonunda "&gt;" olmaksızın 
+    belirtilmelidir. <code class="directive">&lt;IfSection&gt;</code> 
+    yönergesindeki <var>bölüm-adı</var> iki türlü ele alınır:</p>
+
+    <ul>
+      <li><var>bölüm-adı</var></li>
+      <li>!<var>bölüm-adı</var></li>
+    </ul>
+
+    <p>İlk durumda bölüm içinde kalan yönergeler, yönerge başlangıç satırına 
+    belirtilen bölüm işlem sırasında mevcutsa çalıştırılır, değilse 
+    çalıştırılmaz. İkinci durumda ise, bölüm içinde kalan yönergeler, yönerge 
+    başlangıç satırına belirtilen bölüm işlem sırasında mevcut 
+    <strong>değilse</strong> çalıştırılır, mevcutsa çalıştırılmaz.</p>
+
+    <p>Örnek:</p>
+
+    <pre class="prettyprint lang-config">&lt;IfSection VirtualHost&gt;
+   ...
+&lt;/IfSection&gt;</pre>
+
+    
+    <div class="note">Bu yönergeyi kullanma ihtiyacı sadece çok sayıda  
+    <code class="program"><a href="../programs/httpd.html">httpd</a></code> tek bir yapılandırma dosyası ile (belli bir bölüm 
+    yönergesinin var olup olmamasına bakmaksızın) çalıştırılmak 
+    zorundaysa ortaya çıkar. Böyle bir ihtiyacın olmadığı normal durumlarda 
+    yönergelerin <code class="directive">&lt;IfSection&gt;</code> bölümlerine 
+    yerleştirlmesine gerek yoktur.</div>
+
+<h3>Ayrıca bakınız:</h3>
+<ul>
+<li><code class="directive"><a href="#ifdirective">&lt;IfDirective&gt;</a></code></li>
+</ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="Include" id="Include">Include</a> <a name="include" id="include">Yönergesi</a></h2>
@@ -2344,13 +2551,15 @@ Include conf/vhosts/*.conf</pre>
 <tr><th><a href="directive-dict.html#Context">Bağlam:</a></th><td>sunucu geneli, sanal konak, dizin</td></tr>
 <tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
 <tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>core</td></tr>
-<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>2.3.6 ve sonrasına kullanılabilmektedir.</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>2.3.6 ve sonrasına kullanılabilmektedir. Dosya kalıp karakterleri 
+  içermeyen dosya yollarından mevcut olmayanlar 2.4.30 sürümünden itibaren 
+  sözdizimi hatalarına sebep olmamaktadır.</td></tr>
 </table>
     <p>Bu yönerge, diğer yapılandırma dosyalarının sunucu yapılandırma
       dosyasında içerilmesini sağlar. Çalışması <code class="directive"><a href="#include">Include</a></code> yönergesi ile bir istisna dışında
       aynıdır. Dosya kalıp karakterlerinin hiçbir dosya veya dizinle
-      eşleşmemesi durumunda <code class="directive"><a href="#includeoptional">IncludeOptional</a></code> yönergesi bir hataya sebep olmak yerine
-      bunu sadece yoksayacaktır.</p>
+      eşleşmemesi veya dosya yolunun dosya sisteminde mevcut olmaması durumunda 
+      bir hata oluşmayacak ve bu durum sadece yoksayılacaktır.</p>
 
 <h3>Ayrıca bakınız:</h3>
 <ul>
@@ -2933,7 +3142,7 @@ uygulanır.</td></tr>
       kullanılmalıdır.</p>
 
     <pre class="prettyprint lang-config">&lt;LocationMatch "^/combined/(?&lt;sitename&gt;[^/]+)"&gt;
-    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+    Require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/LocationMatch&gt;</pre>
 
 
@@ -3798,21 +4007,76 @@ davranılır.</td></tr>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="RegexDefaultOptions" id="RegexDefaultOptions">RegexDefaultOptions</a> <a name="regexdefaultoptions" id="regexdefaultoptions">Yönergesi</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Açıklama:</a></th><td>Regex düzenli ifadeleri için öntanımlı/küresel seçenekleri yapılandırır</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Sözdizimi:</a></th><td><code>RegexDefaultOptions [none] [+|-]<var>seçenek</var> [[+|-]<var>seçenek</var>] ...</code></td></tr>
+<tr><th><a href="directive-dict.html#Default">Öntanımlı:</a></th><td><code>RegexDefaultOptions DOLLAR_ENDONLY</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Bağlam:</a></th><td>sunucu geneli</td></tr>
+<tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
+<tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>Sadece Apache 2.4.30 ve sonrasında kullanılabilmektedir.</td></tr>
+</table>
+        <p>Bu yönerge kendisinden sonra kullanılan bütün düzenli ifsdelerin 
+        davranışını etkiler.</p>
+
+        <p>'+' ile öncelenmiş bütün seçenekler önceden atanmış seçeneklere 
+        eklenir.<br />
+        '-' ile öncelenmiş bütün seçenekler önceden atanmış seçeneklerden 
+        çıkarılır.<br />
+        '+' veya '-' ile öncelenmemiş her seçenek önceden atanmış seçenekleri 
+        silerek onların yerini alır.<br />
+        <code>none</code> ile önceden atanmış tüm seçenekler sıfırlanır.</p>
+
+        <p><var>seçenek</var> şunlardan biri olabilir:</p>
+        <dl>
+            <dt><code>ICASE</code></dt>
+            <dd>Harf büyüklüğüne duyarlı eşleşmeler kullanılır.</dd>
+
+            <dt><code>DOTALL</code></dt>
+            <dd>Perl'ün /s seçeneği.</dd>
+
+            <dt><code>DOLLAR_ENDONLY</code></dt>
+            <dd>'$' dizgenin sonu ile eşleşir.</dd>
+            <dd>.</dd>
+        </dl>
+        <pre class="prettyprint lang-config"># 
+RegexDefaultOptions +ICASE +DOLLAR_ENDONLY
+...
+# ICASE seçeneği silinir, diğer seçenekler tutulur:
+RegexDefaultOptions -ICASE
+...
+# Atanmuş seçenekler silinir, DOTALL öntanımlı seçenek yapılır:
+RegexDefaultOptions DOTALL
+...
+# Tüm seçenekler silinir, öntanımlı seçenek kalmaz.
+RegexDefaultOptions none
+...</pre>
+
+    
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="RegisterHttpMethod" id="RegisterHttpMethod">RegisterHttpMethod</a> <a name="registerhttpmethod" id="registerhttpmethod">Yönergesi</a></h2>
 <table class="directive">
-<tr><th><a href="directive-dict.html#Description">Açıklama:</a></th><td>Standart olamayan HTTP yöntemlerini belirler</td></tr>
+<tr><th><a href="directive-dict.html#Description">Açıklama:</a></th><td>Standart olmayan HTTP yöntemlerini devreye alır</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Sözdizimi:</a></th><td><code>RegisterHttpMethod <var>yöntem</var> [<var>yöntem</var> [...]]</code></td></tr>
 <tr><th><a href="directive-dict.html#Context">Bağlam:</a></th><td>sunucu geneli</td></tr>
 <tr><th><a href="directive-dict.html#Status">Durum:</a></th><td>Çekirdek</td></tr>
 <tr><th><a href="directive-dict.html#Module">Modül:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Uyumluluk:</a></th><td>Apache HTTP Sunucusunun 2.4.24 ve sonraki sürümlerinde kullanılabilmektedir.</td></tr>
 </table>
-    <p>İlgili RFClerle uyumlu olmayan HTTP Yöntemleri Apache HTTPD'de isteğin 
-      işlenmesi sırasında  normal olarak reddedilir. Bundan kaçınmak için, uyumsuz 
-      HTTP yöntemlerini modüller destekli hale getirebilir.  
-      <code class="directive">RegisterHttpMethod</code> yönergesi böyle yöntemleri elle 
-      desteklenir yapmaya yarar. Bu tür yöntemler CGI gibi harici işlemlere 
-      aktarılıyorsa bu işlem yararlıdır.</p>
+    <p>Bu yönerge sunucunun standatta bulunmayan ek HTTP yöntemlerini 
+      kullanabilmesini sağlar. Yönergelerde standartta olmayan yöntem isimleri 
+      kullanmak gerektiğinde veya sunucunun modüllere sadece standart yöntemleri 
+      aktaracak şekilde yapılandırıldığı durumlarda bazı standart-dışı 
+      yöntemleri vekil veya CGI betikleriyle aktarmayı mümkün kılmak için bu 
+      gereklidir.</p>
 
+<h3>Ayrıca bakınız:</h3>
+<ul>
+<li><code class="directive"><a href="#httpprotocoloptions">HTTPProtocolOptions</a></code></li>
+<li><code class="directive"><a href="../mod/mod_allowmethods.html#allowmethods">AllowMethods</a></code></li>
+</ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="RLimitCPU" id="RLimitCPU">RLimitCPU</a> <a name="rlimitcpu" id="rlimitcpu">Yönergesi</a></h2>
@@ -4476,8 +4740,8 @@ gerçekleşmesi için sunucunun geçmesini bekleyeceği süre.</td></tr>
       <li>Veriyi istemciye yazarken, gönderme tamponu dolu olduğu takdirde bir
         paket alındısı için beklenecek süre.</li>
 
-      <li><code class="module"><a href="../mod/mod_cgi.html">mod_cgi</a></code> modülünde, bir CGI betiğinden çıktı için
-        beklenecek süre.</li>
+      <li><code class="module"><a href="../mod/mod_cgi.html">mod_cgi</a></code> ve <code class="module"><a href="../mod/mod_cgid.html">mod_cgid</a></code> modülünde, bir CGI 
+        betiğinden belli bir çıktı kümesi için beklenecek süre.</li>
 
       <li><code class="module"><a href="../mod/mod_ext_filter.html">mod_ext_filter</a></code> modülünde, bir süzme işleminden çıktı
         almak için beklenecek süre.</li>
@@ -4542,6 +4806,11 @@ gerçekleşmesi için sunucunun geçmesini bekleyeceği süre.</td></tr>
       konaklar haricinde, değişiklikleri kendisinden sonraki tüm yapılandırma
       yönergelerinde görünür kılar.</p>
 
+<h3>Ayrıca bakınız:</h3>
+<ul>
+<li><code class="directive"><a href="#define">Define</a></code></li>
+<li><code class="directive"><a href="#ifdefine">IfDefine</a></code></li>
+</ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="UseCanonicalName" id="UseCanonicalName">UseCanonicalName</a> <a name="usecanonicalname" id="usecanonicalname">Yönergesi</a></h2>
@@ -4797,7 +5066,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/core.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

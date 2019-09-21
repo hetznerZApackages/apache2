@@ -1030,7 +1030,7 @@ static int read_type_map(apr_file_t **map, negotiation_state *neg,
                     *eol = '\0';
                 if ((mime_info.body = get_body(buffer, &len, tag, *map)) < 0) {
                     ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00685)
-                                  "Syntax error in type map, no end tag '%s'"
+                                  "Syntax error in type map, no end tag '%s' "
                                   "found in %s for Body: content.",
                                   tag, r->filename);
                      break;
@@ -1332,14 +1332,19 @@ static int mime_match(accept_rec *accept_r, var_rec *avail)
     const char *avail_type = avail->mime_type;
     int len = strlen(accept_type);
 
-    if (accept_type[0] == '*') {        /* Anything matches star/star */
+    if ((len == 1 && accept_type[0] == '*')
+            || (len == 3 && !strncmp(accept_type, "*/*", 3))) {
+        /* Anything matches star or star/star */
         if (avail->mime_stars < 1) {
             avail->mime_stars = 1;
         }
         return 1;
     }
-    else if ((accept_type[len - 1] == '*') &&
-             !strncmp(accept_type, avail_type, len - 2)) {
+    else if (len > 2 && accept_type[len - 2] == '/'
+                     && accept_type[len - 1] == '*'
+                     && !strncmp(accept_type, avail_type, len - 2)
+                     && avail_type[len - 2] == '/') {
+        /* Any subtype matches for type/star */
         if (avail->mime_stars < 2) {
             avail->mime_stars = 2;
         }
@@ -1454,7 +1459,7 @@ static int find_lang_index(apr_array_header_t *accept_langs, char *lang)
     alang = (const char **) accept_langs->elts;
 
     for (i = 0; i < accept_langs->nelts; ++i) {
-        if (!strncmp(lang, *alang, strlen(*alang))) {
+        if (!ap_cstr_casecmpn(lang, *alang, strlen(*alang))) {
             return i;
         }
         alang += (accept_langs->elt_size / sizeof(char*));
@@ -1544,9 +1549,6 @@ static void set_language_quality(negotiation_state *neg, var_rec *variant)
          */
         if (!neg->dont_fiddle_headers) {
             variant->lang_quality = neg->default_lang_quality;
-        }
-        if (!neg->accept_langs) {
-            return;             /* no accept-language header */
         }
         return;
     }

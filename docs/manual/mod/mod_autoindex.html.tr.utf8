@@ -74,7 +74,7 @@ yaptığı gibi dizin içeriğini listeler.</td></tr>
       olanı küçükten büyüğe sıralamada 1011 baytlıktan önce
       gösterilecektir.</p>
 </div>
-<div id="quickview"><h3>Konular</h3>
+<div id="quickview"><a href="https://www.apache.org/foundation/contributing.html" class="badge"><img src="https://www.apache.org/images/SupportApache-small.png" alt="Support Apache!" /></a><h3>Konular</h3>
 <ul id="topics">
 <li><img alt="" src="../images/down.gif" /> <a href="#query">Sütun Sıralamada Sorgu Seçenekleri</a></li>
 </ul><h3 class="directives">Yönergeler</h3>
@@ -830,6 +830,16 @@ belirler.</td></tr>
       <pre class="prettyprint lang-config">IndexOptions Type=text/plain</pre>
 
       </dd>
+      
+      <dt><a name="indexoptions.useolddateformat" id="indexoptions.useolddateformat">UseOldDateFormat</a>
+      (<em>Apache HTTP Sunucusu 2.4.26 ve sonrasında</em>)</dt>
+
+      <dd><code>Last Modified</code> alanı tarafından kullanılan tarih biçemi 
+        <code>"%Y-%m-%d %H:%M"</code> dikkatsizlik sonucu 2.4.0 sürümünde 
+        <code>"%d-%b-%Y %H:%M"</code> olarak değişmiştir. Bu seçenekle tarih 
+        biçemini 2.2 ve öncesindeki biçemiyle kullanabilirsiniz.</dd>
+
+      
       <dt><a name="indexoptions.versionsort" id="indexoptions.versionsort"><code>VersionSort</code></a>
       </dt>
 
@@ -1057,7 +1067,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_autoindex.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -1,11 +1,12 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,7 +38,6 @@
  * of our own to disble those.
  */
 
-struct apr_thread_cond_t;
 struct h2_bucket_beam;
 struct h2_conn;
 struct h2_mplx;
@@ -45,6 +45,7 @@ struct h2_task;
 struct h2_req_engine;
 struct h2_request;
 struct h2_response_parser;
+struct h2_stream;
 struct h2_worker;
 
 typedef struct h2_task h2_task;
@@ -56,6 +57,7 @@ struct h2_task {
     apr_pool_t *pool;
     
     const struct h2_request *request;
+    apr_interval_time_t timeout;
     int rst_error;                   /* h2 related stream abort error */
     
     struct {
@@ -72,10 +74,10 @@ struct h2_task {
         unsigned int copy_files : 1;
         struct h2_response_parser *rparser;
         apr_bucket_brigade *bb;
+        apr_size_t max_buffer;
     } output;
     
     struct h2_mplx *mplx;
-    struct apr_thread_cond_t *cond;
     
     unsigned int filters_set    : 1;
     unsigned int frozen         : 1;
@@ -91,11 +93,11 @@ struct h2_task {
     struct h2_req_engine *assigned; /* engine that task has been assigned to */
 };
 
-h2_task *h2_task_create(conn_rec *c, int stream_id, 
-                        const struct h2_request *req, 
+h2_task *h2_task_create(conn_rec *slave, int stream_id,
+                        const h2_request *req, struct h2_mplx *m, 
                         struct h2_bucket_beam *input, 
-                        struct h2_bucket_beam *output, 
-                        struct h2_mplx *mplx);
+                        apr_interval_time_t timeout,
+                        apr_size_t output_max_mem);
 
 void h2_task_destroy(h2_task *task);
 

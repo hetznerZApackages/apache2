@@ -291,6 +291,9 @@ Package=<4>
     Project_Dep_Name mod_proxy_scgi
     End Project Dependency
     Begin Project Dependency
+    Project_Dep_Name mod_proxy_uwsgi
+    End Project Dependency
+    Begin Project Dependency
     Project_Dep_Name mod_proxy_wstunnel
     End Project Dependency
     Begin Project Dependency
@@ -446,24 +449,6 @@ Package=<5>
 
 Package=<4>
 {{{
-    Begin Project Dependency
-    Project_Dep_Name expat_static
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "apr_dbd_freetds"=".\srclib\apr\dbd\apr_dbd_freetds.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name libapr
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -588,30 +573,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "expat"=".\srclib\expat\lib\expat.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "expat_static"=".\srclib\expat\lib\expat_static.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
 Project: "fcgistarter"=.\support\fcgistarter.dsp - Package Owner=<4>
 
 Package=<5>
@@ -725,9 +686,6 @@ Package=<5>
 
 Package=<4>
 {{{
-    Begin Project Dependency
-    Project_Dep_Name expat
-    End Project Dependency
 }}}
 
 ###############################################################################
@@ -1226,6 +1184,24 @@ Package=<4>
 ###############################################################################
 
 Project: "mod_autoindex"=.\modules\generators\mod_autoindex.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "mod_brotli"=.\modules\filters\mod_brotli.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -2113,6 +2089,24 @@ Package=<4>
 
 ###############################################################################
 
+Project: "mod_md"=.\modules\md\mod_md.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "mod_mime"=.\modules\http\mod_mime.dsp - Package Owner=<4>
 
 Package=<5>
@@ -2332,7 +2326,6 @@ Package=<4>
 }}}
 
 ###############################################################################
-###############################################################################
 
 Project: "mod_proxy_html"=.\modules\filters\mod_proxy_html.dsp - Package Owner=<4>
 
@@ -2416,6 +2409,26 @@ Package=<4>
     End Project Dependency
 }}}
 
+###############################################################################
+
+Project: "mod_proxy_uwsgi"=.\modules\proxy\mod_proxy_uwsgi.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name mod_proxy
+    End Project Dependency
+}}}
 
 ###############################################################################
 

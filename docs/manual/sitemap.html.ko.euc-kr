@@ -193,6 +193,7 @@
 <li><a href="mod/mod_authz_owner.html">아파치 모듈 mod_authz_owner</a></li>
 <li><a href="mod/mod_authz_user.html">아파치 모듈 mod_authz_user</a></li>
 <li><a href="mod/mod_autoindex.html">아파치 모듈 mod_autoindex</a></li>
+<li><a href="mod/mod_brotli.html">아파치 모듈 mod_brotli</a></li>
 <li><a href="mod/mod_buffer.html">아파치 모듈 mod_buffer</a></li>
 <li><a href="mod/mod_cache.html">아파치 모듈 mod_cache</a></li>
 <li><a href="mod/mod_cache_disk.html">아파치 모듈 mod_cache_disk</a></li>
@@ -237,6 +238,7 @@
 <li><a href="mod/mod_logio.html">아파치 모듈 mod_logio</a></li>
 <li><a href="mod/mod_lua.html">아파치 모듈 mod_lua</a></li>
 <li><a href="mod/mod_macro.html">아파치 모듈 mod_macro</a></li>
+<li><a href="mod/mod_md.html">아파치 모듈 mod_md</a></li>
 <li><a href="mod/mod_mime.html">아파치 모듈 mod_mime</a></li>
 <li><a href="mod/mod_mime_magic.html">아파치 모듈 mod_mime_magic</a></li>
 <li><a href="mod/mod_negotiation.html">아파치 모듈 mod_negotiation</a></li>
@@ -255,6 +257,7 @@
 <li><a href="mod/mod_proxy_http.html">아파치 모듈 mod_proxy_http</a></li>
 <li><a href="mod/mod_proxy_http2.html">아파치 모듈 mod_proxy_http2</a></li>
 <li><a href="mod/mod_proxy_scgi.html">아파치 모듈 mod_proxy_scgi</a></li>
+<li><a href="mod/mod_proxy_uwsgi.html">아파치 모듈 mod_proxy_uwsgi</a></li>
 <li><a href="mod/mod_proxy_wstunnel.html">아파치 모듈 mod_proxy_wstunnel</a></li>
 <li><a href="mod/mod_ratelimit.html">아파치 모듈 mod_ratelimit</a></li>
 <li><a href="mod/mod_reflector.html">아파치 모듈 mod_reflector</a></li>
@@ -336,7 +339,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/sitemap.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">모듈</a> | <a href="./mod/directives.html">지시어들</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="./glossary.html">용어</a> | <a href="./sitemap.html">사이트맵</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

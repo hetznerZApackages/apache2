@@ -597,8 +597,8 @@ AP_DECLARE(void) ap_no2slash(char *name)
  * MODIFIED FOR HAVE_DRIVE_LETTERS and NETWARE environments,
  * so that if n == 0, "/" is returned in d with n == 1
  * and s == "e:/test.html", "e:/" is returned in d
- * *** See also directory_walk in modules/http/http_request.c
-
+ * *** See also ap_directory_walk in server/request.c
+ *
  * examples:
  *    /a/b, 0  ==> /  (true for all platforms)
  *    /a/b, 1  ==> /
@@ -1679,10 +1679,8 @@ AP_DECLARE(int) ap_find_token(apr_pool_t *p, const char *line, const char *tok)
 
     s = (const unsigned char *)line;
     for (;;) {
-        /* find start of token, skip all stop characters, note NUL
-         * isn't a token stop, so we don't need to test for it
-         */
-        while (TEST_CHAR(*s, T_HTTP_TOKEN_STOP)) {
+        /* find start of token, skip all stop characters */
+        while (*s && TEST_CHAR(*s, T_HTTP_TOKEN_STOP)) {
             ++s;
         }
         if (!*s) {
@@ -2665,9 +2663,7 @@ AP_DECLARE(int) ap_parse_form_data(request_rec *r, ap_filter_t *f,
     ap_form_type_t state = FORM_NAME, percent = FORM_NORMAL;
     ap_form_pair_t *pair = NULL;
     apr_array_header_t *pairs = apr_array_make(r->pool, 4, sizeof(ap_form_pair_t));
-
-    char hi = 0;
-    char low = 0;
+    char escaped_char[2] = { 0 };
 
     *ptr = pairs;
 
@@ -2734,30 +2730,13 @@ AP_DECLARE(int) ap_parse_form_data(request_rec *r, ap_filter_t *f,
                     continue;
                 }
                 if (FORM_PERCENTA == percent) {
-                    if (c >= 'a') {
-                        hi = c - 'a' + 10;
-                    }
-                    else if (c >= 'A') {
-                        hi = c - 'A' + 10;
-                    }
-                    else if (c >= '0') {
-                        hi = c - '0';
-                    }
-                    hi = hi << 4;
+                    escaped_char[0] = c;
                     percent = FORM_PERCENTB;
                     continue;
                 }
                 if (FORM_PERCENTB == percent) {
-                    if (c >= 'a') {
-                        low = c - 'a' + 10;
-                    }
-                    else if (c >= 'A') {
-                        low = c - 'A' + 10;
-                    }
-                    else if (c >= '0') {
-                        low = c - '0';
-                    }
-                    c = low | hi;
+                    escaped_char[1] = c;
+                    c = x2c(escaped_char);
                     percent = FORM_NORMAL;
                 }
                 switch (state) {

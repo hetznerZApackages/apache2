@@ -1,18 +1,19 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include <assert.h>
 #include <stdio.h>
 
@@ -31,6 +32,12 @@
 #include "h2_request.h"
 #include "h2_headers.h"
 
+
+static int is_unsafe(server_rec *s) 
+{
+    core_server_config *conf = ap_get_core_module_config(s->module_config);
+    return (conf->http_conformance == AP_HTTP_CONFORMANCE_UNSAFE);
+}
 
 typedef struct {
     apr_bucket_refcount refcount;
@@ -104,13 +111,14 @@ apr_bucket *h2_bucket_headers_beam(struct h2_bucket_beam *beam,
 
 
 h2_headers *h2_headers_create(int status, apr_table_t *headers_in, 
-                                apr_table_t *notes, apr_pool_t *pool)
+                                apr_table_t *notes, apr_off_t raw_bytes,
+                                apr_pool_t *pool)
 {
     h2_headers *headers = apr_pcalloc(pool, sizeof(h2_headers));
     headers->status    = status;
-    headers->headers   = (headers_in? apr_table_copy(pool, headers_in)
+    headers->headers   = (headers_in? apr_table_clone(pool, headers_in)
                            : apr_table_make(pool, 5));
-    headers->notes     = (notes? apr_table_copy(pool, notes)
+    headers->notes     = (notes? apr_table_clone(pool, notes)
                            : apr_table_make(pool, 5));
     return headers;
 }
@@ -118,7 +126,7 @@ h2_headers *h2_headers_create(int status, apr_table_t *headers_in,
 h2_headers *h2_headers_rcreate(request_rec *r, int status,
                                  apr_table_t *header, apr_pool_t *pool)
 {
-    h2_headers *headers = h2_headers_create(status, header, r->notes, pool);
+    h2_headers *headers = h2_headers_create(status, header, r->notes, 0, pool);
     if (headers->status == HTTP_FORBIDDEN) {
         const char *cause = apr_table_get(r->notes, "ssl-renegotiate-forbidden");
         if (cause) {
@@ -132,7 +140,16 @@ h2_headers *h2_headers_rcreate(request_rec *r, int status,
             headers->status = H2_ERR_HTTP_1_1_REQUIRED;
         }
     }
+    if (is_unsafe(r->server)) {
+        apr_table_setn(headers->notes, H2_HDR_CONFORMANCE, 
+                       H2_HDR_CONFORMANCE_UNSAFE);
+    }
     return headers;
+}
+
+h2_headers *h2_headers_copy(apr_pool_t *pool, h2_headers *h)
+{
+    return h2_headers_create(h->status, h->headers, h->notes, h->raw_bytes, pool);
 }
 
 h2_headers *h2_headers_die(apr_status_t type,
