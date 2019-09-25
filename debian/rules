@@ -8,25 +8,24 @@ DEB_BUILD_ARCH_OS    ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH_OS)
 
 export DEB_BUILD_MAINT_OPTIONS=hardening=+bindnow
 include /usr/share/dpkg/buildflags.mk
+include /usr/share/dpkg/architecture.mk
+include /usr/share/dpkg/pkg-info.mk
 
 LSB_RELEASE := $(shell lsb_release -i -s)
-SERVER_VERSION := $(shell dpkg-parsechangelog | perl -ne 'print $$1 if m/Version:\s*([\d\.]+)/')
-DEBIAN_VERSION := $(shell dpkg-parsechangelog | perl -ne 'print $$1 if m/Version:\s*(.+)/')
 BUILD_DATETIME := $(shell date -u --date="`dpkg-parsechangelog -S Date`" +%FT%T)
 MODULE_DIR := /usr/lib/apache2/modules/
-API = $(shell perl -ne 'print $$1 if m/define\s+MODULE_MAGIC_NUMBER_MAJOR\s+?(.*)$$/' < include/ap_mmn.h)
-AP2_CFLAGS = -pipe -Werror=implicit-function-declaration $(CFLAGS)
+API := $(shell perl -ne 'print $$1 if m/define\s+MODULE_MAGIC_NUMBER_MAJOR\s+?(.*)$$/' < include/ap_mmn.h)
+OPENSSL := openssl1.1
+AP2_CFLAGS = -pipe $(CFLAGS)
 AP2_LDFLAGS = -Wl,--as-needed $(LDFLAGS)
 AP2_CPPFLAGS = -DPLATFORM='\"$(LSB_RELEASE)\"' -DBUILD_DATETIME='\"$(BUILD_DATETIME)\"' $(CPPFLAGS)
 AP2_LTFLAGS = --no-silent
-DEB_HOST_GNU_TYPE := $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
-DEB_BUILD_GNU_TYPE := $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
 support/suexec-custom.c: support/suexec.c debian/patches/suexec-custom.patch
 	cp support/suexec.c support/suexec-custom.c
 	patch -p1 -i debian/patches/suexec-custom.patch
 
-prebuild-checks:
+prebuild-checks-stamp:
 	ERRS="" ;\
 	for a in $$(find debian/config-dir/ -type f) ; do \
 		t="$$a.$$$$" ;\
@@ -44,6 +43,7 @@ prebuild-checks:
 		echo "ERROR: index.html's md5 is missing in postrm!" ;\
 		false ; \
 	fi
+	touch $@
 
 debian/fixup_conffiles.tgz: \
     debian/config-dir/sites-available/000-default.conf \
@@ -70,21 +70,23 @@ debian/fixup_conffiles.b64: debian/fixup_conffiles.tgz
 debian/apache2.preinst: debian/apache2.preinst.in debian/fixup_conffiles.b64 debian/create_preinst
 	debian/create_preinst
 
-clean-config-vars:
-	# Clean up config_vars.mk
-	# FIXME: Maybe someone could document here why we actually need to
-	# cleanup some stuff here
+clean-config-vars-stamp: debian/tmp/usr/share/apache2/build/config_vars.mk debian/clean_config_vars
+	# Clean up config_vars.mk so that flags that are only intended for the
+	# compilation of apache2 itself are not used by apxs for compiling
+	# modules.
 	perl ./debian/clean_config_vars '$(AP2_CFLAGS)' '$(AP2_CPPFLAGS)' '$(AP2_LDFLAGS)'
+	touch $@
 
 %: %.in
-	sed 's#__SERVER_VERSION__#$(SERVER_VERSION)#; s#__MODULE_DIR__#$(MODULE_DIR)#; s#__API__#$(API)#;' $< > $@
+	sed 's#__SERVER_VERSION__#$(DEB_VERSION_EPOCH_UPSTREAM)#; s#__MODULE_DIR__#$(MODULE_DIR)#; s#__API__#$(API)#; s#__OPENSSL__#$(OPENSSL)#;' $< > $@
 	chmod `/usr/bin/stat -c '%a' "$<"` $@
 
-prepare-scripts: debian/a2query debian/debhelper/dh_apache2
-	(grep -s -v apache2:API debian/apache2-bin.substvars; echo apache2:API=apache2-api-$(API)) > debian/apache2-bin.substvars.new
+substvars-stamp: debian/rules include/ap_mmn.h
+	(grep -s -v apache2:API debian/apache2-bin.substvars; echo "apache2:API=apache2-api-$(API), apache2-api-$(API)-$(OPENSSL)") > debian/apache2-bin.substvars.new
 	mv debian/apache2-bin.substvars.new debian/apache2-bin.substvars
+	touch $@
 
-generate-maintainer-scripts: debian/apache2.preinst
+suexec-scripts-stamp: $(wildcard debian/debian/apache2-suexec.*.in)
 	set -e ; \
 	for type in custom pristine ; do \
 		for f in postinst preinst prerm links dirs lintian-overrides postrm; do \
@@ -94,11 +96,13 @@ generate-maintainer-scripts: debian/apache2.preinst
 			fi ;\
 		done ;\
 	done
+	touch $@
 
 clean build build-arch build-indep binary binary-arch binary-indep: %:
-	dh $@ --parallel --with autotools_dev,systemd
+	dh $@ --with systemd
 
-override_dh_auto_configure: generate-maintainer-scripts prebuild-checks support/suexec-custom.c
+override_dh_auto_configure: configure-stamp
+configure-stamp: prebuild-checks-stamp support/suexec-custom.c
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--enable-layout=Debian --enable-so --with-program-name=apache2 \
 		--enable-suexec --with-suexec-caller=www-data \
@@ -109,11 +113,11 @@ override_dh_auto_configure: generate-maintainer-scripts prebuild-checks support/
 		--with-pcre=yes \
 		--enable-pie \
 		--enable-mpms-shared=all \
-		--enable-mods-shared="all cgi ident authnz_fcgi imagemap cern_meta proxy_fdpass proxy_http2 bucketeer case_filter case_filter_in" \
+		--enable-mods-shared="all brotli cgi ident authnz_fcgi imagemap cern_meta proxy_fdpass proxy_http2 bucketeer case_filter case_filter_in" \
 		--enable-mods-static="unixd logio watchdog version" \
 		CFLAGS="$(AP2_CFLAGS)" CPPFLAGS="$(AP2_CPPFLAGS)" LDFLAGS="$(AP2_LDFLAGS)" \
 		LTFLAGS="$(AP2_LTFLAGS)" SHELL=/bin/bash
-
+	touch $@
 
 debian/config-dir/apache2.conf: debian/config-dir/apache2.conf.in
 	@# Sanity check that the marker is actually there
@@ -128,7 +132,13 @@ else
 	perl -p -i -e 's,___MUTEX___,,' < $< > $@
 endif
 
-override_dh_install: clean-config-vars prepare-scripts debian/config-dir/apache2.conf
+override_dh_install: clean-config-vars-stamp \
+		     substvars-stamp \
+		     debian/config-dir/apache2.conf \
+		     debian/a2query \
+		     debian/debhelper/dh_apache2 \
+		     debian/apache2.preinst \
+		     suexec-scripts-stamp
 	# don't install mod_ssl_openssl.h in apache2-dev
 	dh_install --list-missing -papache2-dev -Xopenssl
 	dh_install --list-missing --remaining-packages
@@ -162,12 +172,11 @@ override_dh_systemd_enable:
 	dh_systemd_enable -papache2 --name=apache-htcacheclean@ apache-htcacheclean@.service
 
 override_dh_installdocs-indep:
-	# TODO: So, did anyone check convert_docs needs an update? ;)
 	perl debian/convert_docs debian/apache2-doc/usr/share/doc/apache2-doc/manual
 	dh_installdocs -i
 
 override_dh_installdocs-arch:
-	dh_installdocs --link-doc=apache2 -papache2 -papache2-dbg
+	dh_installdocs --link-doc=apache2 -papache2 -plibapache2-mod-md -plibapache2-mod-proxy-uwsgi
 	dh_installdocs --link-doc=apache2-dev -papache2-ssl-dev
 	dh_installdocs -a
 
@@ -183,13 +192,9 @@ override_dh_installman:
 	dh_installman
 
 override_dh_strip:
-	dh_strip --dbg-package=apache2-dbg
+	dh_strip --dbgsym-migration='apache2-dbg (<< 2.4.37-2~)'
 
 override_dh_auto_install:
 	dh_auto_install -- -j1
 
-override_dh_builddeb:
-	dh_builddeb -- -Zxz
-
-.PHONY: generate-maintainer-scripts clean-config-vars prepare-scripts prebuild-checks
 .PHONY: clean build build-arch build-indep binary binary-arch binary-indep

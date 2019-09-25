@@ -48,9 +48,9 @@ my @test_cases = (
 );
 
 my @todo;
-if (!have_min_apache_version('2.5')) {
+if (!have_min_apache_version('2.4.24')) {
    # r1426827
-   push @todo, 32, 35, 56, 57, 59, 60, 80, 81, 83, 84;
+   push @todo, 32, 35, 56, 59, 80, 83;
 }
 if (!have_min_apache_version('2.4')) {
    # r1147614, PR 26005

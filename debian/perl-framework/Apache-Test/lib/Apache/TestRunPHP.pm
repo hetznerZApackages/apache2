@@ -234,7 +234,7 @@ what this means, but it isn't important to understand the gory details.
 instead, it is sufficient to understand that when C<Apache::Test> calls
 C<bar.php> it feeds the results directly to C<Test::Harness>, a module
 that comes with every Perl installation, and C<Test::Harness> expects
-what it receives to be formated in a very specific way.  by itself, all
+what it receives to be formatted in a very specific way.  by itself, all
 of this is pretty useless, so C<Apache::Test> provides PHP testers with
 something much better.  here is a much better example:
 

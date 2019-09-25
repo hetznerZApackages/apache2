@@ -5,7 +5,7 @@ bug report.
 
 In case of a crash, do the following:
 
-1) Install the packages apache2-dbg libapr1-dbg libaprutil1-dbg gdb. 
+1) Install the packages apache2-bin-dbgsym libapr1-dbgsym libaprutil1-dbgsym gdb. 
 
 2) Add "CoreDumpDirectory /var/cache/apache2/core" to your apache configuration.
 
