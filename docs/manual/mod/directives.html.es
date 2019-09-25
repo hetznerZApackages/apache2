@@ -7,7 +7,7 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>Índice de Directivas - Servidor Apache HTTP Versión 2.4</title>
+<title>Índice de Directivas - Servidor HTTP Apache Versión 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
@@ -158,6 +158,11 @@
 <li><a href="mod_proxy.html#balancerinherit">BalancerInherit</a></li>
 <li><a href="mod_proxy.html#balancermember">BalancerMember</a></li>
 <li><a href="mod_proxy.html#balancerpersist">BalancerPersist</a></li>
+<li><a href="mod_brotli.html#brotlialteretag">BrotliAlterETag</a></li>
+<li><a href="mod_brotli.html#brotlicompressionmaxinputblock">BrotliCompressionMaxInputBlock</a></li>
+<li><a href="mod_brotli.html#brotlicompressionquality">BrotliCompressionQuality</a></li>
+<li><a href="mod_brotli.html#brotlicompressionwindow">BrotliCompressionWindow</a></li>
+<li><a href="mod_brotli.html#brotlifilternote">BrotliFilterNote</a></li>
 <li><a href="mod_setenvif.html#browsermatch">BrowserMatch</a></li>
 <li><a href="mod_setenvif.html#browsermatchnocase">BrowserMatchNoCase</a></li>
 <li><a href="mod_log_config.html#bufferedlogs">BufferedLogs</a></li>
@@ -300,7 +305,6 @@
 <li><a href="mod_http2.html#h2pushpriority">H2PushPriority</a></li>
 <li><a href="mod_http2.html#h2pushresource">H2PushResource</a></li>
 <li><a href="mod_http2.html#h2serializeheaders">H2SerializeHeaders</a></li>
-<li><a href="mod_http2.html#h2sessionextrafiles">H2SessionExtraFiles</a></li>
 <li><a href="mod_http2.html#h2streammaxmemsize">H2StreamMaxMemSize</a></li>
 <li><a href="mod_http2.html#h2tlscooldownsecs">H2TLSCoolDownSecs</a></li>
 <li><a href="mod_http2.html#h2tlswarmupsize">H2TLSWarmUpSize</a></li>
@@ -319,7 +323,10 @@
 <li><a href="mod_ident.html#identitychecktimeout">IdentityCheckTimeout</a></li>
 <li><a href="core.html#if">&lt;If&gt;</a></li>
 <li><a href="core.html#ifdefine">&lt;IfDefine&gt;</a></li>
+<li><a href="core.html#ifdirective">&lt;IfDirective&gt;</a></li>
+<li><a href="core.html#iffile">&lt;IfFile&gt;</a></li>
 <li><a href="core.html#ifmodule">&lt;IfModule&gt;</a></li>
+<li><a href="core.html#ifsection">&lt;IfSection&gt;</a></li>
 <li><a href="mod_version.html#ifversion">&lt;IfVersion&gt;</a></li>
 <li><a href="mod_imagemap.html#imapbase">ImapBase</a></li>
 <li><a href="mod_imagemap.html#imapdefault">ImapDefault</a></li>
@@ -411,6 +418,24 @@
 <li><a href="prefork.html#maxspareservers">MaxSpareServers</a></li>
 <li><a href="mpm_common.html#maxsparethreads">MaxSpareThreads</a></li>
 <li><a href="mpm_netware.html#maxthreads">MaxThreads</a></li>
+<li><a href="mod_md.html#mdbaseserver">MDBaseServer</a></li>
+<li><a href="mod_md.html#mdcachallenges">MDCAChallenges</a></li>
+<li><a href="mod_md.html#mdcertificateagreement">MDCertificateAgreement</a></li>
+<li><a href="mod_md.html#mdcertificateauthority">MDCertificateAuthority</a></li>
+<li><a href="mod_md.html#mdcertificateprotocol">MDCertificateProtocol</a></li>
+<li><a href="mod_md.html#mddrivemode">MDDriveMode</a></li>
+<li><a href="mod_md.html#mdhttpproxy">MDHttpProxy</a></li>
+<li><a href="mod_md.html#mdmember">MDMember</a></li>
+<li><a href="mod_md.html#mdmembers">MDMembers</a></li>
+<li><a href="mod_md.html#mdmuststaple">MDMustStaple</a></li>
+<li><a href="mod_md.html#mdnotifycmd">MDNotifyCmd</a></li>
+<li><a href="mod_md.html#mdomain">MDomain</a></li>
+<li><a href="mod_md.html#mdomainset">&lt;MDomainSet&gt;</a></li>
+<li><a href="mod_md.html#mdportmap">MDPortMap</a></li>
+<li><a href="mod_md.html#mdprivatekeys">MDPrivateKeys</a></li>
+<li><a href="mod_md.html#mdrenewwindow">MDRenewWindow</a></li>
+<li><a href="mod_md.html#mdrequirehttps">MDRequireHttps</a></li>
+<li><a href="mod_md.html#mdstoredir">MDStoreDir</a></li>
 <li><a href="mod_socache_memcache.html#memcacheconnttl">MemcacheConnTTL</a></li>
 <li><a href="core.html#mergetrailers">MergeTrailers</a></li>
 <li><a href="mod_cern_meta.html#metadir">MetaDir</a></li>
@@ -447,6 +472,8 @@
 <li><a href="mod_proxy_express.html#proxyexpressdbmfile">ProxyExpressDBMFile</a></li>
 <li><a href="mod_proxy_express.html#proxyexpressdbmtype">ProxyExpressDBMType</a></li>
 <li><a href="mod_proxy_express.html#proxyexpressenable">ProxyExpressEnable</a></li>
+<li><a href="mod_proxy_fcgi.html#proxyfcgibackendtype">ProxyFCGIBackendType</a></li>
+<li><a href="mod_proxy_fcgi.html#proxyfcgisetenvif">ProxyFCGISetEnvIf</a></li>
 <li><a href="mod_proxy_ftp.html#proxyftpdircharset">ProxyFtpDirCharset</a></li>
 <li><a href="mod_proxy_ftp.html#proxyftpescapewildcards">ProxyFtpEscapeWildcards</a></li>
 <li><a href="mod_proxy_ftp.html#proxyftplistonwildcard">ProxyFtpListOnWildcard</a></li>
@@ -495,11 +522,14 @@
 <li><a href="mod_alias.html#redirectpermanent">RedirectPermanent</a></li>
 <li><a href="mod_alias.html#redirecttemp">RedirectTemp</a></li>
 <li><a href="mod_reflector.html#reflectorheader">ReflectorHeader</a></li>
+<li><a href="core.html#regexdefaultoptions">RegexDefaultOptions</a></li>
 <li><a href="core.html#registerhttpmethod">RegisterHttpMethod</a></li>
 <li><a href="mod_remoteip.html#remoteipheader">RemoteIPHeader</a></li>
 <li><a href="mod_remoteip.html#remoteipinternalproxy">RemoteIPInternalProxy</a></li>
 <li><a href="mod_remoteip.html#remoteipinternalproxylist">RemoteIPInternalProxyList</a></li>
 <li><a href="mod_remoteip.html#remoteipproxiesheader">RemoteIPProxiesHeader</a></li>
+<li><a href="mod_remoteip.html#remoteipproxyprotocol">RemoteIPProxyProtocol</a></li>
+<li><a href="mod_remoteip.html#remoteipproxyprotocolexceptions">RemoteIPProxyProtocolExceptions</a></li>
 <li><a href="mod_remoteip.html#remoteiptrustedproxy">RemoteIPTrustedProxy</a></li>
 <li><a href="mod_remoteip.html#remoteiptrustedproxylist">RemoteIPTrustedProxyList</a></li>
 <li><a href="mod_mime.html#removecharset">RemoveCharset</a></li>
@@ -600,8 +630,10 @@
 <li><a href="mod_ssl.html#sslinsecurerenegotiation">SSLInsecureRenegotiation</a></li>
 <li><a href="mod_ssl.html#sslocspdefaultresponder">SSLOCSPDefaultResponder</a></li>
 <li><a href="mod_ssl.html#sslocspenable">SSLOCSPEnable</a></li>
+<li><a href="mod_ssl.html#sslocspnoverify">SSLOCSPNoverify</a></li>
 <li><a href="mod_ssl.html#sslocspoverrideresponder">SSLOCSPOverrideResponder</a></li>
 <li><a href="mod_ssl.html#sslocspproxyurl">SSLOCSPProxyURL</a></li>
+<li><a href="mod_ssl.html#sslocsprespondercertificatefile">SSLOCSPResponderCertificateFile</a></li>
 <li><a href="mod_ssl.html#sslocsprespondertimeout">SSLOCSPResponderTimeout</a></li>
 <li><a href="mod_ssl.html#sslocspresponsemaxage">SSLOCSPResponseMaxAge</a></li>
 <li><a href="mod_ssl.html#sslocspresponsetimeskew">SSLOCSPResponseTimeSkew</a></li>
@@ -716,7 +748,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/directives.html'
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licencia bajo los términos de <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br />Licencia bajo los términos de la <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Módulos</a> | <a href="../mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="../glossary.html">Glosario</a> | <a href="../sitemap.html">Mapa del sitio web</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

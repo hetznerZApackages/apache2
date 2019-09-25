@@ -41,23 +41,17 @@
 
 char *ssl_util_vhostid(apr_pool_t *p, server_rec *s)
 {
-    char *id;
     SSLSrvConfigRec *sc;
-    char *host;
     apr_port_t port;
 
-    host = s->server_hostname;
     if (s->port != 0)
         port = s->port;
     else {
         sc = mySrvConfig(s);
-        if (sc->enabled == TRUE)
-            port = DEFAULT_HTTPS_PORT;
-        else
-            port = DEFAULT_HTTP_PORT;
+        port = sc->enabled == TRUE ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT;
     }
-    id = apr_psprintf(p, "%s:%lu", host, (unsigned long)port);
-    return id;
+
+    return apr_psprintf(p, "%s:%lu", s->server_hostname, (unsigned long)port);
 }
 
 /*
@@ -104,6 +98,23 @@ BOOL ssl_util_vhost_matches(const char *servername, server_rec *s)
     }
     
     return FALSE;
+}
+
+int modssl_request_is_tls(const request_rec *r, SSLConnRec **scout)
+{
+    SSLConnRec *sslconn = myConnConfig(r->connection);
+    SSLSrvConfigRec *sc = mySrvConfig(r->server);
+
+    if (!(sslconn && sslconn->ssl) && r->connection->master) {
+        sslconn = myConnConfig(r->connection->master);
+    }
+
+    if (sc->enabled == SSL_ENABLED_FALSE || !sslconn || !sslconn->ssl)
+        return 0;
+    
+    if (scout) *scout = sslconn;
+
+    return 1;
 }
 
 apr_file_t *ssl_util_ppopen(server_rec *s, apr_pool_t *p, const char *cmd,
@@ -246,7 +257,8 @@ void ssl_asn1_table_unset(apr_hash_t *table,
     apr_hash_set(table, key, klen, NULL);
 }
 
-#if APR_HAS_THREADS
+#if APR_HAS_THREADS && MODSSL_USE_OPENSSL_PRE_1_1_API
+
 /*
  * To ensure thread-safetyness in OpenSSL - work in progress
  */
@@ -362,6 +374,34 @@ static void ssl_dyn_destroy_function(struct CRYPTO_dynlock_value *l,
     apr_pool_destroy(l->pool);
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+
+static void ssl_util_thr_id(CRYPTO_THREADID *id)
+{
+    /* OpenSSL needs this to return an unsigned long.  On OS/390, the pthread
+     * id is a structure twice that big.  Use the TCB pointer instead as a
+     * unique unsigned long.
+     */
+#ifdef __MVS__
+    struct PSA {
+        char unmapped[540]; /* PSATOLD is at offset 540 in the PSA */
+        unsigned long PSATOLD;
+    } *psaptr = 0; /* PSA is at address 0 */
+
+    CRYPTO_THREADID_set_numeric(id, psaptr->PSATOLD);
+#else
+    CRYPTO_THREADID_set_numeric(id, (unsigned long) apr_os_thread_current());
+#endif
+}
+
+static apr_status_t ssl_util_thr_id_cleanup(void *old)
+{
+    CRYPTO_THREADID_set_callback(old);
+    return APR_SUCCESS;
+}
+
+#else
+
 static unsigned long ssl_util_thr_id(void)
 {
     /* OpenSSL needs this to return an unsigned long.  On OS/390, the pthread
@@ -380,10 +420,17 @@ static unsigned long ssl_util_thr_id(void)
 #endif
 }
 
+static apr_status_t ssl_util_thr_id_cleanup(void *old)
+{
+    CRYPTO_set_id_callback(old);
+    return APR_SUCCESS;
+}
+
+#endif
+
 static apr_status_t ssl_util_thread_cleanup(void *data)
 {
     CRYPTO_set_locking_callback(NULL);
-    CRYPTO_set_id_callback(NULL);
 
     CRYPTO_set_dynlock_create_callback(NULL);
     CRYPTO_set_dynlock_lock_callback(NULL);
@@ -407,8 +454,6 @@ void ssl_util_thread_setup(apr_pool_t *p)
         apr_thread_mutex_create(&(lock_cs[i]), APR_THREAD_MUTEX_DEFAULT, p);
     }
 
-    CRYPTO_set_id_callback(ssl_util_thr_id);
-
     CRYPTO_set_locking_callback(ssl_util_thr_lock);
 
     /* Set up dynamic locking scaffolding for OpenSSL to use at its
@@ -422,4 +467,16 @@ void ssl_util_thread_setup(apr_pool_t *p)
     apr_pool_cleanup_register(p, NULL, ssl_util_thread_cleanup,
                                        apr_pool_cleanup_null);
 }
+
+void ssl_util_thread_id_setup(apr_pool_t *p)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+    CRYPTO_THREADID_set_callback(ssl_util_thr_id);
+#else
+    CRYPTO_set_id_callback(ssl_util_thr_id);
 #endif
+    apr_pool_cleanup_register(p, NULL, ssl_util_thr_id_cleanup,
+                                       apr_pool_cleanup_null);
+}
+
+#endif /* #if APR_HAS_THREADS && MODSSL_USE_OPENSSL_PRE_1_1_API */

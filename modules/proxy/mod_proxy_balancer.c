@@ -22,6 +22,8 @@
 #include "apr_version.h"
 #include "ap_hooks.h"
 #include "apr_date.h"
+#include "util_md5.h"
+#include "mod_watchdog.h"
 
 static const char *balancer_mutex_type = "proxy-balancer-shm";
 ap_slotmem_provider_t *storage = NULL;
@@ -450,7 +452,7 @@ static void force_recovery(proxy_balancer *balancer, server_rec *s)
             (*worker)->s->status &= ~PROXY_WORKER_IN_ERROR;
             ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(01165)
                          "%s: Forcing recovery for worker (%s)",
-                         balancer->s->name, (*worker)->s->hostname);
+                         balancer->s->name, (*worker)->s->hostname_ex);
         }
     }
 }
@@ -699,10 +701,10 @@ static void recalc_factors(proxy_balancer *balancer)
     /* Recalculate lbfactors */
     workers = (proxy_worker **)balancer->workers->elts;
     /* Special case if there is only one worker its
-     * load factor will always be 1
+     * load factor will always be 100
      */
     if (balancer->workers->nelts == 1) {
-        (*workers)->s->lbstatus = (*workers)->s->lbfactor = 1;
+        (*workers)->s->lbstatus = (*workers)->s->lbfactor = 100;
         return;
     }
     for (i = 0; i < balancer->workers->nelts; i++) {
@@ -729,6 +731,117 @@ static apr_status_t lock_remove(void *data)
     return(0);
 }
 
+/*
+ * Compute an ID for a vhost based on what makes it selected by requests.
+ * The second and more Host(s)/IP(s):port(s), and the ServerAlias(es) are
+ * optional (see make_servers_ids() below).
+ */
+ static const char *make_server_id(server_rec *s, apr_pool_t *p, int full)
+{
+    apr_md5_ctx_t md5_ctx;
+    unsigned char md5[APR_MD5_DIGESTSIZE];
+    char id[2 * APR_MD5_DIGESTSIZE + 1];
+    char host_ip[64]; /* for any IPv[46] string */
+    server_addr_rec *sar;
+    int i;
+
+    apr_md5_init(&md5_ctx);
+    for (sar = s->addrs; sar; sar = sar->next) {
+        host_ip[0] = '\0';
+        apr_sockaddr_ip_getbuf(host_ip, sizeof host_ip, sar->host_addr);
+        apr_md5_update(&md5_ctx, (void *)sar->virthost, strlen(sar->virthost));
+        apr_md5_update(&md5_ctx, (void *)host_ip, strlen(host_ip));
+        apr_md5_update(&md5_ctx, (void *)&sar->host_port,
+                       sizeof(sar->host_port));
+        if (!full) {
+            break;
+        }
+    }
+    if (s->server_hostname) {
+        apr_md5_update(&md5_ctx, (void *)s->server_hostname,
+                       strlen(s->server_hostname));
+    }
+    if (full) {
+        if (s->names) {
+            for (i = 0; i < s->names->nelts; ++i) {
+                const char *name = APR_ARRAY_IDX(s->names, i, char *);
+                apr_md5_update(&md5_ctx, (void *)name, strlen(name));
+            }
+        }
+        if (s->wild_names) {
+            for (i = 0; i < s->wild_names->nelts; ++i) {
+                const char *name = APR_ARRAY_IDX(s->wild_names, i, char *);
+                apr_md5_update(&md5_ctx, (void *)name, strlen(name));
+            }
+        }
+    }
+    apr_md5_final(md5, &md5_ctx);
+    ap_bin2hex(md5, APR_MD5_DIGESTSIZE, id);
+
+    return apr_pstrmemdup(p, id, sizeof(id) - 1);
+}
+
+/*
+ * First try to compute an unique ID for each vhost with minimal criteria,
+ * that is the first Host/IP:port and ServerName. For most cases this should
+ * be enough and avoids changing the ID unnecessarily accross restart (or
+ * stop/start w.r.t. persisted files) for things that this module does not
+ * care about.
+ *
+ * But if it's not enough (collisions) do a second pass for the full monty,
+ * that is additionally the other Host(s)/IP(s):port(s) and ServerAlias(es).
+ *
+ * Finally, for pathological configs where this is still not enough, let's
+ * append a counter to duplicates, because we really want that ID to be unique
+ * even if the vhost will never be selected to handle requests at run time, at
+ * load time a duplicate may steal the original slotmems (depending on its
+ * balancers' configurations), see how mod_slotmem_shm reuses slots/files based
+ * solely on this ID and resets them if the sizes don't match.
+ */
+static apr_array_header_t *make_servers_ids(server_rec *main_s, apr_pool_t *p)
+{
+    server_rec *s = main_s;
+    apr_array_header_t *ids = apr_array_make(p, 10, sizeof(const char *));
+    apr_hash_t *dups = apr_hash_make(p);
+    int idx, *dup, full_monty = 0;
+    const char *id;
+
+    for (idx = 0, s = main_s; s; s = s->next, ++idx) {
+        id = make_server_id(s, p, 0);
+        dup = apr_hash_get(dups, id, APR_HASH_KEY_STRING);
+        apr_hash_set(dups, id, APR_HASH_KEY_STRING,
+                     apr_pmemdup(p, &idx, sizeof(int)));
+        if (dup) {
+            full_monty = 1;
+            APR_ARRAY_IDX(ids, *dup, const char *) = NULL;
+            APR_ARRAY_PUSH(ids, const char *) = NULL;
+        }
+        else {
+            APR_ARRAY_PUSH(ids, const char *) = id;
+        }
+    }
+    if (full_monty) {
+        apr_hash_clear(dups);
+        for (idx = 0, s = main_s; s; s = s->next, ++idx) {
+            id = APR_ARRAY_IDX(ids, idx, const char *);
+            if (id) {
+                /* Preserve non-duplicates */
+                continue;
+            }
+            id = make_server_id(s, p, 1);
+            if (apr_hash_get(dups, id, APR_HASH_KEY_STRING)) {
+                id = apr_psprintf(p, "%s_%x", id, idx);
+            }
+            else {
+                apr_hash_set(dups, id, APR_HASH_KEY_STRING, (void *)-1);
+            }
+            APR_ARRAY_IDX(ids, idx, const char *) = id;
+        }
+    }
+
+    return ids;
+}
+
 /* post_config hook: */
 static int balancer_post_config(apr_pool_t *pconf, apr_pool_t *plog,
                          apr_pool_t *ptemp, server_rec *s)
@@ -737,6 +850,8 @@ static int balancer_post_config(apr_pool_t *pconf, apr_pool_t *plog,
     proxy_server_conf *conf;
     ap_slotmem_instance_t *new = NULL;
     apr_time_t tstamp;
+    apr_array_header_t *ids;
+    int idx;
 
     /* balancer_post_config() will be called twice during startup.  So, don't
      * set up the static data the 1st time through. */
@@ -744,14 +859,12 @@ static int balancer_post_config(apr_pool_t *pconf, apr_pool_t *plog,
         return OK;
     }
 
+    ap_proxy_retry_worker_fn =
+            APR_RETRIEVE_OPTIONAL_FN(ap_proxy_retry_worker);
     if (!ap_proxy_retry_worker_fn) {
-        ap_proxy_retry_worker_fn =
-                APR_RETRIEVE_OPTIONAL_FN(ap_proxy_retry_worker);
-        if (!ap_proxy_retry_worker_fn) {
-            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02230)
-                         "mod_proxy must be loaded for mod_proxy_balancer");
-            return !OK;
-        }
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02230)
+                     "mod_proxy must be loaded for mod_proxy_balancer");
+        return !OK;
     }
 
     /*
@@ -767,14 +880,16 @@ static int balancer_post_config(apr_pool_t *pconf, apr_pool_t *plog,
         return !OK;
     }
 
+    ids = make_servers_ids(s, ptemp);
+
     tstamp = apr_time_now();
     /*
      * Go thru each Vhost and create the shared mem slotmem for
      * each balancer's workers
      */
-    while (s) {
+    for (idx = 0; s; ++idx) {
         int i,j;
-        char *id;
+        const char *id;
         proxy_balancer *balancer;
         ap_slotmem_type_t type;
         void *sconf = s->module_config;
@@ -783,14 +898,7 @@ static int balancer_post_config(apr_pool_t *pconf, apr_pool_t *plog,
          * During create_proxy_config() we created a dummy id. Now that
          * we have identifying info, we can create the real id
          */
-        id = apr_psprintf(pconf, "%s.%s.%d.%s.%s.%u.%s",
-                          (s->server_scheme ? s->server_scheme : "????"),
-                          (s->server_hostname ? s->server_hostname : "???"),
-                          (int)s->port,
-                          (s->server_admin ? s->server_admin : "??"),
-                          (s->defn_name ? s->defn_name : "?"),
-                          s->defn_line_number,
-                          (s->error_fname ? s->error_fname : DEFAULT_ERRORLOG));
+        id = APR_ARRAY_IDX(ids, idx, const char *);
         conf->id = apr_psprintf(pconf, "p%x",
                                 ap_proxy_hashfunc(id, PROXY_HASHFUNC_DEFAULT));
         if (conf->bslot) {
@@ -800,7 +908,7 @@ static int balancer_post_config(apr_pool_t *pconf, apr_pool_t *plog,
             continue;
         }
         if (conf->bal_persist) {
-            type = AP_SLOTMEM_TYPE_PERSIST;
+            type = AP_SLOTMEM_TYPE_PERSIST | AP_SLOTMEM_TYPE_CLEARINUSE;
         } else {
             type = 0;
         }
@@ -1092,8 +1200,10 @@ static int balancer_handler(request_rec *r)
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01192) "settings worker params");
 
         if ((val = apr_table_get(params, "w_lf"))) {
-            int ival = atoi(val);
-            if (ival >= 1 && ival <= 100) {
+            int ival;
+            double fval = atof(val);
+            ival = fval * 100.0;
+            if (ival >= 100 && ival <= 10000) {
                 wsel->s->lbfactor = ival;
                 if (bsel)
                     recalc_factors(bsel);
@@ -1127,6 +1237,9 @@ static int balancer_handler(request_rec *r)
         if ((val = apr_table_get(params, "w_status_H"))) {
             ap_proxy_set_wstatus(PROXY_WORKER_HOT_STANDBY_FLAG, atoi(val), wsel);
         }
+        if ((val = apr_table_get(params, "w_status_R"))) {
+            ap_proxy_set_wstatus(PROXY_WORKER_HOT_SPARE_FLAG, atoi(val), wsel);
+        }
         if ((val = apr_table_get(params, "w_status_S"))) {
             ap_proxy_set_wstatus(PROXY_WORKER_STOPPED_FLAG, atoi(val), wsel);
         }
@@ -1140,9 +1253,11 @@ static int balancer_handler(request_rec *r)
              }
         }
         if ((val = apr_table_get(params, "w_hi"))) {
-            int ival = atoi(val);
-            if (ival >= HCHECK_WATHCHDOG_INTERVAL) {
-                wsel->s->interval = apr_time_from_sec(ival);
+            apr_interval_time_t hci;
+            if (ap_timeout_parameter_parse(val, &hci, "ms") == APR_SUCCESS) {
+                if (hci >= AP_WD_TM_SLICE) {
+                    wsel->s->interval = hci;
+                }
              }
         }
         if ((val = apr_table_get(params, "w_hp"))) {
@@ -1357,10 +1472,10 @@ static int balancer_handler(request_rec *r)
                           "</httpd:name>\n", NULL);
                 ap_rvputs(r, "          <httpd:scheme>", worker->s->scheme,
                           "</httpd:scheme>\n", NULL);
-                ap_rvputs(r, "          <httpd:hostname>", worker->s->hostname,
+                ap_rvputs(r, "          <httpd:hostname>", worker->s->hostname_ex,
                           "</httpd:hostname>\n", NULL);
-                ap_rprintf(r, "          <httpd:loadfactor>%d</httpd:loadfactor>\n",
-                          worker->s->lbfactor);
+                ap_rprintf(r, "          <httpd:loadfactor>%.2f</httpd:loadfactor>\n",
+                          (float)(worker->s->lbfactor)/100.0);
                 ap_rprintf(r,
                            "          <httpd:port>%d</httpd:port>\n",
                            worker->s->port);
@@ -1413,8 +1528,8 @@ static int balancer_handler(request_rec *r)
                            "          <httpd:lbstatus>%d</httpd:lbstatus>\n",
                            worker->s->lbstatus);
                 ap_rprintf(r,
-                           "          <httpd:loadfactor>%d</httpd:loadfactor>\n",
-                           worker->s->lbfactor);
+                           "          <httpd:loadfactor>%.2f</httpd:loadfactor>\n",
+                           (float)(worker->s->lbfactor)/100.0);
                 ap_rprintf(r,
                            "          <httpd:transferred>%" APR_OFF_T_FMT "</httpd:transferred>\n",
                            worker->s->transferred);
@@ -1600,7 +1715,7 @@ static int balancer_handler(request_rec *r)
                           NULL);
                 ap_rvputs(r, "</td><td>",
                           ap_escape_html(r->pool, worker->s->redirect), NULL);
-                ap_rprintf(r, "</td><td>%d</td>", worker->s->lbfactor);
+                ap_rprintf(r, "</td><td>%.2f</td>", (float)(worker->s->lbfactor)/100.0);
                 ap_rprintf(r, "<td>%d</td><td>", worker->s->lbset);
                 ap_rvputs(r, ap_proxy_parse_wstatus(r->pool, worker), NULL);
                 ap_rputs("</td>", r);
@@ -1612,7 +1727,7 @@ static int balancer_handler(request_rec *r)
                 ap_rputs(apr_strfsize(worker->s->read, fbuf), r);
                 if (set_worker_hc_param_f) {
                     ap_rprintf(r, "</td><td>%s</td>", ap_proxy_show_hcmethod(worker->s->method));
-                    ap_rprintf(r, "<td>%d</td>", (int)apr_time_sec(worker->s->interval));
+                    ap_rprintf(r, "<td>%" APR_TIME_T_FMT "ms</td>", apr_time_as_msec(worker->s->interval));
                     ap_rprintf(r, "<td>%d (%d)</td>", worker->s->passes,worker->s->pcount);
                     ap_rprintf(r, "<td>%d (%d)</td>", worker->s->fails, worker->s->fcount);
                     ap_rprintf(r, "<td>%s</td>", worker->s->hcuri);
@@ -1635,7 +1750,7 @@ static int balancer_handler(request_rec *r)
             ap_rputs("<form method='POST' enctype='application/x-www-form-urlencoded' action='", r);
             ap_rvputs(r, ap_escape_uri(r->pool, action), "'>\n", NULL);
             ap_rputs("<table><tr><td>Load factor:</td><td><input name='w_lf' id='w_lf' type=text ", r);
-            ap_rprintf(r, "value='%d'></td></tr>\n", wsel->s->lbfactor);
+            ap_rprintf(r, "value='%.2f'></td></tr>\n", (float)(wsel->s->lbfactor)/100.0);
             ap_rputs("<tr><td>LB Set:</td><td><input name='w_ls' id='w_ls' type=text ", r);
             ap_rprintf(r, "value='%d'></td></tr>\n", wsel->s->lbset);
             ap_rputs("<tr><td>Route:</td><td><input name='w_wr' id='w_wr' type=text ", r);
@@ -1651,7 +1766,8 @@ static int balancer_handler(request_rec *r)
                      "<th>Ignore Errors</th>"
                      "<th>Draining Mode</th>"
                      "<th>Disabled</th>"
-                     "<th>Hot Standby</th>", r);
+                     "<th>Hot Standby</th>"
+                     "<th>Hot Spare</th>", r);
             if (hc_show_exprs_f) {
                 ap_rputs("<th>HC Fail</th>", r);
             }
@@ -1660,6 +1776,7 @@ static int balancer_handler(request_rec *r)
             create_radio("w_status_N", (PROXY_WORKER_IS(wsel, PROXY_WORKER_DRAIN)), r);
             create_radio("w_status_D", (PROXY_WORKER_IS(wsel, PROXY_WORKER_DISABLED)), r);
             create_radio("w_status_H", (PROXY_WORKER_IS(wsel, PROXY_WORKER_HOT_STANDBY)), r);
+            create_radio("w_status_R", (PROXY_WORKER_IS(wsel, PROXY_WORKER_HOT_SPARE)), r);
             if (hc_show_exprs_f) {
                 create_radio("w_status_C", (PROXY_WORKER_IS(wsel, PROXY_WORKER_HC_FAIL)), r);
             }
@@ -1681,8 +1798,8 @@ static int balancer_handler(request_rec *r)
                 ap_rputs("<tr><td>Expr</td><td><select name='w_he'>\n", r);
                 hc_select_exprs_f(r, wsel->s->hcexpr);
                 ap_rputs("</select>\n</td></tr>\n", r);
-                ap_rprintf(r, "<tr><td>Interval (secs)</td><td><input name='w_hi' id='w_hi' type='text'"
-                           "value='%d'></td></tr>\n", (int)apr_time_sec(wsel->s->interval));
+                ap_rprintf(r, "<tr><td>Interval (ms)</td><td><input name='w_hi' id='w_hi' type='text'"
+                           "value='%" APR_TIME_T_FMT "'></td></tr>\n", apr_time_as_msec(wsel->s->interval));
                 ap_rprintf(r, "<tr><td>Passes trigger</td><td><input name='w_hp' id='w_hp' type='text'"
                            "value='%d'></td></tr>\n", wsel->s->passes);
                 ap_rprintf(r, "<tr><td>Fails trigger)</td><td><input name='w_hf' id='w_hf' type='text'"

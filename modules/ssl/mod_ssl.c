@@ -30,8 +30,13 @@
 #include "util_md5.h"
 #include "util_mutex.h"
 #include "ap_provider.h"
+#include "http_config.h"
+
+#include "mod_proxy.h" /* for proxy_hook_section_post_config() */
 
 #include <assert.h>
+
+static int modssl_running_statically = 0;
 
 APR_IMPLEMENT_OPTIONAL_HOOK_RUN_ALL(ssl, SSL, int, pre_handshake,
                                     (conn_rec *c,SSL *ssl,int is_proxy),
@@ -48,6 +53,10 @@ APR_IMPLEMENT_OPTIONAL_HOOK_RUN_ALL(ssl, SSL, int, pre_handshake,
 #define SSL_CMD_SRV(name, args, desc) \
         AP_INIT_##args("SSL"#name, ssl_cmd_SSL##name, \
                        NULL, RSRC_CONF, desc),
+
+#define SSL_CMD_PXY(name, args, desc) \
+        AP_INIT_##args("SSL"#name, ssl_cmd_SSL##name, \
+                       NULL, RSRC_CONF|PROXY_CONF, desc),
 
 #define SSL_CMD_DIR(name, type, args, desc) \
         AP_INIT_##args("SSL"#name, ssl_cmd_SSL##name, \
@@ -84,9 +93,9 @@ static const command_rec ssl_config_cmds[] = {
     SSL_CMD_SRV(FIPS, FLAG,
                 "Enable FIPS-140 mode "
                 "(`on', `off')")
-    SSL_CMD_ALL(CipherSuite, TAKE1,
-                "Colon-delimited list of permitted SSL Ciphers "
-                "('XXX:...:XXX' - see manual)")
+    SSL_CMD_ALL(CipherSuite, TAKE12,
+                "Colon-delimited list of permitted SSL Ciphers, optional preceeded "
+                "by protocol identifier ('XXX:...:XXX' - see manual)")
     SSL_CMD_SRV(CertificateFile, TAKE1,
                 "SSL Server Certificate file "
                 "('/path/to/file' - PEM or DER encoded)")
@@ -170,50 +179,50 @@ static const command_rec ssl_config_cmds[] = {
     /*
      * Proxy configuration for remote SSL connections
      */
-    SSL_CMD_SRV(ProxyEngine, FLAG,
+    SSL_CMD_PXY(ProxyEngine, FLAG,
                 "SSL switch for the proxy protocol engine "
                 "('on', 'off')")
-    SSL_CMD_SRV(ProxyProtocol, RAW_ARGS,
+    SSL_CMD_PXY(ProxyProtocol, RAW_ARGS,
                "SSL Proxy: enable or disable SSL protocol flavors "
                 "('[+-][" SSL_PROTOCOLS "] ...' - see manual)")
-    SSL_CMD_SRV(ProxyCipherSuite, TAKE1,
+    SSL_CMD_PXY(ProxyCipherSuite, TAKE12,
                "SSL Proxy: colon-delimited list of permitted SSL ciphers "
-               "('XXX:...:XXX' - see manual)")
-    SSL_CMD_SRV(ProxyVerify, TAKE1,
+               ", optionally preceeded by protocol specifier ('XXX:...:XXX' - see manual)")
+    SSL_CMD_PXY(ProxyVerify, TAKE1,
                "SSL Proxy: whether to verify the remote certificate "
                "('on' or 'off')")
-    SSL_CMD_SRV(ProxyVerifyDepth, TAKE1,
+    SSL_CMD_PXY(ProxyVerifyDepth, TAKE1,
                "SSL Proxy: maximum certificate verification depth "
                "('N' - number of intermediate certificates)")
-    SSL_CMD_SRV(ProxyCACertificateFile, TAKE1,
+    SSL_CMD_PXY(ProxyCACertificateFile, TAKE1,
                "SSL Proxy: file containing server certificates "
                "('/path/to/file' - PEM encoded certificates)")
-    SSL_CMD_SRV(ProxyCACertificatePath, TAKE1,
+    SSL_CMD_PXY(ProxyCACertificatePath, TAKE1,
                "SSL Proxy: directory containing server certificates "
                "('/path/to/dir' - contains PEM encoded certificates)")
-    SSL_CMD_SRV(ProxyCARevocationPath, TAKE1,
+    SSL_CMD_PXY(ProxyCARevocationPath, TAKE1,
                 "SSL Proxy: CA Certificate Revocation List (CRL) path "
                 "('/path/to/dir' - contains PEM encoded files)")
-    SSL_CMD_SRV(ProxyCARevocationFile, TAKE1,
+    SSL_CMD_PXY(ProxyCARevocationFile, TAKE1,
                 "SSL Proxy: CA Certificate Revocation List (CRL) file "
                 "('/path/to/file' - PEM encoded)")
-    SSL_CMD_SRV(ProxyCARevocationCheck, RAW_ARGS,
+    SSL_CMD_PXY(ProxyCARevocationCheck, RAW_ARGS,
                 "SSL Proxy: CA Certificate Revocation List (CRL) checking mode")
-    SSL_CMD_SRV(ProxyMachineCertificateFile, TAKE1,
+    SSL_CMD_PXY(ProxyMachineCertificateFile, TAKE1,
                "SSL Proxy: file containing client certificates "
                "('/path/to/file' - PEM encoded certificates)")
-    SSL_CMD_SRV(ProxyMachineCertificatePath, TAKE1,
+    SSL_CMD_PXY(ProxyMachineCertificatePath, TAKE1,
                "SSL Proxy: directory containing client certificates "
                "('/path/to/dir' - contains PEM encoded certificates)")
-    SSL_CMD_SRV(ProxyMachineCertificateChainFile, TAKE1,
+    SSL_CMD_PXY(ProxyMachineCertificateChainFile, TAKE1,
                "SSL Proxy: file containing issuing certificates "
                "of the client certificate "
                "(`/path/to/file' - PEM encoded certificates)")
-    SSL_CMD_SRV(ProxyCheckPeerExpire, FLAG,
+    SSL_CMD_PXY(ProxyCheckPeerExpire, FLAG,
                 "SSL Proxy: check the peer certificate's expiration date")
-    SSL_CMD_SRV(ProxyCheckPeerCN, FLAG,
+    SSL_CMD_PXY(ProxyCheckPeerCN, FLAG,
                 "SSL Proxy: check the peer certificate's CN")
-    SSL_CMD_SRV(ProxyCheckPeerName, FLAG,
+    SSL_CMD_PXY(ProxyCheckPeerName, FLAG,
                 "SSL Proxy: check the peer certificate's name "
                 "(must be present in subjectAltName extension or CN")
 
@@ -234,8 +243,8 @@ static const command_rec ssl_config_cmds[] = {
                 "request body if a per-location SSL renegotiation is required due to "
                 "changed access control requirements")
 
-    SSL_CMD_SRV(OCSPEnable, FLAG,
-               "Enable use of OCSP to verify certificate revocation ('on', 'off')")
+    SSL_CMD_SRV(OCSPEnable, RAW_ARGS,
+               "Enable use of OCSP to verify certificate revocation mode ('on', 'leaf', 'off')")
     SSL_CMD_SRV(OCSPDefaultResponder, TAKE1,
                "URL of the default OCSP Responder")
     SSL_CMD_SRV(OCSPOverrideResponder, FLAG,
@@ -250,6 +259,14 @@ static const command_rec ssl_config_cmds[] = {
                 "Whether OCSP queries use a nonce or not ('on', 'off')")
     SSL_CMD_SRV(OCSPProxyURL, TAKE1,
                 "Proxy URL to use for OCSP requests")
+
+/* Define OCSP Responder Certificate Verification Directive */
+    SSL_CMD_SRV(OCSPNoVerify, FLAG,
+                "Do not verify OCSP Responder certificate ('on', 'off')")
+/* Define OCSP Responder File Configuration Directive */
+    SSL_CMD_SRV(OCSPResponderCertificateFile, TAKE1,
+               "Trusted OCSP responder certificates"
+               "(`/path/to/file' - PEM encoded certificates)")
 
 #ifdef HAVE_OCSP_STAPLING
     /*
@@ -297,22 +314,49 @@ static const command_rec ssl_config_cmds[] = {
 /*
  *  the various processing hooks
  */
+static int modssl_is_prelinked(void)
+{
+    apr_size_t i = 0;
+    const module *mod;
+    while ((mod = ap_prelinked_modules[i++])) {
+        if (strcmp(mod->name, "mod_ssl.c") == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 static apr_status_t ssl_cleanup_pre_config(void *data)
 {
     /*
      * Try to kill the internals of the SSL library.
      */
-    /* Corresponds to OPENSSL_load_builtin_modules():
-     * XXX: borrowed from apps.h, but why not CONF_modules_free()
-     * which also invokes CONF_modules_finish()?
-     */
-    CONF_modules_unload(1);
+#ifdef HAVE_FIPS
+    FIPS_mode_set(0);
+#endif
+    /* Corresponds to OBJ_create()s */
+    OBJ_cleanup();
+    /* Corresponds to OPENSSL_load_builtin_modules() */
+    CONF_modules_free();
     /* Corresponds to SSL_library_init: */
     EVP_cleanup();
 #if HAVE_ENGINE_LOAD_BUILTIN_ENGINES
     ENGINE_cleanup();
 #endif
+#if OPENSSL_VERSION_NUMBER >= 0x1000200fL
+#ifndef OPENSSL_NO_COMP
+    SSL_COMP_free_compression_methods();
+#endif
+#endif
+
+    /* Usually needed per thread, but this parent process is single-threaded */
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
+#if OPENSSL_VERSION_NUMBER >= 0x1000000fL
+    ERR_remove_thread_state(NULL);
+#else
     ERR_remove_state(0);
+#endif
+#endif
 
     /* Don't call ERR_free_strings in earlier versions, ERR_load_*_strings only
      * actually loaded the error strings once per process due to static
@@ -321,11 +365,14 @@ static apr_status_t ssl_cleanup_pre_config(void *data)
     ERR_free_strings();
 #endif
 
-    /* Also don't call CRYPTO_cleanup_all_ex_data here; any registered
-     * ex_data indices may have been cached in static variables in
-     * OpenSSL; removing them may cause havoc.  Notably, with OpenSSL
+    /* Also don't call CRYPTO_cleanup_all_ex_data when linked statically here;
+     * any registered ex_data indices may have been cached in static variables
+     * in OpenSSL; removing them may cause havoc.  Notably, with OpenSSL
      * versions >= 0.9.8f, COMP_CTX cleanups would not be run, which
      * could result in a per-connection memory leak (!). */
+    if (!modssl_running_statically) {
+        CRYPTO_cleanup_all_ex_data();
+    }
 
     /*
      * TODO: determine somewhere we can safely shove out diagnostics
@@ -339,10 +386,23 @@ static int ssl_hook_pre_config(apr_pool_t *pconf,
                                apr_pool_t *plog,
                                apr_pool_t *ptemp)
 {
+    modssl_running_statically = modssl_is_prelinked();
+
+    /* Some OpenSSL internals are allocated per-thread, make sure they
+     * are associated to the/our same thread-id until cleaned up.
+     */
+#if APR_HAS_THREADS && MODSSL_USE_OPENSSL_PRE_1_1_API
+    ssl_util_thread_id_setup(pconf);
+#endif
+
     /* We must register the library in full, to ensure our configuration
      * code can successfully test the SSL environment.
      */
-    CRYPTO_malloc_init();
+#if MODSSL_USE_OPENSSL_PRE_1_1_API || defined(LIBRESSL_VERSION_NUMBER)
+    (void)CRYPTO_malloc_init();
+#else
+    OPENSSL_malloc_init();
+#endif
     ERR_load_crypto_strings();
     SSL_load_error_strings();
     SSL_library_init();
@@ -356,6 +416,9 @@ static int ssl_hook_pre_config(apr_pool_t *pconf,
         (void)OBJ_create("1.3.6.1.5.5.7.8.7", "id-on-dnsSRV",
                          "SRVName otherName form");
     }
+
+    /* Start w/o errors (e.g. OBJ_txt2nid() above) */
+    ERR_clear_error();
 
     /*
      * Let us cleanup the ssl library when the module is unloaded
@@ -381,7 +444,8 @@ static int ssl_hook_pre_config(apr_pool_t *pconf,
     return OK;
 }
 
-static SSLConnRec *ssl_init_connection_ctx(conn_rec *c)
+static SSLConnRec *ssl_init_connection_ctx(conn_rec *c,
+                                           ap_conf_vector_t *per_dir_config)
 {
     SSLConnRec *sslconn = myConnConfig(c);
     SSLSrvConfigRec *sc;
@@ -391,6 +455,14 @@ static SSLConnRec *ssl_init_connection_ctx(conn_rec *c)
     }
 
     sslconn = apr_pcalloc(c->pool, sizeof(*sslconn));
+
+    if (per_dir_config) {
+        sslconn->dc = ap_get_module_config(per_dir_config, &ssl_module);
+    }
+    else {
+        sslconn->dc = ap_get_module_config(c->base_server->lookup_defaults,
+                                           &ssl_module);
+    }
 
     sslconn->server = c->base_server;
     sslconn->verify_depth = UNSET;
@@ -402,72 +474,101 @@ static SSLConnRec *ssl_init_connection_ctx(conn_rec *c)
     return sslconn;
 }
 
-int ssl_proxy_enable(conn_rec *c)
+static int ssl_engine_status(conn_rec *c, SSLConnRec *sslconn)
 {
-    SSLSrvConfigRec *sc;
-
-    SSLConnRec *sslconn = ssl_init_connection_ctx(c);
-    sc = mySrvConfig(sslconn->server);
-
-    if (!sc->proxy_enabled) {
-        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(01961)
-                      "SSL Proxy requested for %s but not enabled "
-                      "[Hint: SSLProxyEngine]", sc->vhost_id);
-
-        return 0;
+    if (c->master) {
+        return DECLINED;
     }
-
-    sslconn->is_proxy = 1;
-    sslconn->disabled = 0;
-
-    return 1;
-}
-
-int ssl_engine_disable(conn_rec *c)
-{
-    SSLSrvConfigRec *sc;
-
-    SSLConnRec *sslconn = myConnConfig(c);
-
     if (sslconn) {
-        sc = mySrvConfig(sslconn->server);
+        if (sslconn->disabled) {
+            return SUSPENDED;
+        }
+        if (sslconn->is_proxy) {
+            if (!sslconn->dc->proxy_enabled) {
+                return DECLINED;
+            }
+        }
+        else {
+            if (mySrvConfig(sslconn->server)->enabled != SSL_ENABLED_TRUE) {
+                return DECLINED;
+            }
+        }
     }
     else {
-        sc = mySrvConfig(c->base_server);
+        if (mySrvConfig(c->base_server)->enabled != SSL_ENABLED_TRUE) {
+            return DECLINED;
+        }
     }
-    if (sc->enabled == SSL_ENABLED_FALSE) {
-        return 0;
+    return OK;
+}
+
+static int ssl_engine_set(conn_rec *c,
+                          ap_conf_vector_t *per_dir_config,
+                          int proxy, int enable)
+{
+    SSLConnRec *sslconn;
+    int status;
+    
+    if (proxy) {
+        sslconn = ssl_init_connection_ctx(c, per_dir_config);
+        sslconn->is_proxy = 1;
+    }
+    else {
+        sslconn = myConnConfig(c);
     }
 
-    sslconn = ssl_init_connection_ctx(c);
+    status = ssl_engine_status(c, sslconn);
 
-    sslconn->disabled = 1;
+    if (proxy && status == DECLINED) {
+        if (enable) {
+            SSLSrvConfigRec *sc = mySrvConfig(sslconn->server);
+            ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(01961)
+                          "SSL Proxy requested for %s but not enabled "
+                          "[Hint: SSLProxyEngine]", sc->vhost_id);
+        }
+        sslconn->disabled = 1;
+    }
+    else if (sslconn) {
+        sslconn->disabled = !enable;
+    }
 
-    return 1;
+    return status != DECLINED;
+}
+
+static int ssl_proxy_enable(conn_rec *c)
+{
+    return ssl_engine_set(c, NULL, 1, 1);
+}
+
+static int ssl_engine_disable(conn_rec *c)
+{
+    return ssl_engine_set(c, NULL, 0, 0);
 }
 
 int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
 {
     SSLSrvConfigRec *sc;
     SSL *ssl;
-    SSLConnRec *sslconn = myConnConfig(c);
+    SSLConnRec *sslconn;
     char *vhost_md5;
     int rc;
     modssl_ctx_t *mctx;
     server_rec *server;
 
-    if (!sslconn) {
-        sslconn = ssl_init_connection_ctx(c);
-    }
+    /*
+     * Create or retrieve SSL context
+     */
+    sslconn = ssl_init_connection_ctx(c, r ? r->per_dir_config : NULL);
     server = sslconn->server;
     sc = mySrvConfig(server);
 
     /*
      * Seed the Pseudo Random Number Generator (PRNG)
      */
-    ssl_rand_seed(server, c->pool, SSL_RSCTX_CONNECT, "");
+    ssl_rand_seed(server, c->pool, SSL_RSCTX_CONNECT,
+                  sslconn->is_proxy ? "Proxy: " : "Server: ");
 
-    mctx = sslconn->is_proxy ? sc->proxy : sc->server;
+    mctx = myCtxConfig(sslconn, sc);
 
     /*
      * Create a new SSL connection with the configured server SSL context and
@@ -517,56 +618,31 @@ int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
 
 static const char *ssl_hook_http_scheme(const request_rec *r)
 {
-    SSLSrvConfigRec *sc = mySrvConfig(r->server);
-
-    if (sc->enabled == SSL_ENABLED_FALSE || sc->enabled == SSL_ENABLED_OPTIONAL) {
-        return NULL;
-    }
-
-    return "https";
+    return modssl_request_is_tls(r, NULL) ? "https" : NULL;
 }
 
 static apr_port_t ssl_hook_default_port(const request_rec *r)
 {
-    SSLSrvConfigRec *sc = mySrvConfig(r->server);
-
-    if (sc->enabled == SSL_ENABLED_FALSE || sc->enabled == SSL_ENABLED_OPTIONAL) {
-        return 0;
-    }
-
-    return 443;
+    return modssl_request_is_tls(r, NULL) ? 443 : 0;
 }
 
 static int ssl_hook_pre_connection(conn_rec *c, void *csd)
 {
-
     SSLSrvConfigRec *sc;
     SSLConnRec *sslconn = myConnConfig(c);
+
+    /*
+     * Immediately stop processing if SSL is disabled for this connection
+     */
+    if (ssl_engine_status(c, sslconn) != OK) {
+        return DECLINED;
+    }
 
     if (sslconn) {
         sc = mySrvConfig(sslconn->server);
     }
     else {
         sc = mySrvConfig(c->base_server);
-    }
-    /*
-     * Immediately stop processing if SSL is disabled for this connection
-     */
-    if (c->master || !(sc && (sc->enabled == SSL_ENABLED_TRUE ||
-                              (sslconn && sslconn->is_proxy))))
-    {
-        return DECLINED;
-    }
-
-    /*
-     * Create SSL context
-     */
-    if (!sslconn) {
-        sslconn = ssl_init_connection_ctx(c);
-    }
-
-    if (sslconn->disabled) {
-        return DECLINED;
     }
 
     /*
@@ -610,6 +686,12 @@ static void ssl_register_hooks(apr_pool_t *p)
     /* ssl_hook_ReadReq needs to use the BrowserMatch settings so must
      * run after mod_setenvif's post_read_request hook. */
     static const char *pre_prr[] = { "mod_setenvif.c", NULL };
+    /* The ssl_init_Module post_config hook should run before mod_proxy's
+     * for the ssl proxy main configs to be merged with vhosts' before being
+     * themselves merged with mod_proxy's in proxy_hook_section_post_config.
+     */
+    static const char *b_pc[] = { "mod_proxy.c", NULL};
+
 
     ssl_io_filter_register(p);
 
@@ -617,7 +699,7 @@ static void ssl_register_hooks(apr_pool_t *p)
     ap_hook_process_connection(ssl_hook_process_connection, 
                                                    NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_test_config   (ssl_hook_ConfigTest,    NULL,NULL, APR_HOOK_MIDDLE);
-    ap_hook_post_config   (ssl_init_Module,        NULL,NULL, APR_HOOK_MIDDLE);
+    ap_hook_post_config   (ssl_init_Module,        NULL,b_pc, APR_HOOK_MIDDLE);
     ap_hook_http_scheme   (ssl_hook_http_scheme,   NULL,NULL, APR_HOOK_MIDDLE);
     ap_hook_default_port  (ssl_hook_default_port,  NULL,NULL, APR_HOOK_MIDDLE);
     ap_hook_pre_config    (ssl_hook_pre_config,    NULL,NULL, APR_HOOK_MIDDLE);
@@ -631,10 +713,15 @@ static void ssl_register_hooks(apr_pool_t *p)
                            AP_AUTH_INTERNAL_PER_CONF);
     ap_hook_post_read_request(ssl_hook_ReadReq, pre_prr,NULL, APR_HOOK_MIDDLE);
 
+    APR_OPTIONAL_HOOK(proxy, section_post_config,
+                      ssl_proxy_section_post_config, NULL, NULL,
+                      APR_HOOK_MIDDLE);
+
     ssl_var_register(p);
 
     APR_REGISTER_OPTIONAL_FN(ssl_proxy_enable);
     APR_REGISTER_OPTIONAL_FN(ssl_engine_disable);
+    APR_REGISTER_OPTIONAL_FN(ssl_engine_set);
 
     ap_register_auth_provider(p, AUTHZ_PROVIDER_GROUP, "ssl",
                               AUTHZ_PROVIDER_VERSION,
@@ -645,7 +732,6 @@ static void ssl_register_hooks(apr_pool_t *p)
                               AUTHZ_PROVIDER_VERSION,
                               &ssl_authz_provider_verify_client,
                               AP_AUTH_INTERNAL_PER_CONF);
-
 }
 
 module AP_MODULE_DECLARE_DATA ssl_module = {
@@ -656,4 +742,7 @@ module AP_MODULE_DECLARE_DATA ssl_module = {
     ssl_config_server_merge,    /* merge  per-server config structures */
     ssl_config_cmds,            /* table of configuration directives   */
     ssl_register_hooks          /* register hooks */
+#if defined(AP_MODULE_HAS_FLAGS)
+   ,AP_MODULE_FLAG_ALWAYS_MERGE /* flags */
+#endif
 };

@@ -1,18 +1,19 @@
-/* Copyright 2015 greenbytes GmbH (https://www.greenbytes.de)
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -151,6 +152,7 @@ static void ngn_add_task(h2_req_engine *ngn, h2_task *task, request_rec *r)
     entry->task = task;
     entry->r = r;
     H2_REQ_ENTRIES_INSERT_TAIL(&ngn->entries, entry);
+    ngn->no_assigned++;
 }
 
 
@@ -176,6 +178,17 @@ apr_status_t h2_ngn_shed_push_request(h2_ngn_shed *shed, const char *ngn_type,
         task->assigned = NULL;
     }
     
+    if (task->engine) {
+        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, task->c, 
+                      "h2_ngn_shed(%ld): push task(%s) hosting engine %s " 
+                      "already with %d tasks", 
+                      shed->c->id, task->id, task->engine->id,
+                      task->engine->no_assigned);
+        task->assigned = task->engine;
+        ngn_add_task(task->engine, task, r);
+        return APR_SUCCESS;
+    }
+    
     ngn = apr_hash_get(shed->ngns, ngn_type, APR_HASH_KEY_STRING);
     if (ngn && !ngn->shutdown) {
         /* this task will be processed in another thread,
@@ -187,7 +200,6 @@ apr_status_t h2_ngn_shed_push_request(h2_ngn_shed *shed, const char *ngn_type,
             h2_task_freeze(task);
         }
         ngn_add_task(ngn, task, r);
-        ngn->no_assigned++;
         return APR_SUCCESS;
     }
     
@@ -211,11 +223,11 @@ apr_status_t h2_ngn_shed_push_request(h2_ngn_shed *shed, const char *ngn_type,
         status = einit(newngn, newngn->id, newngn->type, newngn->pool,
                        shed->req_buffer_size, r,
                        &newngn->out_consumed, &newngn->out_consumed_ctx);
+        
         ap_log_cerror(APLOG_MARK, APLOG_DEBUG, status, task->c, APLOGNO(03395)
                       "h2_ngn_shed(%ld): create engine %s (%s)", 
                       shed->c->id, newngn->id, newngn->type);
         if (status == APR_SUCCESS) {
-            ap_assert(task->engine == NULL);
             newngn->task = task;
             task->engine = newngn;
             task->assigned = newngn;

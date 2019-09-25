@@ -52,7 +52,7 @@ static const char *set_keep_alive_timeout(cmd_parms *cmd, void *dummy,
                                           const char *arg)
 {
     apr_interval_time_t timeout;
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     if (err != NULL) {
         return err;
     }
@@ -78,7 +78,7 @@ static const char *set_keep_alive_timeout(cmd_parms *cmd, void *dummy,
 static const char *set_keep_alive(cmd_parms *cmd, void *dummy,
                                   int arg)
 {
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     if (err != NULL) {
         return err;
     }
@@ -90,7 +90,7 @@ static const char *set_keep_alive(cmd_parms *cmd, void *dummy,
 static const char *set_keep_alive_max(cmd_parms *cmd, void *dummy,
                                       const char *arg)
 {
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_CONTEXT);
     if (err != NULL) {
         return err;
     }
@@ -134,7 +134,7 @@ static apr_port_t http_port(const request_rec *r)
 
 static int ap_process_http_async_connection(conn_rec *c)
 {
-    request_rec *r;
+    request_rec *r = NULL;
     conn_state_t *cs = c->cs;
 
     AP_DEBUG_ASSERT(cs != NULL);

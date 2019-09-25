@@ -613,7 +613,7 @@ static int get_form_auth(request_rec * r,
 
     /* have we isolated the user and pw before? */
     get_notes_auth(r, sent_user, sent_pw, sent_method, sent_mimetype);
-    if (*sent_user && *sent_pw) {
+    if (sent_user && *sent_user && sent_pw && *sent_pw) {
         return OK;
     }
 
@@ -842,7 +842,7 @@ static int check_authn(request_rec * r, const char *sent_user, const char *sent_
             break;
         }
 
-        /* If we're returning 403, tell them to try again. */
+        /* If we're returning 401, tell them to try again. */
         if (return_code == HTTP_UNAUTHORIZED) {
             note_cookie_auth_failure(r);
         }

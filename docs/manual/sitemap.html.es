@@ -7,7 +7,7 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>Mapa de este sitio web - Servidor Apache HTTP Versión 2.4</title>
+<title>Mapa de este sitio web - Servidor HTTP Apache Versión 2.4</title>
 <link href="./style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="./style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="./style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="./style/css/prettify.css" />
@@ -46,7 +46,7 @@ Documentación del Servidor HTTP Apache</a>.</p>
 <div id="quickview"><ul id="toc">
 <li><img alt="" src="./images/down.gif" /> <a href="#release">Notas de la Versión</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#using">Funcionamiento del Servidor HTTP Apache</a></li>
-<li><img alt="" src="./images/down.gif" /> <a href="#vhosts">Documuentación sobre Hosting Virtual en Apache</a></li>
+<li><img alt="" src="./images/down.gif" /> <a href="#vhosts">Documentación sobre Hosting Virtual en Apache</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#faq">Preguntas Más Frecuentes sobre Apache</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#ssl">Encriptado SSL/TLS con Apache</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#howto">Guías, Tutoriales, y HowTos</a></li>
@@ -88,7 +88,7 @@ Documentación del Servidor HTTP Apache</a>.</p>
 <li><a href="misc/rewriteguide.html">Documentación adicional sobre mod_rewrite</a></li>
 </ul>
 </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
-<div class="section"><h2><a name="vhosts" id="vhosts">Documuentación sobre Hosting Virtual en Apache</a></h2>
+<div class="section"><h2><a name="vhosts" id="vhosts">Documentación sobre Hosting Virtual en Apache</a></h2>
 <ul><li class="separate"><a href="vhosts/">Visión General</a></li>
 <li><a href="vhosts/name-based.html">Hosting Virtual basado en nombres</a></li>
 <li><a href="vhosts/ip-based.html">Soporte de Hosting Virtual Basado en IPs</a></li>
@@ -195,6 +195,7 @@ usados para describir las directivas de Apache</a></li>
 <li><a href="mod/mod_authz_owner.html">Módulo Apache mod_authz_owner</a></li>
 <li><a href="mod/mod_authz_user.html">Módulo Apache mod_authz_user</a></li>
 <li><a href="mod/mod_autoindex.html">Módulo Apache mod_autoindex</a></li>
+<li><a href="mod/mod_brotli.html">Módulo Apache mod_brotli</a></li>
 <li><a href="mod/mod_buffer.html">Módulo Apache mod_buffer</a></li>
 <li><a href="mod/mod_cache.html">Módulo Apache mod_cache</a></li>
 <li><a href="mod/mod_cache_disk.html">Módulo Apache mod_cache_disk</a></li>
@@ -239,6 +240,7 @@ usados para describir las directivas de Apache</a></li>
 <li><a href="mod/mod_logio.html">Módulo Apache mod_logio</a></li>
 <li><a href="mod/mod_lua.html">Módulo Apache mod_lua</a></li>
 <li><a href="mod/mod_macro.html">Módulo Apache mod_macro</a></li>
+<li><a href="mod/mod_md.html">Módulo Apache mod_md</a></li>
 <li><a href="mod/mod_mime.html">Módulo Apache mod_mime</a></li>
 <li><a href="mod/mod_mime_magic.html">Módulo Apache mod_mime_magic</a></li>
 <li><a href="mod/mod_negotiation.html">Módulo Apache mod_negotiation</a></li>
@@ -257,6 +259,7 @@ usados para describir las directivas de Apache</a></li>
 <li><a href="mod/mod_proxy_http.html">Módulo Apache mod_proxy_http</a></li>
 <li><a href="mod/mod_proxy_http2.html">Módulo Apache mod_proxy_http2</a></li>
 <li><a href="mod/mod_proxy_scgi.html">Módulo Apache mod_proxy_scgi</a></li>
+<li><a href="mod/mod_proxy_uwsgi.html">Módulo Apache mod_proxy_uwsgi</a></li>
 <li><a href="mod/mod_proxy_wstunnel.html">Módulo Apache mod_proxy_wstunnel</a></li>
 <li><a href="mod/mod_ratelimit.html">Módulo Apache mod_ratelimit</a></li>
 <li><a href="mod/mod_reflector.html">Módulo Apache mod_reflector</a></li>
@@ -295,7 +298,7 @@ usados para describir las directivas de Apache</a></li>
 <div class="section"><h2><a name="developer" id="developer">Documentación para desarrolladores</a></h2>
 <ul><li class="separate"><a href="developer/">Visión General</a></li>
 <li><a href="developer/API.html">Notas sobre la API de Apache</a></li>
-<li><a href="developer/debugging.html">Debugging la Reserva de Memoria en APR</a></li>
+<li><a href="developer/debugging.html">Debugear la Reserva de Memoria en APR</a></li>
 <li><a href="developer/documenting.html">Documentando Apache 2.0</a></li>
 <li><a href="developer/hooks.html">Funciones Hook de Apache 2.0</a></li>
 <li><a href="developer/modules.html">Convertir Módulos de Apache 1.3 a Apache 2.0</a></li>
@@ -338,7 +341,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/sitemap.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licencia bajo los términos de <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br />Licencia bajo los términos de la <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">Módulos</a> | <a href="./mod/directives.html">Directivas</a> | <a href="http://wiki.apache.org/httpd/FAQ">Preguntas Frecuentes</a> | <a href="./glossary.html">Glosario</a> | <a href="./sitemap.html">Mapa del sitio web</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
