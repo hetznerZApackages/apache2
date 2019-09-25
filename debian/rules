@@ -99,7 +99,7 @@ suexec-scripts-stamp: $(wildcard debian/debian/apache2-suexec.*.in)
 	touch $@
 
 clean build build-arch build-indep binary binary-arch binary-indep: %:
-	dh $@ --with systemd
+	dh $@ --with systemd --without autoreconf
 
 override_dh_auto_configure: configure-stamp
 configure-stamp: prebuild-checks-stamp support/suexec-custom.c
