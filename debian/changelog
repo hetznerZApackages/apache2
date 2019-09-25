@@ -347,6 +347,71 @@ apache2 (2.4.25-3+deb9u8+deb9hetz1~exp1) stretch-hetz-experimental; urgency=high
 
  -- Geoff Robertson <gr@hetzner.co.za>  Tue, 27 Aug 2019 08:22:38 +0200
 
+apache2 (2.4.25-3+deb9u8) stretch-security; urgency=high
+
+  [ Xavier Guimard ]
+  * Add patch to limit cross-site scripting in mod_proxy (Closes: CVE-2019-10092)
+  * Import http2 modules from 2.4.41 (Closes: CVE-2019-9517, CVE-2019-10082, CVE-2019-10081)
+  * Add patch to set PCRE_DOTALL by default (Closes: CVE-2019-10098)
+
+  [ Stefan Fritsch ]
+  * Add -Werror=implicit-function-declaration to compile options to catch
+    problems with backports.
+
+ -- Stefan Fritsch <sf@debian.org>  Mon, 19 Aug 2019 21:25:31 +0200
+
+apache2 (2.4.25-3+deb9u7) stretch-security; urgency=medium
+
+  * Pull stretch-hetz-experimental to jessie-hetz-experimental
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 14:40:32 +0200
+
+apache2 (2.4.25-3+deb9u6+deb9hetz1~exp3) stretch-hetz-experimental; urgency=medium
+
+  * Version bump
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 14:40:32 +0200
+
+apache2 (2.4.25-3+deb9u6+deb9hetz1~exp2) stretch-hetz-experimental; urgency=medium
+
+  * Bump version to build again
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 13:14:20 +0200
+
+apache2 (2.4.25-3+deb9u6+deb9hetz1~exp1) stretch-hetz-experimental; urgency=medium
+
+  * First custom Apache2.4.25 build for Stretch managed hosting servers
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Tue, 25 Jun 2019 14:36:34 +0200
+
+apache2 (2.4.25-3+deb9u6+hetz1~exp1) stretch-hetz-experimental; urgency=medium
+
+  * First custom Apache2.4.25 build for Stretch managed hosting servers
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 17 Feb 2019 11:09:31 +0200
+
+apache2 (2.4.25-3+deb9u6) stretch; urgency=medium
+
+  * CVE-2018-1333: mod_http2: Fix DoS by worker exhaustion. Closes: #904106
+  * CVE-2018-11763: mod_http2: Fix DoS by continuous SETTINGS.
+    Closes: #909591
+  * mod_proxy_fcgi: Fix segfault. Closes: #902906
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 03 Nov 2018 19:46:19 +0100
+
+apache2 (2.4.25-3+deb9u5) stretch; urgency=medium
+
+  * Upgrade mod_http and mod_proxy_http2 to the versions from 2.4.33. This
+    fixes
+    - CVE-2018-1302: mod_http2: Potential crash w/ mod_http2
+    - Segfaults in mod_http2 (Closes: #873945)
+    - mod_http2 issue with option "Indexes" and directive "HeaderName"
+      (Closes: #850947)
+    Unfortunately, this also removes support for http2 when running on
+    mpm_prefork.
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 03 Nov 2018 19:46:19 +0100
+
 apache2 (2.4.25-3) unstable; urgency=medium
 
   * Fix detection of systemd to fix 'apache2ctl start' on sysv-init.
@@ -592,6 +657,93 @@ apache2 (2.4.17-1) unstable; urgency=medium
   * Don't treat mpm_itk as MPM module in deferred actions in postinst.
     Hopefully really closes: #789914
   * Don't treat mpm_itk as MPM module in a2enmod.
+  [ Jean-Michel Vourgère ]
+  * Updated upstream keyring used to check source authenticity.
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 24 Oct 2015 22:14:32 +0200
+
+apache2 (2.4.16-3) unstable; urgency=medium
+
+  [ Jean-Michel Vourgère ]
+  * Have apache2.postrm removes content of /var/lib/apache2, not the
+    directory itself. Closes: #793862
+  * d/p/reproducible_builds.diff: Sort exported symbols list.
+
+  [ Stefan Fritsch ]
+  * apxs: Don't pass --silent to libtool. Closes: #795820
+  * Remove default /var/www/html/index.html on package purge.
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 18 Aug 2015 13:49:09 +0200
+
+apache2 (2.4.16-2) unstable; urgency=medium
+
+  * Make dh_apache2 add a versioned dependency on apache2-bin, for the
+    new symbols required for the CVE-2015-3185 fix.
+
+ -- Stefan Fritsch <sf@debian.org>  Fri, 07 Aug 2015 23:43:16 +0200
+
+apache2 (2.4.16-1) unstable; urgency=medium
+
+  [ Stefan Fritsch ]
+  * New upstream version, fixing the following security issues:
+    + CVE-2015-3183: Fix chunk header parsing defect.
+    + CVE-2015-3185: ap_some_auth_required() broken in apache 2.4 in an
+      unfixable way. Add a new replacement API ap_some_authn_required()
+      and ap_force_authn hook.
+
+  [ Jean-Michel Vourgère ]
+  * Allow "triggers-awaited" and "triggers-pending" states in addition to
+    "installed" when determining whether to defer actions or process
+    deferred actions. Thanks Colin Watson. Closes: #787103
+  * Allow a2dismod cgi on threaded mpms. Thanks Raul Dias. Closes:
+    #733979
+  * Remove pre-Jessie transition scripts, and remaining breaks.
+  * Made builds reproducible: d/rules set the date from the changelog in
+    CPPFLAGS, new reproducible_builds.diff patch to use it.
+  * Moved bash_completion from /etc to /usr/share/bash_completion. Added
+    links there for dynamic loading.
+  * Upgrade security.conf comments to 2.4 auth format. Thanks Werner
+    Detter. Closes: #789788
+  * apache2.postinst: Fixed tests on deferred mpm switch. Closes:
+    #789914
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 02 Aug 2015 00:44:07 +0200
+
+apache2 (2.4.12-2) unstable; urgency=medium
+
+  [ Jean-Michel Nirgal Vourgère ]
+  * d/control:
+    + Update Vcs-Browser.
+  * d/copyright:
+    + Change d/debhelper/dh_apache2 to dh_apache2.in.
+    + Drop paragraph about inexistant itk patches.
+
+  [ Stefan Fritsch ]
+  * Remove all the transitional packages:
+    apache2-mpm-worker, apache2-mpm-prefork, apache2-mpm-event,
+    apache2-mpm-itk, apache2.2-bin, apache2.2-common,
+    libapache2-mod-proxy-html, libapache2-mod-macro, apache2-suexec
+    This also fixes the dependency problems caused by a recent version
+    of debhelper (see #784803).
+
+ -- Stefan Fritsch <sf@debian.org>  Mon, 11 May 2015 22:07:26 +0200
+
+apache2 (2.4.12-1) unstable; urgency=medium
+
+  * New upstream version
+  * Add a patch for CVE-2015-0253 which was introduced in 2.4.11 which
+    was never shipped in Debian.
+  * Ship mod_proxy_html's default config file. Closes: #782022
+  * Fix typo in dh_apache2 man page. Closes: #781032
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 28 Apr 2015 22:54:41 +0200
+
+apache2 (2.4.10-11) unstable; urgency=medium
+
+  * core: Fix -D[efined] or <Define>[d] variables lifetime accross restarts.
+    This could cause all kinds of strange behavior. PR 56008. PR 57328
+  * mpm_event: Fix process deadlock when shutting down a worker. PR 56960
+  * mpm_event: Fix crashes due to various race conditions. Closes: #779078
 
   [ Jean-Michel Vourgère ]
   * Updated upstream keyring used to check source authenticity.
