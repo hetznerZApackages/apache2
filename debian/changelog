@@ -1,3 +1,9 @@
+apache2 (2.4.38-3+deb10u1+deb9hetz1~exp1) stretch-hetz-experimental; urgency=high
+
+  * Initial backport from Buster
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Wed, 25 Sep 2019 10:38:52 +0200
+
 apache2 (2.4.38-3+deb10u1) buster-security; urgency=high
 
   * Add patch to limit cross-site scripting in mod_proxy (Closes: CVE-2019-10092)
