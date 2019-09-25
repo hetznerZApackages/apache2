@@ -99,12 +99,10 @@ suexec-scripts-stamp: $(wildcard debian/debian/apache2-suexec.*.in)
 	touch $@
 
 clean build build-arch build-indep binary binary-arch binary-indep: %:
-	dh_autotools-dev_restoreconfig
 	dh $@ --with systemd
 
 override_dh_auto_configure: configure-stamp
 configure-stamp: prebuild-checks-stamp support/suexec-custom.c
-	dh_autotools-dev_updateconfig
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--enable-layout=Debian --enable-so --with-program-name=apache2 \
 		--enable-suexec --with-suexec-caller=www-data \
