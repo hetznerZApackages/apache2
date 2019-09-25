@@ -6,7 +6,7 @@ Uploaders: Stefan Fritsch <sf@debian.org>,
            Xavier Guimard <yadd@debian.org>
 Section: httpd
 Priority: optional
-Build-Depends: debhelper (>= 10),
+Build-Depends: debhelper (>= 12),
                dpkg-dev (>= 1.16.1~),
                gawk | awk,
                libapr1-dev (>= 1.5.0),
