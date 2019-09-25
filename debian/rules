@@ -191,6 +191,9 @@ override_dh_installman:
 	pod2man debian/a2query.in > debian/manpages/a2query.8
 	dh_installman
 
+override_dh_strip:
+	dh_strip --dbgsym-migration='apache2-dbg (<< 2.4.37-2~)'
+
 override_dh_auto_install:
 	dh_auto_install -- -j1
 
