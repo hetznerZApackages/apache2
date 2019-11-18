@@ -1,3 +1,23 @@
+apache2 (2.4.38-3+deb10u3+deb9hetz1~exp1) stretch-hetz-experimental; urgency=high
+
+  * Import changes for CVE-2019-10092
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 18 Nov 2019 14:40:24 +0200
+
+apache2 (2.4.38-3+deb10u3) buster-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * Annoatate patch for CVE-2019-10092: Add missing APLOGNO's in
+    modules/proxy/mod_proxy.c and modules/proxy/mod_proxy_ftp.c
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Tue, 15 Oct 2019 21:53:42 +0200
+
+apache2 (2.4.38-3+deb10u2) buster-security; urgency=medium
+
+  * Fix CVE-2019-10092 patch (Closes: #941202)
+
+ -- Xavier Guimard <yadd@debian.org>  Sun, 13 Oct 2019 22:23:11 +0200
+
 apache2 (2.4.38-3+deb10u1+deb9hetz1) stretch-hetz; urgency=high
 
   * Released 2.4.38-3+deb10u1+deb9hetz1~exp2 as 2.4.38-3+deb10u1+deb9hetz1
