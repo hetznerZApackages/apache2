@@ -1,3 +1,9 @@
+apache2 (2.4.38-3+deb10u3+deb9hetz1) stretch-hetz; urgency=high
+
+  * Released 2.4.38-3+deb10u3+deb9hetz1~exp1 as 2.4.38-3+deb10u3+deb9hetz1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Tue, 19 Nov 2019 11:23:36 +0200
+
 apache2 (2.4.38-3+deb10u3+deb9hetz1~exp1) stretch-hetz-experimental; urgency=high
 
   * Import changes for CVE-2019-10092
