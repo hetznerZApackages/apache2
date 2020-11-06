@@ -1,3 +1,9 @@
+apache2 (2.4.38-3+deb10u4+deb9hetz1) stretch-hetz; urgency=high
+
+  * Released 2.4.38-3+deb10u4+deb9hetz1~exp3 as 2.4.38-3+deb10u4+deb9hetz1
+
+ -- Shaun Bugler - Hetzner <sb@hetzner.co.za>  Fri, 06 Nov 2020 08:28:03 +0200
+
 apache2 (2.4.38-3+deb10u4+deb9hetz1~exp3) stretch-hetz-experimental; urgency=high
 
   * Import upstream release 
