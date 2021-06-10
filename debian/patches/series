@@ -19,5 +19,13 @@ CVE-2019-0220-3.patch
 CVE-2019-0197.patch
 CVE-2019-10092.patch
 CVE-2019-10097.patch
-import-http2-module-from-2.4.41.patch
 CVE-2019-10098.patch
+import-http2-module-from-2.4.46.patch
+CVE-2020-11984.patch
+CVE-2020-1927.patch
+CVE-2020-1934.patch
+CVE-2021-31618.patch
+CVE-2021-30641.patch
+CVE-2021-26691.patch
+CVE-2021-26690.patch
+CVE-2020-35452.patch

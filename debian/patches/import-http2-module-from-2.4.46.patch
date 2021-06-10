@@ -5,9 +5,11 @@ Author: Apache authors
 Bug: https://security-tracker.debian.org/tracker/CVE-2019-9517
  https://security-tracker.debian.org/tracker/CVE-2019-10082
  https://security-tracker.debian.org/tracker/CVE-2019-10081
+ https://security-tracker.debian.org/tracker/CVE-2020-9490
+ https://security-tracker.debian.org/tracker/CVE-2020-11993
 Forwarded: not-needed
 Reviewed-By: Xavier Guimard <yadd@debian.org>
-Last-Update: 2019-08-17
+Last-Update: 2020-08-25
 
 --- a/modules/http2/config2.m4
 +++ b/modules/http2/config2.m4
@@ -37,6 +39,15 @@ Last-Update: 2019-08-17
  /* Maximum number of padding bytes in a frame, rfc7540 */
  #define H2_MAX_PADLEN               256
  /* Initial default window size, RFC 7540 ch. 6.5.2 */
+@@ -138,7 +138,7 @@
+     apr_table_t *headers;
+ 
+     apr_time_t request_time;
+-    unsigned int chunked : 1;   /* iff requst body needs to be forwarded as chunked */
++    unsigned int chunked : 1;   /* iff request body needs to be forwarded as chunked */
+     unsigned int serialize : 1; /* iff this request is written in HTTP/1.1 serialization */
+     apr_off_t raw_bytes;        /* RAW network bytes that generated this request - if known. */
+ };
 @@ -162,5 +162,6 @@
  #define H2_FILTER_DEBUG_NOTE    "http2-debug"
  #define H2_HDR_CONFORMANCE      "http2-hdr-conformance"
@@ -86,6 +97,42 @@ Last-Update: 2019-08-17
                  const char *ahost = as->host;
                  if (ahost && !apr_strnatcasecmp(ahost, r->hostname)) {
                      ahost = NULL;
+--- a/modules/http2/h2_bucket_beam.c
++++ b/modules/http2/h2_bucket_beam.c
+@@ -196,7 +196,7 @@
+  * bucket beam that can transport buckets across threads
+  ******************************************************************************/
+ 
+-static void mutex_leave(void *ctx, apr_thread_mutex_t *lock)
++static void mutex_leave(apr_thread_mutex_t *lock)
+ {
+     apr_thread_mutex_unlock(lock);
+ }
+@@ -217,7 +217,7 @@
+ static void leave_yellow(h2_bucket_beam *beam, h2_beam_lock *pbl)
+ {
+     if (pbl->leave) {
+-        pbl->leave(pbl->leave_ctx, pbl->mutex);
++        pbl->leave(pbl->mutex);
+     }
+ }
+ 
+--- a/modules/http2/h2_bucket_beam.h
++++ b/modules/http2/h2_bucket_beam.h
+@@ -126,12 +126,11 @@
+  * buffers until the transmission is complete. Star gates use a similar trick.
+  */
+ 
+-typedef void h2_beam_mutex_leave(void *ctx,  struct apr_thread_mutex_t *lock);
++typedef void h2_beam_mutex_leave(struct apr_thread_mutex_t *lock);
+ 
+ typedef struct {
+     apr_thread_mutex_t *mutex;
+     h2_beam_mutex_leave *leave;
+-    void *leave_ctx;
+ } h2_beam_lock;
+ 
+ typedef struct h2_bucket_beam h2_bucket_beam;
 --- a/modules/http2/h2_config.c
 +++ b/modules/http2/h2_config.c
 @@ -42,6 +42,55 @@
@@ -259,17 +306,7 @@ Last-Update: 2019-08-17
  {
      switch(var) {
          case H2_CONF_MAX_STREAMS:
-@@ -191,7 +269,8 @@
-         case H2_CONF_UPGRADE:
-             return H2_CONFIG_GET(conf, &defconf, h2_upgrade);
-         case H2_CONF_DIRECT:
--            return H2_CONFIG_GET(conf, &defconf, h2_direct);
-+            return 1;
-+            /*return H2_CONFIG_GET(conf, &defconf, h2_direct);*/
-         case H2_CONF_TLS_WARMUP_SIZE:
-             return H2_CONFIG_GET(conf, &defconf, tls_warmup_size);
-         case H2_CONF_TLS_COOLDOWN_SECS:
-@@ -204,12 +283,93 @@
+@@ -204,12 +282,93 @@
              return H2_CONFIG_GET(conf, &defconf, copy_files);
          case H2_CONF_EARLY_HINTS:
              return H2_CONFIG_GET(conf, &defconf, early_hints);
@@ -364,7 +401,7 @@ Last-Update: 2019-08-17
  {
      h2_config *cfg = (h2_config *)ap_get_module_config(s->module_config, 
                                                         &http2_module);
-@@ -217,9 +377,162 @@
+@@ -217,9 +376,162 @@
      return cfg;
  }
  
@@ -529,7 +566,7 @@ Last-Update: 2019-08-17
      if (content_type && conf->priorities) {
          size_t len = strcspn(content_type, "; \t");
          h2_priority *prio = apr_hash_get(conf->priorities, content_type, len);
-@@ -228,166 +541,156 @@
+@@ -228,166 +540,156 @@
      return NULL;
  }
  
@@ -762,7 +799,7 @@ Last-Update: 2019-08-17
      return "value must be On or Off";
  }
  
-@@ -419,7 +722,7 @@
+@@ -419,7 +721,7 @@
      else if (!strcasecmp("BEFORE", sdependency)) {
          dependency = H2_DEPENDANT_BEFORE;
          if (sweight) {
@@ -771,7 +808,7 @@ Last-Update: 2019-08-17
          }
      } 
      else if (!strcasecmp("INTERLEAVED", sdependency)) {
-@@ -447,100 +750,88 @@
+@@ -447,100 +749,88 @@
      return NULL;
  }
  
@@ -903,7 +940,7 @@ Last-Update: 2019-08-17
      new->uri_ref = push->uri_ref;
      new->critical = push->critical;
  }
-@@ -549,8 +840,6 @@
+@@ -549,8 +839,6 @@
                                          const char *arg1, const char *arg2,
                                          const char *arg3)
  {
@@ -912,7 +949,7 @@ Last-Update: 2019-08-17
      h2_push_res push;
      const char *last = arg3;
      
-@@ -575,42 +864,54 @@
+@@ -575,42 +863,54 @@
          }
      }
  
@@ -987,7 +1024,7 @@ Last-Update: 2019-08-17
      ap_mpm_query(AP_MPMQ_MAX_THREADS, &threads_per_child);
  
      if (*minw <= 0) {
-@@ -652,7 +953,7 @@
+@@ -652,7 +952,7 @@
      AP_INIT_TAKE1("H2ModernTLSOnly", h2_conf_set_modern_tls_only, NULL,
                    RSRC_CONF, "off to not impose RFC 7540 restrictions on TLS"),
      AP_INIT_TAKE1("H2Upgrade", h2_conf_set_upgrade, NULL,
@@ -996,7 +1033,7 @@ Last-Update: 2019-08-17
      AP_INIT_TAKE1("H2Direct", h2_conf_set_direct, NULL,
                    RSRC_CONF, "on to enable direct HTTP/2 mode"),
      AP_INIT_TAKE1("H2SessionExtraFiles", h2_conf_set_session_extra_files, NULL,
-@@ -662,7 +963,7 @@
+@@ -662,7 +962,7 @@
      AP_INIT_TAKE1("H2TLSCoolDownSecs", h2_conf_set_tls_cooldown_secs, NULL,
                    RSRC_CONF, "seconds of idle time on TLS before shrinking writes"),
      AP_INIT_TAKE1("H2Push", h2_conf_set_push, NULL,
@@ -1005,7 +1042,7 @@ Last-Update: 2019-08-17
      AP_INIT_TAKE23("H2PushPriority", h2_conf_add_push_priority, NULL,
                    RSRC_CONF, "define priority of PUSHed resources per content type"),
      AP_INIT_TAKE1("H2PushDiarySize", h2_conf_set_push_diary_size, NULL,
-@@ -670,33 +971,12 @@
+@@ -670,33 +970,12 @@
      AP_INIT_TAKE1("H2CopyFiles", h2_conf_set_copy_files, NULL,
                    OR_FILEINFO, "on to perform copy of file data"),
      AP_INIT_TAKE123("H2PushResource", h2_conf_add_push_res, NULL,
@@ -1143,6 +1180,15 @@ Last-Update: 2019-08-17
  
  #include <httpd.h>
  #include <http_core.h>
+@@ -79,7 +80,7 @@
+                 mpm_type = H2_MPM_PREFORK;
+                 mpm_module = m;
+                 /* While http2 can work really well on prefork, it collides
+-                 * today's use case for prefork: runnning single-thread app engines
++                 * today's use case for prefork: running single-thread app engines
+                  * like php. If we restrict h2_workers to 1 per process, php will
+                  * work fine, but browser will be limited to 1 active request at a
+                  * time. */
 @@ -109,7 +110,6 @@
  
  apr_status_t h2_conn_child_init(apr_pool_t *pool, server_rec *s)
@@ -1160,6 +1206,15 @@ Last-Update: 2019-08-17
      ap_log_error(APLOG_MARK, APLOG_TRACE3, 0, s,
                   "h2_workers: min=%d max=%d, mthrpchild=%d, idle_secs=%d", 
                   minw, maxw, max_threads_per_child, idle_secs);
+@@ -138,7 +138,7 @@
+     ap_register_input_filter("H2_IN", h2_filter_core_input,
+                              NULL, AP_FTYPE_CONNECTION);
+    
+-    status = h2_mplx_child_init(pool, s);
++    status = h2_mplx_m_child_init(pool, s);
+ 
+     if (status == APR_SUCCESS) {
+         status = apr_socket_create(&dummy_socket, APR_INET, SOCK_STREAM,
 @@ -172,9 +172,10 @@
      return mpm_module;
  }
@@ -1172,7 +1227,7 @@ Last-Update: 2019-08-17
      apr_status_t status;
      
      if (!workers) {
-@@ -183,24 +184,19 @@
+@@ -183,24 +184,25 @@
          return APR_EGENERAL;
      }
      
@@ -1187,6 +1242,12 @@ Last-Update: 2019-08-17
 +    if (APR_SUCCESS == (status = h2_session_create(&session, c, r, s, workers))) {
 +        ctx = h2_ctx_get(c, 1);
          h2_ctx_session_set(ctx, session);
++
++        /* remove the input filter of mod_reqtimeout, now that the connection
++         * is established and we have swtiched to h2. reqtimeout has supervised
++         * possibly configured handshake timeouts and needs to get out of the way
++         * now since the rest of its state handling assumes http/1.x to take place. */
++        ap_remove_input_filter_byhandle(c->input_filters, "reqtimeout");
      }
 +    
      return status;
@@ -1202,7 +1263,7 @@ Last-Update: 2019-08-17
      
      ap_assert(session);
      do {
-@@ -235,6 +231,13 @@
+@@ -235,6 +237,13 @@
              case H2_SESSION_ST_BUSY:
              case H2_SESSION_ST_WAIT:
                  c->cs->state = CONN_STATE_WRITE_COMPLETION;
@@ -1216,7 +1277,7 @@ Last-Update: 2019-08-17
                  break;
              case H2_SESSION_ST_CLEANUP:
              case H2_SESSION_ST_DONE:
-@@ -249,7 +252,7 @@
+@@ -249,7 +258,7 @@
  
  apr_status_t h2_conn_pre_close(struct h2_ctx *ctx, conn_rec *c)
  {
@@ -1225,19 +1286,140 @@ Last-Update: 2019-08-17
      if (session) {
          apr_status_t status = h2_session_pre_close(session, async_mpm);
          return (status == APR_SUCCESS)? DONE : status;
-@@ -310,8 +313,10 @@
+@@ -257,7 +266,7 @@
+     return DONE;
+ }
+ 
+-conn_rec *h2_slave_create(conn_rec *master, int slave_id, apr_pool_t *parent)
++conn_rec *h2_secondary_create(conn_rec *master, int sec_id, apr_pool_t *parent)
+ {
+     apr_allocator_t *allocator;
+     apr_status_t status;
+@@ -268,11 +277,11 @@
+     
+     ap_assert(master);
+     ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, master,
+-                  "h2_stream(%ld-%d): create slave", master->id, slave_id);
++                  "h2_stream(%ld-%d): create secondary", master->id, sec_id);
+     
+     /* We create a pool with its own allocator to be used for
+      * processing a request. This is the only way to have the processing
+-     * independant of its parent pool in the sense that it can work in
++     * independent of its parent pool in the sense that it can work in
+      * another thread. Also, the new allocator needs its own mutex to
+      * synchronize sub-pools.
+      */
+@@ -281,18 +290,18 @@
+     status = apr_pool_create_ex(&pool, parent, NULL, allocator);
+     if (status != APR_SUCCESS) {
+         ap_log_cerror(APLOG_MARK, APLOG_ERR, status, master, 
+-                      APLOGNO(10004) "h2_session(%ld-%d): create slave pool",
+-                      master->id, slave_id);
++                      APLOGNO(10004) "h2_session(%ld-%d): create secondary pool",
++                      master->id, sec_id);
+         return NULL;
+     }
+     apr_allocator_owner_set(allocator, pool);
+-    apr_pool_tag(pool, "h2_slave_conn");
++    apr_pool_tag(pool, "h2_secondary_conn");
+  
+     c = (conn_rec *) apr_palloc(pool, sizeof(conn_rec));
+     if (c == NULL) {
+         ap_log_cerror(APLOG_MARK, APLOG_ERR, APR_ENOMEM, master, 
+-                      APLOGNO(02913) "h2_session(%ld-%d): create slave",
+-                      master->id, slave_id);
++                      APLOGNO(02913) "h2_session(%ld-%d): create secondary",
++                      master->id, sec_id);
+         apr_pool_destroy(pool);
+         return NULL;
+     }
+@@ -310,26 +319,28 @@
      c->filter_conn_ctx        = NULL;
  #endif
      c->bucket_alloc           = apr_bucket_alloc_create(pool);
--    c->data_in_input_filters  = 0;
--    c->data_in_output_filters = 0;
 +#if !AP_MODULE_MAGIC_AT_LEAST(20180720, 1)
-+     c->data_in_input_filters  = 0;
-+     c->data_in_output_filters = 0;
+     c->data_in_input_filters  = 0;
+     c->data_in_output_filters = 0;
 +#endif
      /* prevent mpm_event from making wrong assumptions about this connection,
       * like e.g. using its socket for an async read check. */
      c->clogging_input_filters = 1;
+     c->log                    = NULL;
+     c->log_id                 = apr_psprintf(pool, "%ld-%d", 
+-                                             master->id, slave_id);
++                                             master->id, sec_id);
+     c->aborted                = 0;
+-    /* We cannot install the master connection socket on the slaves, as
++    /* We cannot install the master connection socket on the secondary, as
+      * modules mess with timeouts/blocking of the socket, with
+      * unwanted side effects to the master connection processing.
+-     * Fortunately, since we never use the slave socket, we can just install
++     * Fortunately, since we never use the secondary socket, we can just install
+      * a single, process-wide dummy and everyone is happy.
+      */
+     ap_set_module_config(c->conn_config, &core_module, dummy_socket);
+     /* TODO: these should be unique to this thread */
+     c->sbh                    = master->sbh;
+-    /* TODO: not all mpm modules have learned about slave connections yet.
+-     * copy their config from master to slave.
++    /* TODO: not all mpm modules have learned about secondary connections yet.
++     * copy their config from master to secondary.
+      */
+     if ((mpm = h2_conn_mpm_module()) != NULL) {
+         cfg = ap_get_module_config(master->conn_config, mpm);
+@@ -337,38 +348,38 @@
+     }
+ 
+     ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c, 
+-                  "h2_slave(%s): created", c->log_id);
++                  "h2_secondary(%s): created", c->log_id);
+     return c;
+ }
+ 
+-void h2_slave_destroy(conn_rec *slave)
++void h2_secondary_destroy(conn_rec *secondary)
+ {
+-    ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, slave,
+-                  "h2_slave(%s): destroy", slave->log_id);
+-    slave->sbh = NULL;
+-    apr_pool_destroy(slave->pool);
++    ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, secondary,
++                  "h2_secondary(%s): destroy", secondary->log_id);
++    secondary->sbh = NULL;
++    apr_pool_destroy(secondary->pool);
+ }
+ 
+-apr_status_t h2_slave_run_pre_connection(conn_rec *slave, apr_socket_t *csd)
++apr_status_t h2_secondary_run_pre_connection(conn_rec *secondary, apr_socket_t *csd)
+ {
+-    if (slave->keepalives == 0) {
++    if (secondary->keepalives == 0) {
+         /* Simulate that we had already a request on this connection. Some
+          * hooks trigger special behaviour when keepalives is 0. 
+          * (Not necessarily in pre_connection, but later. Set it here, so it
+          * is in place.) */
+-        slave->keepalives = 1;
++        secondary->keepalives = 1;
+         /* We signal that this connection will be closed after the request.
+          * Which is true in that sense that we throw away all traffic data
+-         * on this slave connection after each requests. Although we might
++         * on this secondary connection after each requests. Although we might
+          * reuse internal structures like memory pools.
+          * The wanted effect of this is that httpd does not try to clean up
+          * any dangling data on this connection when a request is done. Which
+-         * is unneccessary on a h2 stream.
++         * is unnecessary on a h2 stream.
+          */
+-        slave->keepalive = AP_CONN_CLOSE;
+-        return ap_run_pre_connection(slave, csd);
++        secondary->keepalive = AP_CONN_CLOSE;
++        return ap_run_pre_connection(secondary, csd);
+     }
+-    ap_assert(slave->output_filters);
++    ap_assert(secondary->output_filters);
+     return APR_SUCCESS;
+ }
+ 
 --- a/modules/http2/h2_conn.h
 +++ b/modules/http2/h2_conn.h
 @@ -23,21 +23,21 @@
@@ -1266,6 +1448,21 @@ Last-Update: 2019-08-17
  
  /**
   * The connection is about to close. If we have not send a GOAWAY
+@@ -68,10 +68,10 @@
+ const char *h2_conn_mpm_name(void);
+ int h2_mpm_supported(void);
+ 
+-conn_rec *h2_slave_create(conn_rec *master, int slave_id, apr_pool_t *parent);
+-void h2_slave_destroy(conn_rec *slave);
++conn_rec *h2_secondary_create(conn_rec *master, int sec_id, apr_pool_t *parent);
++void h2_secondary_destroy(conn_rec *secondary);
+ 
+-apr_status_t h2_slave_run_pre_connection(conn_rec *slave, apr_socket_t *csd);
+-void h2_slave_run_connection(conn_rec *slave);
++apr_status_t h2_secondary_run_pre_connection(conn_rec *secondary, apr_socket_t *csd);
++void h2_secondary_run_connection(conn_rec *secondary);
+ 
+ #endif /* defined(__mod_h2__h2_conn__) */
 --- a/modules/http2/h2_conn_io.c
 +++ b/modules/http2/h2_conn_io.c
 @@ -40,12 +40,17 @@
@@ -1464,6 +1661,15 @@ Last-Update: 2019-08-17
      bbout(bb, "    \"SETTINGS_ENABLE_PUSH\": %d\n", h2_session_push_enabled(s)); 
      bbout(bb, "  }%s\n", last? "" : ",");
  }
+@@ -369,7 +370,7 @@
+     x.s = s;
+     x.idx = 0;
+     bbout(bb, "  \"streams\": {");
+-    h2_mplx_stream_do(s->mplx, add_stream, &x);
++    h2_mplx_m_stream_do(s->mplx, add_stream, &x);
+     bbout(bb, "\n  }%s\n", last? "" : ",");
+ }
+ 
 @@ -431,41 +432,38 @@
  
  static apr_status_t h2_status_insert(h2_task *task, apr_bucket *b)
@@ -1473,7 +1679,7 @@ Last-Update: 2019-08-17
 -    h2_session *session;
 -    h2_stream *stream;
 +    h2_mplx *m = task->mplx;
-+    h2_stream *stream = h2_mplx_stream_get(m, task->stream_id);
++    h2_stream *stream = h2_mplx_t_stream_get(m, task);
 +    h2_session *s;
 +    conn_rec *c;
 +    
@@ -1594,7 +1800,82 @@ Last-Update: 2019-08-17
          
 --- a/modules/http2/h2_from_h1.c
 +++ b/modules/http2/h2_from_h1.c
-@@ -594,18 +594,20 @@
+@@ -315,6 +315,7 @@
+     int http_status;
+     apr_array_header_t *hlines;
+     apr_bucket_brigade *tmp;
++    apr_bucket_brigade *saveto;
+ } h2_response_parser;
+ 
+ static apr_status_t parse_header(h2_response_parser *parser, char *line) {
+@@ -351,13 +352,17 @@
+         parser->tmp = apr_brigade_create(task->pool, task->c->bucket_alloc);
+     }
+     status = apr_brigade_split_line(parser->tmp, bb, APR_BLOCK_READ, 
+-                                    HUGE_STRING_LEN);
++                                    len);
+     if (status == APR_SUCCESS) {
+         --len;
+         status = apr_brigade_flatten(parser->tmp, line, &len);
+         if (status == APR_SUCCESS) {
+             /* we assume a non-0 containing line and remove trailing crlf. */
+             line[len] = '\0';
++            /*
++             * XXX: What to do if there is an LF but no CRLF?
++             *      Should we error out?
++             */
+             if (len >= 2 && !strcmp(H2_CRLF, line + len - 2)) {
+                 len -= 2;
+                 line[len] = '\0';
+@@ -367,10 +372,47 @@
+                               task->id, line);
+             }
+             else {
++                apr_off_t brigade_length;
++
++                /*
++                 * If the brigade parser->tmp becomes longer than our buffer
++                 * for flattening we never have a chance to get a complete
++                 * line. This can happen if we are called multiple times after
++                 * previous calls did not find a H2_CRLF and we returned
++                 * APR_EAGAIN. In this case parser->tmp (correctly) grows
++                 * with each call to apr_brigade_split_line.
++                 *
++                 * XXX: Currently a stack based buffer of HUGE_STRING_LEN is
++                 * used. This means we cannot cope with lines larger than
++                 * HUGE_STRING_LEN which might be an issue.
++                 */
++                status = apr_brigade_length(parser->tmp, 0, &brigade_length);
++                if ((status != APR_SUCCESS) || (brigade_length > len)) {
++                    ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, task->c, APLOGNO(10257)
++                                  "h2_task(%s): read response, line too long",
++                                  task->id);
++                    return APR_ENOSPC;
++                }
+                 /* this does not look like a complete line yet */
+                 ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, task->c,
+                               "h2_task(%s): read response, incomplete line: %s", 
+                               task->id, line);
++                if (!parser->saveto) {
++                    parser->saveto = apr_brigade_create(task->pool,
++                                                        task->c->bucket_alloc);
++                }
++                /*
++                 * Be on the save side and save the parser->tmp brigade
++                 * as it could contain transient buckets which could be
++                 * invalid next time we are here.
++                 *
++                 * NULL for the filter parameter is ok since we
++                 * provide our own brigade as second parameter
++                 * and ap_save_brigade does not need to create one.
++                 */
++                ap_save_brigade(NULL, &(parser->saveto), &(parser->tmp),
++                                parser->tmp->p);
++                APR_BRIGADE_CONCAT(parser->tmp, parser->saveto);
+                 return APR_EAGAIN;
+             }
+         }
+@@ -594,18 +636,20 @@
          }
      }
      
@@ -1645,7 +1926,7 @@ Last-Update: 2019-08-17
          if (!opt_ssl_var_lookup) {
              /* unable to check */
              return 0;
-@@ -521,26 +520,22 @@
+@@ -521,33 +520,29 @@
      return 1;
  }
  
@@ -1678,6 +1959,23 @@ Last-Update: 2019-08-17
  }
  
  /*******************************************************************************
+  * Register various hooks
+  */
+ static const char* const mod_ssl[]        = { "mod_ssl.c", NULL};
+-static const char* const mod_reqtimeout[] = { "mod_reqtimeout.c", NULL};
++static const char* const mod_reqtimeout[] = { "mod_ssl.c", "mod_reqtimeout.c", NULL};
+ 
+ void h2_h2_register_hooks(void)
+ {
+@@ -558,7 +553,7 @@
+      * a chance to take over before it.
+      */
+     ap_hook_process_connection(h2_h2_process_conn, 
+-                               mod_ssl, mod_reqtimeout, APR_HOOK_LAST);
++                               mod_reqtimeout, NULL, APR_HOOK_LAST);
+     
+     /* One last chance to properly say goodbye if we have not done so
+      * already. */
 @@ -581,14 +576,17 @@
  {
      apr_status_t status;
@@ -1761,6 +2059,15 @@ Last-Update: 2019-08-17
          return OK;
      }
      
+@@ -667,7 +666,7 @@
+ {
+     h2_ctx *ctx;
+ 
+-    /* slave connection? */
++    /* secondary connection? */
+     if (c->master) {
+         return DECLINED;
+     }
 @@ -684,16 +683,17 @@
  
  static void check_push(request_rec *r, const char *tag)
@@ -1785,9 +2092,12 @@ Last-Update: 2019-08-17
              apr_table_add(r->headers_out, "Link", 
                             apr_psprintf(r->pool, "<%s>; rel=preload%s", 
                                          push->uri_ref, push->critical? "; critical" : ""));
-@@ -712,8 +712,7 @@
+@@ -710,10 +710,9 @@
+ 
+ static int h2_h2_post_read_req(request_rec *r)
  {
-     /* slave connection? */
+-    /* slave connection? */
++    /* secondary connection? */
      if (r->connection->master) {
 -        h2_ctx *ctx = h2_ctx_rget(r);
 -        struct h2_task *task = h2_ctx_get_task(ctx);
@@ -1795,9 +2105,21 @@ Last-Update: 2019-08-17
          /* This hook will get called twice on internal redirects. Take care
           * that we manipulate filters only once. */
          if (task && !task->filters_set) {
-@@ -746,12 +745,10 @@
+@@ -730,7 +729,7 @@
+             ap_add_output_filter("H2_RESPONSE", task, r, r->connection);
+             
+             for (f = r->input_filters; f; f = f->next) {
+-                if (!strcmp("H2_SLAVE_IN", f->frec->name)) {
++                if (!strcmp("H2_SECONDARY_IN", f->frec->name)) {
+                     f->r = r;
+                     break;
+                 }
+@@ -744,17 +743,15 @@
+ 
+ static int h2_h2_late_fixups(request_rec *r)
  {
-     /* slave connection? */
+-    /* slave connection? */
++    /* secondary connection? */
      if (r->connection->master) {
 -        h2_ctx *ctx = h2_ctx_rget(r);
 -        struct h2_task *task = h2_ctx_get_task(ctx);
@@ -1809,7 +2131,11 @@ Last-Update: 2019-08-17
 +            task->output.copy_files = h2_config_rgeti(r, H2_CONF_COPY_FILES);
              if (task->output.copy_files) {
                  ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, task->c,
-                               "h2_slave_out(%s): copy_files on", task->id);
+-                              "h2_slave_out(%s): copy_files on", task->id);
++                              "h2_secondary_out(%s): copy_files on", task->id);
+                 h2_beam_on_file_beam(task->output.beam, h2_beam_no_files, NULL);
+             }
+             check_push(r, "late_fixup");
 --- a/modules/http2/h2_h2.h
 +++ b/modules/http2/h2_h2.h
 @@ -57,23 +57,15 @@
@@ -1949,22 +2275,49 @@ Last-Update: 2019-08-17
  #include "h2_request.h"
  #include "h2_stream.h"
  #include "h2_session.h"
-@@ -54,8 +53,12 @@
+@@ -54,9 +53,21 @@
      h2_mplx *m;
      h2_stream *stream;
      apr_time_t now;
 +    apr_size_t count;
  } stream_iter_ctx;
  
-+static apr_status_t mplx_be_happy(h2_mplx *m);
-+static apr_status_t mplx_be_annoyed(h2_mplx *m);
+-apr_status_t h2_mplx_child_init(apr_pool_t *pool, server_rec *s)
++/**
++ * Naming convention for static functions:
++ * - m_*: function only called from the master connection
++ * - s_*: function only called from a secondary connection
++ * - t_*: function only called from a h2_task holder
++ * - mst_*: function called from everyone
++ */
 +
- apr_status_t h2_mplx_child_init(apr_pool_t *pool, server_rec *s)
++static apr_status_t s_mplx_be_happy(h2_mplx *m, h2_task *task);
++static apr_status_t m_be_annoyed(h2_mplx *m);
++
++apr_status_t h2_mplx_m_child_init(apr_pool_t *pool, server_rec *s)
  {
      return APR_SUCCESS;
-@@ -83,12 +86,6 @@
- static void stream_output_consumed(void *ctx, 
-                                    h2_bucket_beam *beam, apr_off_t length)
+ }
+@@ -72,46 +83,40 @@
+ #define H2_MPLX_ENTER_ALWAYS(m)    \
+     apr_thread_mutex_lock(m->lock)
+ 
+-#define H2_MPLX_ENTER_MAYBE(m, lock)    \
+-    if (lock) apr_thread_mutex_lock(m->lock)
++#define H2_MPLX_ENTER_MAYBE(m, dolock)    \
++    if (dolock) apr_thread_mutex_lock(m->lock)
+ 
+-#define H2_MPLX_LEAVE_MAYBE(m, lock)    \
+-    if (lock) apr_thread_mutex_unlock(m->lock)
++#define H2_MPLX_LEAVE_MAYBE(m, dolock)    \
++    if (dolock) apr_thread_mutex_unlock(m->lock)
+ 
+-static void check_data_for(h2_mplx *m, h2_stream *stream, int lock);
++static void mst_check_data_for(h2_mplx *m, h2_stream *stream, int mplx_is_locked);
+ 
+-static void stream_output_consumed(void *ctx, 
+-                                   h2_bucket_beam *beam, apr_off_t length)
++static void mst_stream_output_consumed(void *ctx, h2_bucket_beam *beam, apr_off_t length)
  {
 -    h2_stream *stream = ctx;
 -    h2_task *task = stream->task;
@@ -1974,38 +2327,69 @@ Last-Update: 2019-08-17
 -    }
  }
  
- static void stream_input_ev(void *ctx, h2_bucket_beam *beam)
-@@ -105,7 +102,7 @@
+-static void stream_input_ev(void *ctx, h2_bucket_beam *beam)
++static void mst_stream_input_ev(void *ctx, h2_bucket_beam *beam)
+ {
+     h2_stream *stream = ctx;
+     h2_mplx *m = stream->session->mplx;
+     apr_atomic_set32(&m->event_pending, 1); 
+ }
  
- static void stream_joined(h2_mplx *m, h2_stream *stream)
+-static void stream_input_consumed(void *ctx, h2_bucket_beam *beam, apr_off_t length)
++static void m_stream_input_consumed(void *ctx, h2_bucket_beam *beam, apr_off_t length)
+ {
+     h2_stream_in_consumed(ctx, length);
+ }
+ 
+-static void stream_joined(h2_mplx *m, h2_stream *stream)
++static void ms_stream_joined(h2_mplx *m, h2_stream *stream)
  {
 -    ap_assert(!stream->task || stream->task->worker_done);
 +    ap_assert(!h2_task_has_started(stream->task) || stream->task->worker_done);
      
++    h2_ififo_remove(m->readyq, stream->id);
      h2_ihash_remove(m->shold, stream->id);
      h2_ihash_add(m->spurge, stream);
-@@ -131,12 +128,11 @@
-     h2_ififo_remove(m->readyq, stream->id);
-     h2_ihash_add(m->shold, stream);
+ }
+ 
+-static void stream_cleanup(h2_mplx *m, h2_stream *stream)
++static void m_stream_cleanup(h2_mplx *m, h2_stream *stream)
+ {
+     ap_assert(stream->state == H2_SS_CLEANUP);
+ 
+@@ -128,15 +133,16 @@
+ 
+     h2_ihash_remove(m->streams, stream->id);
+     h2_iq_remove(m->q, stream->id);
+-    h2_ififo_remove(m->readyq, stream->id);
+-    h2_ihash_add(m->shold, stream);
      
 -    if (!stream->task || stream->task->worker_done) {
+-        stream_joined(m, stream);
 +    if (!h2_task_has_started(stream->task) || stream->task->done_done) {
-         stream_joined(m, stream);
++        ms_stream_joined(m, stream);
      }
-     else if (stream->task) {
-         stream->task->c->aborted = 1;
+-    else if (stream->task) {
+-        stream->task->c->aborted = 1;
 -        apr_thread_cond_broadcast(m->task_thawed);
++    else {
++        h2_ififo_remove(m->readyq, stream->id);
++        h2_ihash_add(m->shold, stream);
++        if (stream->task) {
++            stream->task->c->aborted = 1;
++        }
      }
  }
  
-@@ -151,25 +147,19 @@
+@@ -151,29 +157,23 @@
   *   their HTTP/1 cousins, the separate allocator seems to work better
   *   than protecting a shared h2_session one with an own lock.
   */
 -h2_mplx *h2_mplx_create(conn_rec *c, apr_pool_t *parent, 
 -                        const h2_config *conf, 
-+h2_mplx *h2_mplx_create(conn_rec *c, server_rec *s, apr_pool_t *parent, 
-                         h2_workers *workers)
+-                        h2_workers *workers)
++h2_mplx *h2_mplx_m_create(conn_rec *c, server_rec *s, apr_pool_t *parent, 
++                          h2_workers *workers)
  {
      apr_status_t status = APR_SUCCESS;
      apr_allocator_t *allocator;
@@ -2025,8 +2409,14 @@ Last-Update: 2019-08-17
 +        m->s = s;
          
          /* We create a pool with its own allocator to be used for
-          * processing slave connections. This is the only way to have the
-@@ -204,17 +194,10 @@
+-         * processing slave connections. This is the only way to have the
+-         * processing independant of its parent pool in the sense that it
++         * processing secondary connections. This is the only way to have the
++         * processing independent of its parent pool in the sense that it
+          * can work in another thread. Also, the new allocator needs its own
+          * mutex to synchronize sub-pools.
+          */
+@@ -204,17 +204,10 @@
              return NULL;
          }
          
@@ -2046,24 +2436,181 @@ Last-Update: 2019-08-17
          m->shold = h2_ihash_create(m->pool, offsetof(h2_stream,id));
          m->spurge = h2_ihash_create(m->pool, offsetof(h2_stream,id));
          m->q = h2_iq_create(m->pool, m->max_streams);
-@@ -228,14 +211,10 @@
+@@ -228,19 +221,15 @@
          m->workers = workers;
          m->max_active = workers->max_workers;
          m->limit_active = 6; /* the original h1 max parallel connections */
 -        m->last_limit_change = m->last_idle_block = apr_time_now();
 -        m->limit_change_interval = apr_time_from_msec(100);
+-        
+-        m->spare_slaves = apr_array_make(m->pool, 10, sizeof(conn_rec*));
 +        m->last_mood_change = apr_time_now();
 +        m->mood_update_interval = apr_time_from_msec(100);
          
-         m->spare_slaves = apr_array_make(m->pool, 10, sizeof(conn_rec*));
--        
 -        m->ngn_shed = h2_ngn_shed_create(m->pool, m->c, m->max_streams, 
 -                                         m->stream_max_mem);
 -        h2_ngn_shed_set_ctx(m->ngn_shed , m);
++        m->spare_secondary = apr_array_make(m->pool, 10, sizeof(conn_rec*));
      }
      return m;
  }
-@@ -394,10 +373,10 @@
+ 
+-int h2_mplx_shutdown(h2_mplx *m)
++int h2_mplx_m_shutdown(h2_mplx *m)
+ {
+     int max_stream_started = 0;
+     
+@@ -254,7 +243,7 @@
+     return max_stream_started;
+ }
+ 
+-static int input_consumed_signal(h2_mplx *m, h2_stream *stream)
++static int m_input_consumed_signal(h2_mplx *m, h2_stream *stream)
+ {
+     if (stream->input) {
+         return h2_beam_report_consumption(stream->input);
+@@ -262,12 +251,12 @@
+     return 0;
+ }
+ 
+-static int report_consumption_iter(void *ctx, void *val)
++static int m_report_consumption_iter(void *ctx, void *val)
+ {
+     h2_stream *stream = val;
+     h2_mplx *m = ctx;
+     
+-    input_consumed_signal(m, stream);
++    m_input_consumed_signal(m, stream);
+     if (stream->state == H2_SS_CLOSED_L
+         && (!stream->task || stream->task->worker_done)) {
+         ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, m->c, 
+@@ -278,7 +267,7 @@
+     return 1;
+ }
+ 
+-static int output_consumed_signal(h2_mplx *m, h2_task *task)
++static int s_output_consumed_signal(h2_mplx *m, h2_task *task)
+ {
+     if (task->output.beam) {
+         return h2_beam_report_consumption(task->output.beam);
+@@ -286,7 +275,7 @@
+     return 0;
+ }
+ 
+-static int stream_destroy_iter(void *ctx, void *val) 
++static int m_stream_destroy_iter(void *ctx, void *val) 
+ {   
+     h2_mplx *m = ctx;
+     h2_stream *stream = val;
+@@ -296,7 +285,7 @@
+     
+     if (stream->input) {
+         /* Process outstanding events before destruction */
+-        input_consumed_signal(m, stream);    
++        m_input_consumed_signal(m, stream);    
+         h2_beam_log(stream->input, m->c, APLOG_TRACE2, "stream_destroy");
+         h2_beam_destroy(stream->input);
+         stream->input = NULL;
+@@ -304,12 +293,12 @@
+ 
+     if (stream->task) {
+         h2_task *task = stream->task;
+-        conn_rec *slave;
+-        int reuse_slave = 0;
++        conn_rec *secondary;
++        int reuse_secondary = 0;
+         
+         stream->task = NULL;
+-        slave = task->c;
+-        if (slave) {
++        secondary = task->c;
++        if (secondary) {
+             /* On non-serialized requests, the IO logging has not accounted for any
+              * meta data send over the network: response headers and h2 frame headers. we
+              * counted this on the stream and need to add this now.
+@@ -318,26 +307,25 @@
+             if (task->request && !task->request->serialize && h2_task_logio_add_bytes_out) {
+                 apr_off_t unaccounted = stream->out_frame_octets - stream->out_data_octets;
+                 if (unaccounted > 0) {
+-                    h2_task_logio_add_bytes_out(slave, unaccounted);
++                    h2_task_logio_add_bytes_out(secondary, unaccounted);
+                 }
+             }
+         
+-            if (m->s->keep_alive_max == 0 || slave->keepalives < m->s->keep_alive_max) {
+-                reuse_slave = ((m->spare_slaves->nelts < (m->limit_active * 3 / 2))
+-                               && !task->rst_error);
++            if (m->s->keep_alive_max == 0 || secondary->keepalives < m->s->keep_alive_max) {
++                reuse_secondary = ((m->spare_secondary->nelts < (m->limit_active * 3 / 2))
++                                   && !task->rst_error);
+             }
+             
+-            task->c = NULL;
+-            if (reuse_slave) {
++            if (reuse_secondary) {
+                 h2_beam_log(task->output.beam, m->c, APLOG_DEBUG, 
+-                            APLOGNO(03385) "h2_task_destroy, reuse slave");    
++                            APLOGNO(03385) "h2_task_destroy, reuse secondary");    
+                 h2_task_destroy(task);
+-                APR_ARRAY_PUSH(m->spare_slaves, conn_rec*) = slave;
++                APR_ARRAY_PUSH(m->spare_secondary, conn_rec*) = secondary;
+             }
+             else {
+                 h2_beam_log(task->output.beam, m->c, APLOG_TRACE1, 
+-                            "h2_task_destroy, destroy slave");    
+-                h2_slave_destroy(slave);
++                            "h2_task_destroy, destroy secondary");    
++                h2_secondary_destroy(secondary);
+             }
+         }
+     }
+@@ -345,11 +333,11 @@
+     return 0;
+ }
+ 
+-static void purge_streams(h2_mplx *m, int lock)
++static void m_purge_streams(h2_mplx *m, int lock)
+ {
+     if (!h2_ihash_empty(m->spurge)) {
+         H2_MPLX_ENTER_MAYBE(m, lock);
+-        while (!h2_ihash_iter(m->spurge, stream_destroy_iter, m)) {
++        while (!h2_ihash_iter(m->spurge, m_stream_destroy_iter, m)) {
+             /* repeat until empty */
+         }
+         H2_MPLX_LEAVE_MAYBE(m, lock);
+@@ -361,13 +349,13 @@
+     void *ctx;
+ } stream_iter_ctx_t;
+ 
+-static int stream_iter_wrap(void *ctx, void *stream)
++static int m_stream_iter_wrap(void *ctx, void *stream)
+ {
+     stream_iter_ctx_t *x = ctx;
+     return x->cb(stream, x->ctx);
+ }
+ 
+-apr_status_t h2_mplx_stream_do(h2_mplx *m, h2_mplx_stream_cb *cb, void *ctx)
++apr_status_t h2_mplx_m_stream_do(h2_mplx *m, h2_mplx_stream_cb *cb, void *ctx)
+ {
+     stream_iter_ctx_t x;
+     
+@@ -375,13 +363,13 @@
+ 
+     x.cb = cb;
+     x.ctx = ctx;
+-    h2_ihash_iter(m->streams, stream_iter_wrap, &x);
++    h2_ihash_iter(m->streams, m_stream_iter_wrap, &x);
+         
+     H2_MPLX_LEAVE(m);
+     return APR_SUCCESS;
+ }
+ 
+-static int report_stream_iter(void *ctx, void *val) {
++static int m_report_stream_iter(void *ctx, void *val) {
+     h2_mplx *m = ctx;
+     h2_stream *stream = val;
+     h2_task *task = stream->task;
+@@ -394,10 +382,10 @@
      if (task) {
          ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, m->c, /* NO APLOGNO */
                        H2_STRM_MSG(stream, "->03198: %s %s %s"
@@ -2076,8 +2623,35 @@ Last-Update: 2019-08-17
      }
      else {
          ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, m->c, /* NO APLOGNO */
-@@ -436,7 +415,7 @@
- void h2_mplx_release_and_join(h2_mplx *m, apr_thread_cond_t *wait)
+@@ -406,7 +394,7 @@
+     return 1;
+ }
+ 
+-static int unexpected_stream_iter(void *ctx, void *val) {
++static int m_unexpected_stream_iter(void *ctx, void *val) {
+     h2_mplx *m = ctx;
+     h2_stream *stream = val;
+     ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, m->c, /* NO APLOGNO */
+@@ -415,7 +403,7 @@
+     return 1;
+ }
+ 
+-static int stream_cancel_iter(void *ctx, void *val) {
++static int m_stream_cancel_iter(void *ctx, void *val) {
+     h2_mplx *m = ctx;
+     h2_stream *stream = val;
+ 
+@@ -429,14 +417,14 @@
+     h2_stream_rst(stream, H2_ERR_NO_ERROR);
+     /* All connection data has been sent, simulate cleanup */
+     h2_stream_dispatch(stream, H2_SEV_EOS_SENT);
+-    stream_cleanup(m, stream);  
++    m_stream_cleanup(m, stream);  
+     return 0;
+ }
+ 
+-void h2_mplx_release_and_join(h2_mplx *m, apr_thread_cond_t *wait)
++void h2_mplx_m_release_and_join(h2_mplx *m, apr_thread_cond_t *wait)
  {
      apr_status_t status;
 -    int i, wait_secs = 60;
@@ -2085,11 +2659,11 @@ Last-Update: 2019-08-17
  
      ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, m->c,
                    "h2_mplx(%ld): start release", m->id);
-@@ -447,15 +426,23 @@
+@@ -447,15 +435,23 @@
      
      H2_MPLX_ENTER_ALWAYS(m);
  
-+    /* While really terminating any slave connections, treat the master
++    /* While really terminating any secondary connections, treat the master
 +     * connection as aborted. It's not as if we could send any more data
 +     * at this point. */
 +    old_aborted = m->c->aborted;
@@ -2097,11 +2671,12 @@ Last-Update: 2019-08-17
 +
      /* How to shut down a h2 connection:
       * 1. cancel all streams still active */
+-    while (!h2_ihash_iter(m->streams, stream_cancel_iter, m)) {
 +    ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, m->c, 
 +                  "h2_mplx(%ld): release, %d/%d/%d streams (total/hold/purge), %d active tasks", 
 +                  m->id, (int)h2_ihash_count(m->streams),
 +                  (int)h2_ihash_count(m->shold), (int)h2_ihash_count(m->spurge), m->tasks_active);
-     while (!h2_ihash_iter(m->streams, stream_cancel_iter, m)) {
++    while (!h2_ihash_iter(m->streams, m_stream_cancel_iter, m)) {
          /* until empty */
      }
      
@@ -2112,8 +2687,12 @@ Last-Update: 2019-08-17
      ap_assert(h2_ihash_empty(m->streams));
      ap_assert(h2_iq_empty(m->q));
      
-@@ -476,14 +463,10 @@
-             h2_ihash_iter(m->shold, report_stream_iter, m);
+@@ -473,65 +469,60 @@
+             ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, m->c, APLOGNO(03198)
+                           "h2_mplx(%ld): waited %d sec for %d tasks", 
+                           m->id, i*wait_secs, (int)h2_ihash_count(m->shold));
+-            h2_ihash_iter(m->shold, report_stream_iter, m);
++            h2_ihash_iter(m->shold, m_report_stream_iter, m);
          }
      }
 -    ap_assert(m->tasks_active == 0);
@@ -2129,8 +2708,9 @@ Last-Update: 2019-08-17
      if (!h2_ihash_empty(m->shold)) {
          ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, m->c, APLOGNO(03516)
                        "h2_mplx(%ld): unexpected %d streams in hold", 
-@@ -491,10 +474,10 @@
-         h2_ihash_iter(m->shold, unexpected_stream_iter, m);
+                       m->id, (int)h2_ihash_count(m->shold));
+-        h2_ihash_iter(m->shold, unexpected_stream_iter, m);
++        h2_ihash_iter(m->shold, m_unexpected_stream_iter, m);
      }
      
 +    m->c->aborted = old_aborted;
@@ -2141,8 +2721,245 @@ Last-Update: 2019-08-17
 +    ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, m->c, "h2_mplx(%ld): released", m->id);
  }
  
- apr_status_t h2_mplx_stream_cleanup(h2_mplx *m, h2_stream *stream)
-@@ -732,7 +715,6 @@
+-apr_status_t h2_mplx_stream_cleanup(h2_mplx *m, h2_stream *stream)
++apr_status_t h2_mplx_m_stream_cleanup(h2_mplx *m, h2_stream *stream)
+ {
+     H2_MPLX_ENTER(m);
+     
+     ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, m->c, 
+                   H2_STRM_MSG(stream, "cleanup"));
+-    stream_cleanup(m, stream);        
++    m_stream_cleanup(m, stream);        
+     
+     H2_MPLX_LEAVE(m);
+     return APR_SUCCESS;
+ }
+ 
+-h2_stream *h2_mplx_stream_get(h2_mplx *m, int id)
++h2_stream *h2_mplx_t_stream_get(h2_mplx *m, h2_task *task)
+ {
+     h2_stream *s = NULL;
+     
+     H2_MPLX_ENTER_ALWAYS(m);
+ 
+-    s = h2_ihash_get(m->streams, id);
++    s = h2_ihash_get(m->streams, task->stream_id);
+ 
+     H2_MPLX_LEAVE(m);
+     return s;
+ }
+ 
+-static void output_produced(void *ctx, h2_bucket_beam *beam, apr_off_t bytes)
++static void mst_output_produced(void *ctx, h2_bucket_beam *beam, apr_off_t bytes)
+ {
+     h2_stream *stream = ctx;
+     h2_mplx *m = stream->session->mplx;
+     
+-    check_data_for(m, stream, 1);
++    mst_check_data_for(m, stream, 0);
+ }
+ 
+-static apr_status_t out_open(h2_mplx *m, int stream_id, h2_bucket_beam *beam)
++static apr_status_t t_out_open(h2_mplx *m, int stream_id, h2_bucket_beam *beam)
+ {
+-    apr_status_t status = APR_SUCCESS;
+     h2_stream *stream = h2_ihash_get(m->streams, stream_id);
+     
+     if (!stream || !stream->task || m->aborted) {
+@@ -542,26 +533,26 @@
+     stream->output = beam;
+     
+     if (APLOGctrace2(m->c)) {
+-        h2_beam_log(beam, m->c, APLOG_TRACE2, "out_open");
++        h2_beam_log(beam, stream->task->c, APLOG_TRACE2, "out_open");
+     }
+     else {
+-        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, status, m->c,
++        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, stream->task->c,
+                       "h2_mplx(%s): out open", stream->task->id);
+     }
+     
+-    h2_beam_on_consumed(stream->output, NULL, stream_output_consumed, stream);
+-    h2_beam_on_produced(stream->output, output_produced, stream);
++    h2_beam_on_consumed(stream->output, NULL, mst_stream_output_consumed, stream);
++    h2_beam_on_produced(stream->output, mst_output_produced, stream);
+     if (stream->task->output.copy_files) {
+         h2_beam_on_file_beam(stream->output, h2_beam_no_files, NULL);
+     }
+     
+     /* we might see some file buckets in the output, see
+      * if we have enough handles reserved. */
+-    check_data_for(m, stream, 0);
+-    return status;
++    mst_check_data_for(m, stream, 1);
++    return APR_SUCCESS;
+ }
+ 
+-apr_status_t h2_mplx_out_open(h2_mplx *m, int stream_id, h2_bucket_beam *beam)
++apr_status_t h2_mplx_t_out_open(h2_mplx *m, int stream_id, h2_bucket_beam *beam)
+ {
+     apr_status_t status;
+     
+@@ -571,14 +562,14 @@
+         status = APR_ECONNABORTED;
+     }
+     else {
+-        status = out_open(m, stream_id, beam);
++        status = t_out_open(m, stream_id, beam);
+     }
+ 
+     H2_MPLX_LEAVE(m);
+     return status;
+ }
+ 
+-static apr_status_t out_close(h2_mplx *m, h2_task *task)
++static apr_status_t s_out_close(h2_mplx *m, h2_task *task)
+ {
+     apr_status_t status = APR_SUCCESS;
+     h2_stream *stream;
+@@ -595,17 +586,17 @@
+         return APR_ECONNABORTED;
+     }
+ 
+-    ap_log_cerror(APLOG_MARK, APLOG_TRACE2, status, m->c,
++    ap_log_cerror(APLOG_MARK, APLOG_TRACE2, status, task->c,
+                   "h2_mplx(%s): close", task->id);
+     status = h2_beam_close(task->output.beam);
+-    h2_beam_log(task->output.beam, m->c, APLOG_TRACE2, "out_close");
+-    output_consumed_signal(m, task);
+-    check_data_for(m, stream, 0);
++    h2_beam_log(task->output.beam, task->c, APLOG_TRACE2, "out_close");
++    s_output_consumed_signal(m, task);
++    mst_check_data_for(m, stream, 1);
+     return status;
+ }
+ 
+-apr_status_t h2_mplx_out_trywait(h2_mplx *m, apr_interval_time_t timeout,
+-                                 apr_thread_cond_t *iowait)
++apr_status_t h2_mplx_m_out_trywait(h2_mplx *m, apr_interval_time_t timeout,
++                                   apr_thread_cond_t *iowait)
+ {
+     apr_status_t status;
+     
+@@ -614,12 +605,12 @@
+     if (m->aborted) {
+         status = APR_ECONNABORTED;
+     }
+-    else if (h2_mplx_has_master_events(m)) {
++    else if (h2_mplx_m_has_master_events(m)) {
+         status = APR_SUCCESS;
+     }
+     else {
+-        purge_streams(m, 0);
+-        h2_ihash_iter(m->streams, report_consumption_iter, m);
++        m_purge_streams(m, 0);
++        h2_ihash_iter(m->streams, m_report_consumption_iter, m);
+         m->added_output = iowait;
+         status = apr_thread_cond_timedwait(m->added_output, m->lock, timeout);
+         if (APLOGctrace2(m->c)) {
+@@ -634,19 +625,27 @@
+     return status;
+ }
+ 
+-static void check_data_for(h2_mplx *m, h2_stream *stream, int lock)
++static void mst_check_data_for(h2_mplx *m, h2_stream *stream, int mplx_is_locked)
+ {
++    /* If m->lock is already held, we must release during h2_ififo_push()
++     * which can wait on its not_full condition, causing a deadlock because
++     * no one would then be able to acquire m->lock to empty the fifo.
++     */
++    H2_MPLX_LEAVE_MAYBE(m, mplx_is_locked);
+     if (h2_ififo_push(m->readyq, stream->id) == APR_SUCCESS) {
++        H2_MPLX_ENTER_ALWAYS(m);
+         apr_atomic_set32(&m->event_pending, 1);
+-        H2_MPLX_ENTER_MAYBE(m, lock);
+         if (m->added_output) {
+             apr_thread_cond_signal(m->added_output);
+         }
+-        H2_MPLX_LEAVE_MAYBE(m, lock);
++        H2_MPLX_LEAVE_MAYBE(m, !mplx_is_locked);
++    }
++    else {
++        H2_MPLX_ENTER_MAYBE(m, mplx_is_locked);
+     }
+ }
+ 
+-apr_status_t h2_mplx_reprioritize(h2_mplx *m, h2_stream_pri_cmp *cmp, void *ctx)
++apr_status_t h2_mplx_m_reprioritize(h2_mplx *m, h2_stream_pri_cmp *cmp, void *ctx)
+ {
+     apr_status_t status;
+     
+@@ -666,22 +665,22 @@
+     return status;
+ }
+ 
+-static void register_if_needed(h2_mplx *m) 
++static void ms_register_if_needed(h2_mplx *m, int from_master) 
+ {
+     if (!m->aborted && !m->is_registered && !h2_iq_empty(m->q)) {
+         apr_status_t status = h2_workers_register(m->workers, m); 
+         if (status == APR_SUCCESS) {
+             m->is_registered = 1;
+         }
+-        else {
++        else if (from_master) {
+             ap_log_cerror(APLOG_MARK, APLOG_ERR, status, m->c, APLOGNO(10021)
+                           "h2_mplx(%ld): register at workers", m->id);
+         }
+     }
+ }
+ 
+-apr_status_t h2_mplx_process(h2_mplx *m, struct h2_stream *stream, 
+-                             h2_stream_pri_cmp *cmp, void *ctx)
++apr_status_t h2_mplx_m_process(h2_mplx *m, struct h2_stream *stream, 
++                               h2_stream_pri_cmp *cmp, void *ctx)
+ {
+     apr_status_t status;
+     
+@@ -695,13 +694,13 @@
+         h2_ihash_add(m->streams, stream);
+         if (h2_stream_is_ready(stream)) {
+             /* already have a response */
+-            check_data_for(m, stream, 0);
++            mst_check_data_for(m, stream, 1);
+             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, m->c,
+                           H2_STRM_MSG(stream, "process, add to readyq")); 
+         }
+         else {
+             h2_iq_add(m->q, stream->id, cmp, ctx);
+-            register_if_needed(m);                
++            ms_register_if_needed(m, 1);                
+             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, m->c,
+                           H2_STRM_MSG(stream, "process, added to q")); 
+         }
+@@ -711,7 +710,7 @@
+     return status;
+ }
+ 
+-static h2_task *next_stream_task(h2_mplx *m)
++static h2_task *s_next_stream_task(h2_mplx *m)
+ {
+     h2_stream *stream;
+     int sid;
+@@ -720,40 +719,39 @@
+         
+         stream = h2_ihash_get(m->streams, sid);
+         if (stream) {
+-            conn_rec *slave, **pslave;
++            conn_rec *secondary, **psecondary;
+ 
+-            pslave = (conn_rec **)apr_array_pop(m->spare_slaves);
+-            if (pslave) {
+-                slave = *pslave;
+-                slave->aborted = 0;
++            psecondary = (conn_rec **)apr_array_pop(m->spare_secondary);
++            if (psecondary) {
++                secondary = *psecondary;
++                secondary->aborted = 0;
+             }
+             else {
+-                slave = h2_slave_create(m->c, stream->id, m->pool);
++                secondary = h2_secondary_create(m->c, stream->id, m->pool);
              }
              
              if (!stream->task) {
@@ -2150,7 +2967,22 @@ Last-Update: 2019-08-17
                  if (sid > m->max_stream_started) {
                      m->max_stream_started = sid;
                  }
-@@ -751,9 +733,9 @@
+                 if (stream->input) {
+-                    h2_beam_on_consumed(stream->input, stream_input_ev, 
+-                                        stream_input_consumed, stream);
++                    h2_beam_on_consumed(stream->input, mst_stream_input_ev, 
++                                        m_stream_input_consumed, stream);
+                 }
+                 
+-                stream->task = h2_task_create(slave, stream->id, 
++                stream->task = h2_task_create(secondary, stream->id, 
+                                               stream->request, m, stream->input, 
+                                               stream->session->s->timeout,
+                                               m->stream_max_mem);
+                 if (!stream->task) {
+-                    ap_log_cerror(APLOG_MARK, APLOG_ERR, APR_ENOMEM, slave,
++                    ap_log_cerror(APLOG_MARK, APLOG_ERR, APR_ENOMEM, secondary,
+                                   H2_STRM_LOG(APLOGNO(02941), stream, 
                                    "create task"));
                      return NULL;
                  }
@@ -2161,12 +2993,30 @@ Last-Update: 2019-08-17
              ++m->tasks_active;
              return stream->task;
          }
-@@ -787,80 +769,39 @@
+@@ -761,7 +759,7 @@
+     return NULL;
+ }
+ 
+-apr_status_t h2_mplx_pop_task(h2_mplx *m, h2_task **ptask)
++apr_status_t h2_mplx_s_pop_task(h2_mplx *m, h2_task **ptask)
+ {
+     apr_status_t rv = APR_EOF;
+     
+@@ -777,7 +775,7 @@
+         rv = APR_EOF;
+     }
+     else {
+-        *ptask = next_stream_task(m);
++        *ptask = s_next_stream_task(m);
+         rv = (*ptask != NULL && !h2_iq_empty(m->q))? APR_EAGAIN : APR_SUCCESS;
+     }
+     if (APR_EAGAIN != rv) {
+@@ -787,127 +785,87 @@
      return rv;
  }
  
 -static void task_done(h2_mplx *m, h2_task *task, h2_req_engine *ngn)
-+static void task_done(h2_mplx *m, h2_task *task)
++static void s_task_done(h2_mplx *m, h2_task *task)
  {
      h2_stream *stream;
      
@@ -2179,10 +3029,11 @@ Last-Update: 2019-08-17
 -        return;
 -    }
 -        
-     ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, m->c,
+-    ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, m->c,
++    ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, task->c,
                    "h2_mplx(%ld): task(%s) done", m->id, task->id);
-     out_close(m, task);
-     
+-    out_close(m, task);
+-    
 -    if (ngn) {
 -        apr_off_t bytes = 0;
 -        h2_beam_send(task->output.beam, NULL, APR_NONBLOCK_READ);
@@ -2206,10 +3057,12 @@ Last-Update: 2019-08-17
 -        }
 -        h2_ngn_shed_done_ngn(m->ngn_shed, task->engine);
 -    }
--    
++    s_out_close(m, task);
+     
      task->worker_done = 1;
      task->done_at = apr_time_now();
-     ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, m->c,
+-    ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, m->c,
++    ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, task->c,
                    "h2_mplx(%s): request done, %f ms elapsed", task->id, 
                    (task->done_at - task->started_at) / 1000.0);
      
@@ -2228,7 +3081,7 @@ Last-Update: 2019-08-17
 -                          m->id, m->limit_active);
 -        }
 +    if (task->c && !task->c->aborted && task->started_at > m->last_mood_change) {
-+        mplx_be_happy(m);
++        s_mplx_be_happy(m, task);
      }
      
 +    ap_assert(task->done_done == 0);
@@ -2242,39 +3095,79 @@ Last-Update: 2019-08-17
              h2_task_redo(task);
 -            h2_ihash_remove(m->sredo, stream->id);
              h2_iq_add(m->q, stream->id, NULL, NULL);
-+            ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, m->c,
++            ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, task->c,
 +                          H2_STRM_MSG(stream, "redo, added to q")); 
          }
          else {
              /* stream not cleaned up, stay around */
+-            ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, m->c,
 +            task->done_done = 1;
-             ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, m->c,
++            ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, task->c,
                            H2_STRM_MSG(stream, "task_done, stream open")); 
              if (stream->input) {
-@@ -873,6 +814,7 @@
+                 h2_beam_leave(stream->input);
+             }
+ 
+             /* more data will not arrive, resume the stream */
+-            check_data_for(m, stream, 0);            
++            mst_check_data_for(m, stream, 1);            
+         }
      }
      else if ((stream = h2_ihash_get(m->shold, task->stream_id)) != NULL) {
          /* stream is done, was just waiting for this. */
+-        ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, m->c,
 +        task->done_done = 1;
-         ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, m->c,
++        ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, task->c,
                        H2_STRM_MSG(stream, "task_done, in hold"));
          if (stream->input) {
-@@ -897,8 +839,8 @@
+             h2_beam_leave(stream->input);
+         }
+-        stream_joined(m, stream);
++        ms_stream_joined(m, stream);
+     }
+     else if ((stream = h2_ihash_get(m->spurge, task->stream_id)) != NULL) {
+-        ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, m->c,   
++        ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, task->c,   
+                       H2_STRM_LOG(APLOGNO(03517), stream, "already in spurge"));
+         ap_assert("stream should not be in spurge" == NULL);
+     }
+     else {
+-        ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, m->c, APLOGNO(03518)
++        ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, task->c, APLOGNO(03518)
+                       "h2_mplx(%s): task_done, stream not found", 
+                       task->id);
+         ap_assert("stream should still be available" == NULL);
+     }
+ }
+ 
+-void h2_mplx_task_done(h2_mplx *m, h2_task *task, h2_task **ptask)
++void h2_mplx_s_task_done(h2_mplx *m, h2_task *task, h2_task **ptask)
  {
      H2_MPLX_ENTER_ALWAYS(m);
  
 -    task_done(m, task, NULL);
      --m->tasks_active;
-+    task_done(m, task);
++    s_task_done(m, task);
      
      if (m->join_wait) {
          apr_thread_cond_signal(m->join_wait);
-@@ -916,94 +858,161 @@
+     }
+     if (ptask) {
+         /* caller wants another task */
+-        *ptask = next_stream_task(m);
++        *ptask = s_next_stream_task(m);
+     }
+-    register_if_needed(m);
++    ms_register_if_needed(m, 0);
+ 
+     H2_MPLX_LEAVE(m);
+ }
+@@ -916,94 +874,161 @@
   * h2_mplx DoS protection
   ******************************************************************************/
  
 -static int latest_repeatable_unsubmitted_iter(void *data, void *val)
-+static int timed_out_busy_iter(void *data, void *val)
++static int m_timed_out_busy_iter(void *data, void *val)
  {
      stream_iter_ctx *ctx = data;
      h2_stream *stream = val;
@@ -2302,19 +3195,19 @@ Last-Update: 2019-08-17
  }
  
 -static h2_stream *get_latest_repeatable_unsubmitted_stream(h2_mplx *m) 
-+static h2_stream *get_timed_out_busy_stream(h2_mplx *m) 
++static h2_stream *m_get_timed_out_busy_stream(h2_mplx *m) 
  {
      stream_iter_ctx ctx;
      ctx.m = m;
      ctx.stream = NULL;
 -    h2_ihash_iter(m->streams, latest_repeatable_unsubmitted_iter, &ctx);
 +    ctx.now = apr_time_now();
-+    h2_ihash_iter(m->streams, timed_out_busy_iter, &ctx);
++    h2_ihash_iter(m->streams, m_timed_out_busy_iter, &ctx);
      return ctx.stream;
  }
  
 -static int timed_out_busy_iter(void *data, void *val)
-+static int latest_repeatable_unsubmitted_iter(void *data, void *val)
++static int m_latest_repeatable_unsubmitted_iter(void *data, void *val)
  {
      stream_iter_ctx *ctx = data;
      h2_stream *stream = val;
@@ -2346,7 +3239,7 @@ Last-Update: 2019-08-17
  }
  
 -static h2_stream *get_timed_out_busy_stream(h2_mplx *m) 
-+static apr_status_t assess_task_to_throttle(h2_task **ptask, h2_mplx *m) 
++static apr_status_t m_assess_task_to_throttle(h2_task **ptask, h2_mplx *m) 
  {
      stream_iter_ctx ctx;
 +    
@@ -2359,7 +3252,7 @@ Last-Update: 2019-08-17
 -    h2_ihash_iter(m->streams, timed_out_busy_iter, &ctx);
 -    return ctx.stream;
 +    ctx.count = 0;
-+    h2_ihash_iter(m->streams, latest_repeatable_unsubmitted_iter, &ctx);
++    h2_ihash_iter(m->streams, m_latest_repeatable_unsubmitted_iter, &ctx);
 +    if (m->tasks_active - ctx.count > m->limit_active) {
 +        /* we are above the limit of running tasks, accounting for the ones
 +         * already throttled. */
@@ -2368,7 +3261,7 @@ Last-Update: 2019-08-17
 +            return APR_EAGAIN;
 +        }
 +        /* above limit, be seeing no candidate for easy throttling */
-+        if (get_timed_out_busy_stream(m)) {
++        if (m_get_timed_out_busy_stream(m)) {
 +            /* Too many busy workers, unable to cancel enough streams
 +             * and with a busy, timed out stream, we tell the client
 +             * to go away... */
@@ -2378,7 +3271,8 @@ Last-Update: 2019-08-17
 +    return APR_SUCCESS;
  }
  
- static apr_status_t unschedule_slow_tasks(h2_mplx *m) 
+-static apr_status_t unschedule_slow_tasks(h2_mplx *m) 
++static apr_status_t m_unschedule_slow_tasks(h2_mplx *m) 
  {
 -    h2_stream *stream;
 -    int n;
@@ -2390,7 +3284,7 @@ Last-Update: 2019-08-17
       */
 -    n = (m->tasks_active - m->limit_active - (int)h2_ihash_count(m->sredo));
 -    while (n > 0 && (stream = get_latest_repeatable_unsubmitted_stream(m))) {
-+    while (APR_EAGAIN == (rv = assess_task_to_throttle(&task, m))) {
++    while (APR_EAGAIN == (rv = m_assess_task_to_throttle(&task, m))) {
          ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, m->c, 
                        "h2_mplx(%s): unschedule, resetting task for redo later",
 -                      stream->task->id);
@@ -2413,7 +3307,7 @@ Last-Update: 2019-08-17
 +    return rv;
 +}
 +
-+static apr_status_t mplx_be_happy(h2_mplx *m)
++static apr_status_t s_mplx_be_happy(h2_mplx *m, h2_task *task)
 +{
 +    apr_time_t now;            
 +
@@ -2425,7 +3319,7 @@ Last-Update: 2019-08-17
 +        m->limit_active = H2MIN(m->limit_active * 2, m->max_active);
 +        m->last_mood_change = now;
 +        m->irritations_since = 0;
-+        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, m->c,
++        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, task->c,
 +                      "h2_mplx(%ld): mood update, increasing worker limit to %d",
 +                      m->id, m->limit_active);
      }
@@ -2433,7 +3327,7 @@ Last-Update: 2019-08-17
  }
  
 -apr_status_t h2_mplx_idle(h2_mplx *m)
-+static apr_status_t mplx_be_annoyed(h2_mplx *m)
++static apr_status_t m_be_annoyed(h2_mplx *m)
  {
      apr_status_t status = APR_SUCCESS;
      apr_time_t now;            
@@ -2464,18 +3358,18 @@ Last-Update: 2019-08-17
 +    }
 +    
 +    if (m->tasks_active > m->limit_active) {
-+        status = unschedule_slow_tasks(m);
++        status = m_unschedule_slow_tasks(m);
 +    }
 +    return status;
 +}
 +
-+apr_status_t h2_mplx_idle(h2_mplx *m)
++apr_status_t h2_mplx_m_idle(h2_mplx *m)
 +{
 +    apr_status_t status = APR_SUCCESS;
      apr_size_t scount;
      
      H2_MPLX_ENTER(m);
-@@ -1023,31 +1032,7 @@
+@@ -1023,31 +1048,7 @@
               * of busy workers we allow for this connection until it
               * well behaves.
               */
@@ -2504,11 +3398,27 @@ Last-Update: 2019-08-17
 -            if (m->tasks_active > m->limit_active) {
 -                status = unschedule_slow_tasks(m);
 -            }
-+            status = mplx_be_annoyed(m);
++            status = m_be_annoyed(m);
          }
          else if (!h2_iq_empty(m->q)) {
              ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, m->c,
-@@ -1091,142 +1076,6 @@
+@@ -1077,167 +1078,30 @@
+                                   h2_beam_is_closed(stream->output),
+                                   (long)h2_beam_get_buffered(stream->output));
+                     h2_ihash_add(m->streams, stream);
+-                    check_data_for(m, stream, 0);
++                    mst_check_data_for(m, stream, 1);
+                     stream->out_checked = 1;
+                     status = APR_EAGAIN;
+                 }
+             }
+         }
+     }
+-    register_if_needed(m);
++    ms_register_if_needed(m, 1);
+ 
+     H2_MPLX_LEAVE(m);
+     return status;
  }
  
  /*******************************************************************************
@@ -2651,7 +3561,49 @@ Last-Update: 2019-08-17
   * mplx master events dispatching
   ******************************************************************************/
  
-@@ -1278,11 +1127,24 @@
+-int h2_mplx_has_master_events(h2_mplx *m)
++int h2_mplx_m_has_master_events(h2_mplx *m)
+ {
+     return apr_atomic_read32(&m->event_pending) > 0;
+ }
+ 
+-apr_status_t h2_mplx_dispatch_master_events(h2_mplx *m, 
+-                                            stream_ev_callback *on_resume, 
+-                                            void *on_ctx)
++apr_status_t h2_mplx_m_dispatch_master_events(h2_mplx *m, stream_ev_callback *on_resume, 
++                                              void *on_ctx)
+ {
+     h2_stream *stream;
+     int n, id;
+@@ -1247,8 +1111,8 @@
+     apr_atomic_set32(&m->event_pending, 0);
+ 
+     /* update input windows for streams */
+-    h2_ihash_iter(m->streams, report_consumption_iter, m);    
+-    purge_streams(m, 1);
++    h2_ihash_iter(m->streams, m_report_consumption_iter, m);    
++    m_purge_streams(m, 1);
+     
+     n = h2_ififo_count(m->readyq);
+     while (n > 0 
+@@ -1263,13 +1127,13 @@
+     return APR_SUCCESS;
+ }
+ 
+-apr_status_t h2_mplx_keep_active(h2_mplx *m, h2_stream *stream)
++apr_status_t h2_mplx_m_keep_active(h2_mplx *m, h2_stream *stream)
+ {
+-    check_data_for(m, stream, 1);
++    mst_check_data_for(m, stream, 0);
+     return APR_SUCCESS;
+ }
+ 
+-int h2_mplx_awaits_data(h2_mplx *m)
++int h2_mplx_m_awaits_data(h2_mplx *m)
+ {
+     int waiting = 1;
+      
+@@ -1278,11 +1142,24 @@
      if (h2_ihash_empty(m->streams)) {
          waiting = 0;
      }
@@ -2665,7 +3617,7 @@ Last-Update: 2019-08-17
      return waiting;
  }
 +
-+apr_status_t h2_mplx_client_rst(h2_mplx *m, int stream_id)
++apr_status_t h2_mplx_m_client_rst(h2_mplx *m, int stream_id)
 +{
 +    h2_stream *stream;
 +    apr_status_t status = APR_SUCCESS;
@@ -2673,14 +3625,27 @@ Last-Update: 2019-08-17
 +    H2_MPLX_ENTER_ALWAYS(m);
 +    stream = h2_ihash_get(m->streams, stream_id);
 +    if (stream && stream->task) {
-+        status = mplx_be_annoyed(m);
++        status = m_be_annoyed(m);
 +    }
 +    H2_MPLX_LEAVE(m);
 +    return status;
 +}
 --- a/modules/http2/h2_mplx.h
 +++ b/modules/http2/h2_mplx.h
-@@ -47,8 +47,6 @@
+@@ -31,8 +31,10 @@
+  * queued in the multiplexer. If a task thread tries to write more
+  * data, it is blocked until space becomes available.
+  *
+- * Writing input is never blocked. In order to use flow control on the input,
+- * the mplx can be polled for input data consumption.
++ * Naming Convention: 
++ * "h2_mplx_m_" are methods only to be called by the main connection
++ * "h2_mplx_s_" are method only to be called by a secondary connection
++ * "h2_mplx_t_" are method only to be called by a task handler (can be master or secondary)
+  */
+ 
+ struct apr_pool_t;
+@@ -47,8 +49,6 @@
  struct apr_thread_cond_t;
  struct h2_workers;
  struct h2_iqueue;
@@ -2689,7 +3654,7 @@ Last-Update: 2019-08-17
  
  #include <apr_queue.h>
  
-@@ -65,7 +63,6 @@
+@@ -65,7 +65,6 @@
      unsigned int is_registered;     /* is registered at h2_workers */
  
      struct h2_ihash_t *streams;     /* all streams currently processing */
@@ -2697,7 +3662,7 @@ Last-Update: 2019-08-17
      struct h2_ihash_t *shold;       /* all streams done with task ongoing */
      struct h2_ihash_t *spurge;      /* all streams done, ready for destroy */
      
-@@ -79,14 +76,13 @@
+@@ -79,41 +78,35 @@
      int tasks_active;       /* # of tasks being processed from this mplx */
      int limit_active;       /* current limit on active tasks, dynamic */
      int max_active;         /* max, hard limit # of active tasks in a process */
@@ -2716,42 +3681,253 @@ Last-Update: 2019-08-17
      struct apr_thread_cond_t *join_wait;
      
      apr_size_t stream_max_mem;
-@@ -95,8 +91,6 @@
-     apr_array_header_t *spare_slaves; /* spare slave connections */
+     
+     apr_pool_t *spare_io_pool;
+-    apr_array_header_t *spare_slaves; /* spare slave connections */
++    apr_array_header_t *spare_secondary; /* spare secondary connections */
      
      struct h2_workers *workers;
 -    
 -    struct h2_ngn_shed *ngn_shed;
  };
  
+-
+-
+ /*******************************************************************************
+- * Object lifecycle and information.
++ * From the main connection processing: h2_mplx_m_*
+  ******************************************************************************/
  
-@@ -111,8 +105,7 @@
+-apr_status_t h2_mplx_child_init(apr_pool_t *pool, server_rec *s);
++apr_status_t h2_mplx_m_child_init(apr_pool_t *pool, server_rec *s);
+ 
+ /**
   * Create the multiplexer for the given HTTP2 session. 
   * Implicitly has reference count 1.
   */
 -h2_mplx *h2_mplx_create(conn_rec *c, apr_pool_t *master, 
 -                        const struct h2_config *conf, 
-+h2_mplx *h2_mplx_create(conn_rec *c, server_rec *s, apr_pool_t *master, 
-                         struct h2_workers *workers);
+-                        struct h2_workers *workers);
++h2_mplx *h2_mplx_m_create(conn_rec *c, server_rec *s, apr_pool_t *master, 
++                          struct h2_workers *workers);
  
  /**
-@@ -211,6 +204,8 @@
+  * Decreases the reference counter of this mplx and waits for it
+@@ -123,26 +116,14 @@
+  * @param m the mplx to be released and destroyed
+  * @param wait condition var to wait on for ref counter == 0
+  */ 
+-void h2_mplx_release_and_join(h2_mplx *m, struct apr_thread_cond_t *wait);
+-
+-apr_status_t h2_mplx_pop_task(h2_mplx *m, struct h2_task **ptask);
+-
+-void h2_mplx_task_done(h2_mplx *m, struct h2_task *task, struct h2_task **ptask);
++void h2_mplx_m_release_and_join(h2_mplx *m, struct apr_thread_cond_t *wait);
  
- apr_status_t h2_mplx_stream_do(h2_mplx *m, h2_mplx_stream_cb *cb, void *ctx);
- 
-+apr_status_t h2_mplx_client_rst(h2_mplx *m, int stream_id);
-+
- /*******************************************************************************
-  * Output handling of streams.
-  ******************************************************************************/
-@@ -303,28 +298,4 @@
+ /**
+  * Shut down the multiplexer gracefully. Will no longer schedule new streams
+  * but let the ongoing ones finish normally.
+  * @return the highest stream id being/been processed
   */
- apr_status_t h2_mplx_idle(h2_mplx *m);
+-int h2_mplx_shutdown(h2_mplx *m);
+-
+-int h2_mplx_is_busy(h2_mplx *m);
+-
+-/*******************************************************************************
+- * IO lifetime of streams.
+- ******************************************************************************/
+-
+-struct h2_stream *h2_mplx_stream_get(h2_mplx *m, int id);
++int h2_mplx_m_shutdown(h2_mplx *m);
+ 
+ /**
+  * Notifies mplx that a stream has been completely handled on the main
+@@ -151,20 +132,16 @@
+  * @param m the mplx itself
+  * @param stream the stream ready for cleanup
+  */
+-apr_status_t h2_mplx_stream_cleanup(h2_mplx *m, struct h2_stream *stream);
++apr_status_t h2_mplx_m_stream_cleanup(h2_mplx *m, struct h2_stream *stream);
+ 
+ /**
+  * Waits on output data from any stream in this session to become available. 
+  * Returns APR_TIMEUP if no data arrived in the given time.
+  */
+-apr_status_t h2_mplx_out_trywait(h2_mplx *m, apr_interval_time_t timeout,
+-                                 struct apr_thread_cond_t *iowait);
++apr_status_t h2_mplx_m_out_trywait(h2_mplx *m, apr_interval_time_t timeout,
++                                   struct apr_thread_cond_t *iowait);
+ 
+-apr_status_t h2_mplx_keep_active(h2_mplx *m, struct h2_stream *stream);
+-
+-/*******************************************************************************
+- * Stream processing.
+- ******************************************************************************/
++apr_status_t h2_mplx_m_keep_active(h2_mplx *m, struct h2_stream *stream);
+ 
+ /**
+  * Process a stream request.
+@@ -175,8 +152,8 @@
+  * @param cmp the stream priority compare function
+  * @param ctx context data for the compare function
+  */
+-apr_status_t h2_mplx_process(h2_mplx *m, struct h2_stream *stream, 
+-                             h2_stream_pri_cmp *cmp, void *ctx);
++apr_status_t h2_mplx_m_process(h2_mplx *m, struct h2_stream *stream, 
++                               h2_stream_pri_cmp *cmp, void *ctx);
+ 
+ /**
+  * Stream priorities have changed, reschedule pending requests.
+@@ -185,7 +162,7 @@
+  * @param cmp the stream priority compare function
+  * @param ctx context data for the compare function
+  */
+-apr_status_t h2_mplx_reprioritize(h2_mplx *m, h2_stream_pri_cmp *cmp, void *ctx);
++apr_status_t h2_mplx_m_reprioritize(h2_mplx *m, h2_stream_pri_cmp *cmp, void *ctx);
+ 
+ typedef apr_status_t stream_ev_callback(void *ctx, struct h2_stream *stream);
+ 
+@@ -193,7 +170,7 @@
+  * Check if the multiplexer has events for the master connection pending.
+  * @return != 0 iff there are events pending
+  */
+-int h2_mplx_has_master_events(h2_mplx *m);
++int h2_mplx_m_has_master_events(h2_mplx *m);
+ 
+ /**
+  * Dispatch events for the master connection, such as
+@@ -201,130 +178,46 @@
+  * @param on_resume new output data has arrived for a suspended stream 
+  * @param ctx user supplied argument to invocation.
+  */
+-apr_status_t h2_mplx_dispatch_master_events(h2_mplx *m, 
+-                                            stream_ev_callback *on_resume, 
+-                                            void *ctx);
++apr_status_t h2_mplx_m_dispatch_master_events(h2_mplx *m, stream_ev_callback *on_resume, 
++                                              void *ctx);
+ 
+-int h2_mplx_awaits_data(h2_mplx *m);
++int h2_mplx_m_awaits_data(h2_mplx *m);
+ 
+ typedef int h2_mplx_stream_cb(struct h2_stream *s, void *ctx);
+ 
+-apr_status_t h2_mplx_stream_do(h2_mplx *m, h2_mplx_stream_cb *cb, void *ctx);
++apr_status_t h2_mplx_m_stream_do(h2_mplx *m, h2_mplx_stream_cb *cb, void *ctx);
+ 
+-/*******************************************************************************
+- * Output handling of streams.
+- ******************************************************************************/
++apr_status_t h2_mplx_m_client_rst(h2_mplx *m, int stream_id);
+ 
+ /**
+- * Opens the output for the given stream with the specified response.
++ * Master connection has entered idle mode.
++ * @param m the mplx instance of the master connection
++ * @return != SUCCESS iff connection should be terminated
+  */
+-apr_status_t h2_mplx_out_open(h2_mplx *mplx, int stream_id,
+-                              struct h2_bucket_beam *beam);
++apr_status_t h2_mplx_m_idle(h2_mplx *m);
+ 
+ /*******************************************************************************
+- * h2_mplx list Manipulation.
++ * From a secondary connection processing: h2_mplx_s_*
+  ******************************************************************************/
+-
+-/**
+- * The magic pointer value that indicates the head of a h2_mplx list
+- * @param  b The mplx list
+- * @return The magic pointer value
+- */
+-#define H2_MPLX_LIST_SENTINEL(b)	APR_RING_SENTINEL((b), h2_mplx, link)
+-
+-/**
+- * Determine if the mplx list is empty
+- * @param b The list to check
+- * @return true or false
+- */
+-#define H2_MPLX_LIST_EMPTY(b)	APR_RING_EMPTY((b), h2_mplx, link)
+-
+-/**
+- * Return the first mplx in a list
+- * @param b The list to query
+- * @return The first mplx in the list
+- */
+-#define H2_MPLX_LIST_FIRST(b)	APR_RING_FIRST(b)
+-
+-/**
+- * Return the last mplx in a list
+- * @param b The list to query
+- * @return The last mplx int he list
+- */
+-#define H2_MPLX_LIST_LAST(b)	APR_RING_LAST(b)
+-
+-/**
+- * Insert a single mplx at the front of a list
+- * @param b The list to add to
+- * @param e The mplx to insert
+- */
+-#define H2_MPLX_LIST_INSERT_HEAD(b, e) do {				\
+-h2_mplx *ap__b = (e);                                        \
+-APR_RING_INSERT_HEAD((b), ap__b, h2_mplx, link);	\
+-} while (0)
+-
+-/**
+- * Insert a single mplx at the end of a list
+- * @param b The list to add to
+- * @param e The mplx to insert
+- */
+-#define H2_MPLX_LIST_INSERT_TAIL(b, e) do {				\
+-h2_mplx *ap__b = (e);					\
+-APR_RING_INSERT_TAIL((b), ap__b, h2_mplx, link);	\
+-} while (0)
+-
+-/**
+- * Get the next mplx in the list
+- * @param e The current mplx
+- * @return The next mplx
+- */
+-#define H2_MPLX_NEXT(e)	APR_RING_NEXT((e), link)
+-/**
+- * Get the previous mplx in the list
+- * @param e The current mplx
+- * @return The previous mplx
+- */
+-#define H2_MPLX_PREV(e)	APR_RING_PREV((e), link)
+-
+-/**
+- * Remove a mplx from its list
+- * @param e The mplx to remove
+- */
+-#define H2_MPLX_REMOVE(e)	APR_RING_REMOVE((e), link)
++apr_status_t h2_mplx_s_pop_task(h2_mplx *m, struct h2_task **ptask);
++void h2_mplx_s_task_done(h2_mplx *m, struct h2_task *task, struct h2_task **ptask);
+ 
+ /*******************************************************************************
+- * h2_mplx DoS protection
++ * From a h2_task owner: h2_mplx_s_*
++ * (a task is transfered from master to secondary connection and back in
++ * its normal lifetime).
+  ******************************************************************************/
+ 
+ /**
+- * Master connection has entered idle mode.
+- * @param m the mplx instance of the master connection
+- * @return != SUCCESS iff connection should be terminated
++ * Opens the output for the given stream with the specified response.
+  */
+-apr_status_t h2_mplx_idle(h2_mplx *m);
++apr_status_t h2_mplx_t_out_open(h2_mplx *mplx, int stream_id,
++                                struct h2_bucket_beam *beam);
  
 -/*******************************************************************************
 - * h2_req_engine handling
 - ******************************************************************************/
--
++/**
++ * Get the stream that belongs to the given task.
++ */
++struct h2_stream *h2_mplx_t_stream_get(h2_mplx *m, struct h2_task *task);
+ 
 -typedef void h2_output_consumed(void *ctx, conn_rec *c, apr_off_t consumed);
 -typedef apr_status_t h2_mplx_req_engine_init(struct h2_req_engine *engine, 
 -                                             const char *id, 
@@ -2771,485 +3947,8 @@ Last-Update: 2019-08-17
 -                                     request_rec **pr);
 -void h2_mplx_req_engine_done(struct h2_req_engine *ngn, conn_rec *r_conn,
 -                             apr_status_t status);
--
+ 
  #endif /* defined(__mod_h2__h2_mplx__) */
---- a/modules/http2/h2_ngn_shed.c
-+++ /dev/null
-@@ -1,392 +0,0 @@
--/* Licensed to the Apache Software Foundation (ASF) under one or more
-- * contributor license agreements.  See the NOTICE file distributed with
-- * this work for additional information regarding copyright ownership.
-- * The ASF licenses this file to You under the Apache License, Version 2.0
-- * (the "License"); you may not use this file except in compliance with
-- * the License.  You may obtain a copy of the License at
-- *
-- *     http://www.apache.org/licenses/LICENSE-2.0
-- *
-- * Unless required by applicable law or agreed to in writing, software
-- * distributed under the License is distributed on an "AS IS" BASIS,
-- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-- * See the License for the specific language governing permissions and
-- * limitations under the License.
-- */
-- 
--#include <assert.h>
--#include <stddef.h>
--#include <stdlib.h>
--
--#include <apr_thread_mutex.h>
--#include <apr_thread_cond.h>
--#include <apr_strings.h>
--#include <apr_time.h>
--
--#include <httpd.h>
--#include <http_core.h>
--#include <http_log.h>
--
--#include "mod_http2.h"
--
--#include "h2_private.h"
--#include "h2.h"
--#include "h2_config.h"
--#include "h2_conn.h"
--#include "h2_ctx.h"
--#include "h2_h2.h"
--#include "h2_mplx.h"
--#include "h2_request.h"
--#include "h2_task.h"
--#include "h2_util.h"
--#include "h2_ngn_shed.h"
--
--
--typedef struct h2_ngn_entry h2_ngn_entry;
--struct h2_ngn_entry {
--    APR_RING_ENTRY(h2_ngn_entry) link;
--    h2_task *task;
--    request_rec *r;
--};
--
--#define H2_NGN_ENTRY_NEXT(e)	APR_RING_NEXT((e), link)
--#define H2_NGN_ENTRY_PREV(e)	APR_RING_PREV((e), link)
--#define H2_NGN_ENTRY_REMOVE(e)	APR_RING_REMOVE((e), link)
--
--#define H2_REQ_ENTRIES_SENTINEL(b)	APR_RING_SENTINEL((b), h2_ngn_entry, link)
--#define H2_REQ_ENTRIES_EMPTY(b)	APR_RING_EMPTY((b), h2_ngn_entry, link)
--#define H2_REQ_ENTRIES_FIRST(b)	APR_RING_FIRST(b)
--#define H2_REQ_ENTRIES_LAST(b)	APR_RING_LAST(b)
--
--#define H2_REQ_ENTRIES_INSERT_HEAD(b, e) do {				\
--h2_ngn_entry *ap__b = (e);                                        \
--APR_RING_INSERT_HEAD((b), ap__b, h2_ngn_entry, link);	\
--} while (0)
--
--#define H2_REQ_ENTRIES_INSERT_TAIL(b, e) do {				\
--h2_ngn_entry *ap__b = (e);					\
--APR_RING_INSERT_TAIL((b), ap__b, h2_ngn_entry, link);	\
--} while (0)
--
--struct h2_req_engine {
--    const char *id;        /* identifier */
--    const char *type;      /* name of the engine type */
--    apr_pool_t *pool;      /* pool for engine specific allocations */
--    conn_rec *c;           /* connection this engine is assigned to */
--    h2_task *task;         /* the task this engine is based on, running in */
--    h2_ngn_shed *shed;
--
--    unsigned int shutdown : 1; /* engine is being shut down */
--    unsigned int done : 1;     /* engine has finished */
--
--    APR_RING_HEAD(h2_req_entries, h2_ngn_entry) entries;
--    int capacity;     /* maximum concurrent requests */
--    int no_assigned;  /* # of assigned requests */
--    int no_live;      /* # of live */
--    int no_finished;  /* # of finished */
--    
--    h2_output_consumed *out_consumed;
--    void *out_consumed_ctx;
--};
--
--const char *h2_req_engine_get_id(h2_req_engine *engine)
--{
--    return engine->id;
--}
--
--int h2_req_engine_is_shutdown(h2_req_engine *engine)
--{
--    return engine->shutdown;
--}
--
--void h2_req_engine_out_consumed(h2_req_engine *engine, conn_rec *c, 
--                                apr_off_t bytes)
--{
--    if (engine->out_consumed) {
--        engine->out_consumed(engine->out_consumed_ctx, c, bytes);
--    }
--}
--
--h2_ngn_shed *h2_ngn_shed_create(apr_pool_t *pool, conn_rec *c,
--                                int default_capacity, 
--                                apr_size_t req_buffer_size)
--{
--    h2_ngn_shed *shed;
--    
--    shed = apr_pcalloc(pool, sizeof(*shed));
--    shed->c = c;
--    shed->pool = pool;
--    shed->default_capacity = default_capacity;
--    shed->req_buffer_size = req_buffer_size;
--    shed->ngns = apr_hash_make(pool);
--    
--    return shed;
--}
--
--void h2_ngn_shed_set_ctx(h2_ngn_shed *shed, void *user_ctx)
--{
--    shed->user_ctx = user_ctx;
--}
--
--void *h2_ngn_shed_get_ctx(h2_ngn_shed *shed)
--{
--    return shed->user_ctx;
--}
--
--h2_ngn_shed *h2_ngn_shed_get_shed(h2_req_engine *ngn)
--{
--    return ngn->shed;
--}
--
--void h2_ngn_shed_abort(h2_ngn_shed *shed)
--{
--    ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, shed->c, APLOGNO(03394)
--                  "h2_ngn_shed(%ld): abort", shed->c->id);
--    shed->aborted = 1;
--}
--
--static void ngn_add_task(h2_req_engine *ngn, h2_task *task, request_rec *r)
--{
--    h2_ngn_entry *entry = apr_pcalloc(task->pool, sizeof(*entry));
--    APR_RING_ELEM_INIT(entry, link);
--    entry->task = task;
--    entry->r = r;
--    H2_REQ_ENTRIES_INSERT_TAIL(&ngn->entries, entry);
--    ngn->no_assigned++;
--}
--
--
--apr_status_t h2_ngn_shed_push_request(h2_ngn_shed *shed, const char *ngn_type, 
--                                      request_rec *r, 
--                                      http2_req_engine_init *einit) 
--{
--    h2_req_engine *ngn;
--    h2_task *task = h2_ctx_rget_task(r);
--
--    ap_assert(task);
--    ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, shed->c,
--                  "h2_ngn_shed(%ld): PUSHing request (task=%s)", shed->c->id, 
--                  task->id);
--    if (task->request->serialize) {
--        /* Max compatibility, deny processing of this */
--        return APR_EOF;
--    }
--    
--    if (task->assigned) {
--        --task->assigned->no_assigned;
--        --task->assigned->no_live;
--        task->assigned = NULL;
--    }
--    
--    if (task->engine) {
--        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, task->c, 
--                      "h2_ngn_shed(%ld): push task(%s) hosting engine %s " 
--                      "already with %d tasks", 
--                      shed->c->id, task->id, task->engine->id,
--                      task->engine->no_assigned);
--        task->assigned = task->engine;
--        ngn_add_task(task->engine, task, r);
--        return APR_SUCCESS;
--    }
--    
--    ngn = apr_hash_get(shed->ngns, ngn_type, APR_HASH_KEY_STRING);
--    if (ngn && !ngn->shutdown) {
--        /* this task will be processed in another thread,
--         * freeze any I/O for the time being. */
--        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, task->c,
--                      "h2_ngn_shed(%ld): pushing request %s to %s", 
--                      shed->c->id, task->id, ngn->id);
--        if (!h2_task_has_thawed(task)) {
--            h2_task_freeze(task);
--        }
--        ngn_add_task(ngn, task, r);
--        return APR_SUCCESS;
--    }
--    
--    /* no existing engine or being shut down, start a new one */
--    if (einit) {
--        apr_status_t status;
--        apr_pool_t *pool = task->pool;
--        h2_req_engine *newngn;
--        
--        newngn = apr_pcalloc(pool, sizeof(*ngn));
--        newngn->pool = pool;
--        newngn->id   = apr_psprintf(pool, "ngn-%s", task->id);
--        newngn->type = apr_pstrdup(pool, ngn_type);
--        newngn->c    = task->c;
--        newngn->shed = shed;
--        newngn->capacity = shed->default_capacity;
--        newngn->no_assigned = 1;
--        newngn->no_live = 1;
--        APR_RING_INIT(&newngn->entries, h2_ngn_entry, link);
--        
--        status = einit(newngn, newngn->id, newngn->type, newngn->pool,
--                       shed->req_buffer_size, r,
--                       &newngn->out_consumed, &newngn->out_consumed_ctx);
--        
--        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, status, task->c, APLOGNO(03395)
--                      "h2_ngn_shed(%ld): create engine %s (%s)", 
--                      shed->c->id, newngn->id, newngn->type);
--        if (status == APR_SUCCESS) {
--            newngn->task = task;
--            task->engine = newngn;
--            task->assigned = newngn;
--            apr_hash_set(shed->ngns, newngn->type, APR_HASH_KEY_STRING, newngn);
--        }
--        return status;
--    }
--    return APR_EOF;
--}
--
--static h2_ngn_entry *pop_detached(h2_req_engine *ngn)
--{
--    h2_ngn_entry *entry;
--    for (entry = H2_REQ_ENTRIES_FIRST(&ngn->entries);
--         entry != H2_REQ_ENTRIES_SENTINEL(&ngn->entries);
--         entry = H2_NGN_ENTRY_NEXT(entry)) {
--        if (h2_task_has_thawed(entry->task) 
--            || (entry->task->engine == ngn)) {
--            /* The task hosting this engine can always be pulled by it.
--             * For other task, they need to become detached, e.g. no longer
--             * assigned to another worker. */
--            H2_NGN_ENTRY_REMOVE(entry);
--            return entry;
--        }
--    }
--    return NULL;
--}
--
--apr_status_t h2_ngn_shed_pull_request(h2_ngn_shed *shed, 
--                                      h2_req_engine *ngn, 
--                                      int capacity, 
--                                      int want_shutdown,
--                                      request_rec **pr)
--{   
--    h2_ngn_entry *entry;
--    
--    ap_assert(ngn);
--    *pr = NULL;
--    ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, shed->c, APLOGNO(03396)
--                  "h2_ngn_shed(%ld): pull task for engine %s, shutdown=%d", 
--                  shed->c->id, ngn->id, want_shutdown);
--    if (shed->aborted) {
--        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, shed->c, APLOGNO(03397)
--                      "h2_ngn_shed(%ld): abort while pulling requests %s", 
--                      shed->c->id, ngn->id);
--        ngn->shutdown = 1;
--        return APR_ECONNABORTED;
--    }
--    
--    ngn->capacity = capacity;
--    if (H2_REQ_ENTRIES_EMPTY(&ngn->entries)) {
--        if (want_shutdown) {
--            ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, shed->c,
--                          "h2_ngn_shed(%ld): empty queue, shutdown engine %s", 
--                          shed->c->id, ngn->id);
--            ngn->shutdown = 1;
--        }
--        return ngn->shutdown? APR_EOF : APR_EAGAIN;
--    }
--    
--    if ((entry = pop_detached(ngn))) {
--        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, entry->task->c, APLOGNO(03398)
--                      "h2_ngn_shed(%ld): pulled request %s for engine %s", 
--                      shed->c->id, entry->task->id, ngn->id);
--        ngn->no_live++;
--        *pr = entry->r;
--        entry->task->assigned = ngn;
--        /* task will now run in ngn's own thread. Modules like lua
--         * seem to require the correct thread set in the conn_rec.
--         * See PR 59542. */
--        if (entry->task->c && ngn->c) {
--            entry->task->c->current_thread = ngn->c->current_thread;
--        }
--        if (entry->task->engine == ngn) {
--            /* If an engine pushes its own base task, and then pulls
--             * it back to itself again, it needs to be thawed.
--             */
--            h2_task_thaw(entry->task);
--        }
--        return APR_SUCCESS;
--    }
--    
--    if (1) {
--        h2_ngn_entry *entry = H2_REQ_ENTRIES_FIRST(&ngn->entries);
--        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, shed->c, APLOGNO(03399)
--                      "h2_ngn_shed(%ld): pull task, nothing, first task %s", 
--                      shed->c->id, entry->task->id);
--    }
--    return APR_EAGAIN;
--}
--                                 
--static apr_status_t ngn_done_task(h2_ngn_shed *shed, h2_req_engine *ngn, 
--                                  h2_task *task, int waslive, int aborted)
--{
--    ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, shed->c, APLOGNO(03400)
--                  "h2_ngn_shed(%ld): task %s %s by %s", 
--                  shed->c->id, task->id, aborted? "aborted":"done", ngn->id);
--    ngn->no_finished++;
--    if (waslive) ngn->no_live--;
--    ngn->no_assigned--;
--    task->assigned = NULL;
--    
--    return APR_SUCCESS;
--}
--                                
--apr_status_t h2_ngn_shed_done_task(h2_ngn_shed *shed, 
--                                    struct h2_req_engine *ngn, h2_task *task)
--{
--    return ngn_done_task(shed, ngn, task, 1, 0);
--}
--                                
--void h2_ngn_shed_done_ngn(h2_ngn_shed *shed, struct h2_req_engine *ngn)
--{
--    if (ngn->done) {
--        return;
--    }
--    
--    if (!shed->aborted && !H2_REQ_ENTRIES_EMPTY(&ngn->entries)) {
--        h2_ngn_entry *entry;
--        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, shed->c,
--                      "h2_ngn_shed(%ld): exit engine %s (%s), "
--                      "has still requests queued, shutdown=%d,"
--                      "assigned=%ld, live=%ld, finished=%ld", 
--                      shed->c->id, ngn->id, ngn->type,
--                      ngn->shutdown, 
--                      (long)ngn->no_assigned, (long)ngn->no_live,
--                      (long)ngn->no_finished);
--        for (entry = H2_REQ_ENTRIES_FIRST(&ngn->entries);
--             entry != H2_REQ_ENTRIES_SENTINEL(&ngn->entries);
--             entry = H2_NGN_ENTRY_NEXT(entry)) {
--            h2_task *task = entry->task;
--            ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, shed->c,
--                          "h2_ngn_shed(%ld): engine %s has queued task %s, "
--                          "frozen=%d, aborting",
--                          shed->c->id, ngn->id, task->id, task->frozen);
--            ngn_done_task(shed, ngn, task, 0, 1);
--            task->engine = task->assigned = NULL;
--        }
--    }
--    if (!shed->aborted && (ngn->no_assigned > 1 || ngn->no_live > 1)) {
--        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, shed->c,
--                      "h2_ngn_shed(%ld): exit engine %s (%s), "
--                      "assigned=%ld, live=%ld, finished=%ld", 
--                      shed->c->id, ngn->id, ngn->type,
--                      (long)ngn->no_assigned, (long)ngn->no_live,
--                      (long)ngn->no_finished);
--    }
--    else {
--        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, shed->c,
--                      "h2_ngn_shed(%ld): exit engine %s", 
--                      shed->c->id, ngn->id);
--    }
--    
--    apr_hash_set(shed->ngns, ngn->type, APR_HASH_KEY_STRING, NULL);
--    ngn->done = 1;
--}
--
--void h2_ngn_shed_destroy(h2_ngn_shed *shed)
--{
--    ap_assert(apr_hash_count(shed->ngns) == 0);
--}
--
---- a/modules/http2/h2_ngn_shed.h
-+++ /dev/null
-@@ -1,79 +0,0 @@
--/* Licensed to the Apache Software Foundation (ASF) under one or more
-- * contributor license agreements.  See the NOTICE file distributed with
-- * this work for additional information regarding copyright ownership.
-- * The ASF licenses this file to You under the Apache License, Version 2.0
-- * (the "License"); you may not use this file except in compliance with
-- * the License.  You may obtain a copy of the License at
-- *
-- *     http://www.apache.org/licenses/LICENSE-2.0
-- *
-- * Unless required by applicable law or agreed to in writing, software
-- * distributed under the License is distributed on an "AS IS" BASIS,
-- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-- * See the License for the specific language governing permissions and
-- * limitations under the License.
-- */
--
--#ifndef h2_req_shed_h
--#define h2_req_shed_h
--
--struct h2_req_engine;
--struct h2_task;
--
--typedef struct h2_ngn_shed h2_ngn_shed;
--struct h2_ngn_shed {
--    conn_rec *c;
--    apr_pool_t *pool;
--    apr_hash_t *ngns;
--    void *user_ctx;
--    
--    unsigned int aborted : 1;
--    
--    int default_capacity;
--    apr_size_t req_buffer_size; /* preferred buffer size for responses */
--};
--
--const char *h2_req_engine_get_id(h2_req_engine *engine);
--int h2_req_engine_is_shutdown(h2_req_engine *engine);
--
--void h2_req_engine_out_consumed(h2_req_engine *engine, conn_rec *c, 
--                                apr_off_t bytes);
--
--typedef apr_status_t h2_shed_ngn_init(h2_req_engine *engine, 
--                                      const char *id, 
--                                      const char *type,
--                                      apr_pool_t *pool, 
--                                      apr_size_t req_buffer_size,
--                                      request_rec *r,
--                                      h2_output_consumed **pconsumed,
--                                      void **pbaton);
--
--h2_ngn_shed *h2_ngn_shed_create(apr_pool_t *pool, conn_rec *c,
--                                int default_capactiy, 
--                                apr_size_t req_buffer_size); 
--
--void h2_ngn_shed_destroy(h2_ngn_shed *shed);
--
--void h2_ngn_shed_set_ctx(h2_ngn_shed *shed, void *user_ctx);
--void *h2_ngn_shed_get_ctx(h2_ngn_shed *shed);
--
--h2_ngn_shed *h2_ngn_shed_get_shed(struct h2_req_engine *ngn);
--
--void h2_ngn_shed_abort(h2_ngn_shed *shed);
--
--apr_status_t h2_ngn_shed_push_request(h2_ngn_shed *shed, const char *ngn_type, 
--                                      request_rec *r, 
--                                      h2_shed_ngn_init *init_cb);
--
--apr_status_t h2_ngn_shed_pull_request(h2_ngn_shed *shed, h2_req_engine *pub_ngn, 
--                                      int capacity, 
--                                      int want_shutdown, request_rec **pr);
--
--apr_status_t h2_ngn_shed_done_task(h2_ngn_shed *shed, 
--                                   struct h2_req_engine *ngn, 
--                                   struct h2_task *task);
--
--void h2_ngn_shed_done_ngn(h2_ngn_shed *shed, struct h2_req_engine *ngn);
--
--
--#endif /* h2_req_shed_h */
 --- a/modules/http2/h2_proxy_session.c
 +++ b/modules/http2/h2_proxy_session.c
 @@ -45,6 +45,7 @@
@@ -3260,15 +3959,152 @@ Last-Update: 2019-08-17
      uint32_t error_code;
  
      apr_bucket_brigade *input;
-@@ -61,6 +62,7 @@
+@@ -61,7 +62,123 @@
  static void ping_arrived(h2_proxy_session *session);
  static apr_status_t check_suspended(h2_proxy_session *session);
  static void stream_resume(h2_proxy_stream *stream);
 +static apr_status_t submit_trailers(h2_proxy_stream *stream);
  
++/*
++ * The H2_PING connection sub-state: a state independant of the H2_SESSION state
++ * of the connection:
++ * - H2_PING_ST_NONE: no interference with request handling, ProxyTimeout in effect.
++ *   When entered, all suspended streams are unsuspended again.
++ * - H2_PING_ST_AWAIT_ANY: new requests are suspended, a possibly configured "ping"
++ *   timeout is in effect. Any frame received transits to H2_PING_ST_NONE.
++ * - H2_PING_ST_AWAIT_PING: same as above, but only a PING frame transits 
++ *   to H2_PING_ST_NONE.
++ *
++ * An AWAIT state is entered on a new connection or when re-using a connection and
++ * the last frame received has been some time ago. The latter sends a PING frame
++ * and insists on an answer, the former is satisfied by any frame received from the
++ * backend.
++ *
++ * This works for new connections as there is always at least one SETTINGS frame
++ * that the backend sends. When re-using connection, we send a PING and insist on
++ * receiving one back, as there might be frames in our connection buffers from
++ * some time ago. Since some servers have protections against PING flooding, we
++ * only ever have one PING unanswered.
++ *
++ * Requests are suspended while in a PING state, as we do not want to send data
++ * before we can be reasonably sure that the connection is working (at least on
++ * the h2 protocol level). This also means that the session can do blocking reads
++ * when expecting PING answers.
++ */
++static void set_ping_timeout(h2_proxy_session *session)
++{
++    if (session->ping_timeout != -1 && session->save_timeout == -1) {
++        apr_socket_t *socket = NULL;
++
++        socket = ap_get_conn_socket(session->c);
++        if (socket) {
++            apr_socket_timeout_get(socket, &session->save_timeout);
++            apr_socket_timeout_set(socket, session->ping_timeout);
++        }
++    }
++}
++
++static void unset_ping_timeout(h2_proxy_session *session)
++{
++    if (session->save_timeout != -1) {
++        apr_socket_t *socket = NULL;
++
++        socket = ap_get_conn_socket(session->c);
++        if (socket) {
++            apr_socket_timeout_set(socket, session->save_timeout);
++            session->save_timeout = -1;
++        }
++    }
++}
++
++static void enter_ping_state(h2_proxy_session *session, h2_ping_state_t state)
++{
++    if (session->ping_state == state) return;
++    switch (session->ping_state) {
++    case H2_PING_ST_NONE:
++        /* leaving NONE, enforce timeout, send frame maybe */
++        if (H2_PING_ST_AWAIT_PING == state) {
++            unset_ping_timeout(session);
++            nghttp2_submit_ping(session->ngh2, 0, (const uint8_t *)"nevergonnagiveyouup");
++        }
++        set_ping_timeout(session);
++        session->ping_state = state;
++        break;
++    default:
++        /* no switching between the != NONE states */
++        if (H2_PING_ST_NONE == state) {
++            session->ping_state = state;
++            unset_ping_timeout(session);
++            ping_arrived(session);
++        }
++        break;
++    }
++}
++
++static void ping_new_session(h2_proxy_session *session, proxy_conn_rec *p_conn)
++{
++    session->save_timeout = -1;
++    session->ping_timeout = (p_conn->worker->s->ping_timeout_set?
++                             p_conn->worker->s->ping_timeout : -1);
++    session->ping_state = H2_PING_ST_NONE;
++    enter_ping_state(session, H2_PING_ST_AWAIT_ANY);
++}
++
++static void ping_reuse_session(h2_proxy_session *session)
++{
++    if (H2_PING_ST_NONE == session->ping_state) {
++        apr_interval_time_t age = apr_time_now() - session->last_frame_received;
++        if (age > apr_time_from_sec(1)) {
++            enter_ping_state(session, H2_PING_ST_AWAIT_PING);
++        }
++    }
++}
++
++static void ping_ev_frame_received(h2_proxy_session *session, const nghttp2_frame *frame)
++{
++    session->last_frame_received = apr_time_now();
++    switch (session->ping_state) {
++    case H2_PING_ST_NONE:
++        /* nop */
++        break;
++    case H2_PING_ST_AWAIT_ANY:
++        enter_ping_state(session, H2_PING_ST_NONE);
++        break;
++    case H2_PING_ST_AWAIT_PING:
++        if (NGHTTP2_PING == frame->hd.type) {
++            enter_ping_state(session, H2_PING_ST_NONE);
++        }
++        /* we may receive many other frames while we are waiting for the
++         * PING answer. They may come all from our connection buffers and
++         * say nothing about the current state of the backend. */
++        break;
++    }
++}
  
  static apr_status_t proxy_session_pre_close(void *theconn)
-@@ -241,7 +243,8 @@
+ {
+@@ -152,7 +269,8 @@
+                       session->id, buffer);
+     }
+ 
+-    session->last_frame_received = apr_time_now();
++    ping_ev_frame_received(session, frame);
++    /* Action for frame types: */
+     switch (frame->hd.type) {
+         case NGHTTP2_HEADERS:
+             stream = nghttp2_session_get_stream_user_data(ngh2, frame->hd.stream_id);
+@@ -193,10 +311,6 @@
+             stream_resume(stream);
+             break;
+         case NGHTTP2_PING:
+-            if (session->check_ping) {
+-                session->check_ping = 0;
+-                ping_arrived(session);
+-            }
+             break;
+         case NGHTTP2_PUSH_PROMISE:
+             break;
+@@ -241,7 +355,8 @@
      return 1;
  }
  
@@ -3278,7 +4114,7 @@ Last-Update: 2019-08-17
  {
      static const struct {
          const char *name;
-@@ -262,20 +265,18 @@
+@@ -262,20 +377,18 @@
      if (!dconf->preserve_host) {
          for (i = 0; transform_hdrs[i].name; ++i) {
              if (!ap_cstr_casecmp(transform_hdrs[i].name, n)) {
@@ -3303,7 +4139,7 @@ Last-Update: 2019-08-17
  }
  
  static apr_status_t h2_proxy_stream_add_header_out(h2_proxy_stream *stream,
-@@ -299,8 +300,13 @@
+@@ -299,8 +412,13 @@
          return APR_SUCCESS;
      }
      
@@ -3317,7 +4153,7 @@ Last-Update: 2019-08-17
      
          hname = apr_pstrndup(stream->pool, n, nlen);
          h2_proxy_util_camel_case_header(hname, nlen);
-@@ -309,7 +315,7 @@
+@@ -309,7 +427,7 @@
          ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, stream->session->c, 
                        "h2_proxy_stream(%s-%d): got header %s: %s", 
                        stream->session->id, stream->id, hname, hvalue);
@@ -3326,7 +4162,7 @@ Last-Update: 2019-08-17
      }
      return APR_SUCCESS;
  }
-@@ -374,6 +380,7 @@
+@@ -374,6 +492,7 @@
                                        server_name, portstr)
                         );
      }
@@ -3334,7 +4170,7 @@ Last-Update: 2019-08-17
      
      if (APLOGrtrace2(stream->r)) {
          ap_log_rerror(APLOG_MARK, APLOG_TRACE2, 0, stream->r, 
-@@ -429,12 +436,6 @@
+@@ -429,12 +548,6 @@
                                    stream_id, NGHTTP2_STREAM_CLOSED);
          return NGHTTP2_ERR_STREAM_CLOSING;
      }
@@ -3347,7 +4183,7 @@ Last-Update: 2019-08-17
      return 0;
  }
  
-@@ -493,8 +494,8 @@
+@@ -493,12 +606,12 @@
      stream = nghttp2_session_get_stream_user_data(ngh2, stream_id);
      if (!stream) {
          ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf, APLOGNO(03361)
@@ -3358,7 +4194,12 @@ Last-Update: 2019-08-17
          return NGHTTP2_ERR_CALLBACK_FAILURE;
      }
      
-@@ -553,9 +554,14 @@
+-    if (stream->session->check_ping) {
++    if (stream->session->ping_state != H2_PING_ST_NONE) {
+         /* suspend until we hear from the other side */
+         stream->waiting_on_ping = 1;
+         status = APR_EAGAIN;
+@@ -553,9 +666,14 @@
          stream->data_sent += readlen;
          ap_log_rerror(APLOG_MARK, APLOG_DEBUG, status, stream->r, APLOGNO(03468) 
                        "h2_proxy_stream(%d): request DATA %ld, %ld"
@@ -3375,7 +4216,7 @@ Last-Update: 2019-08-17
          return readlen;
      }
      else if (APR_STATUS_IS_EAGAIN(status)) {
-@@ -641,7 +647,7 @@
+@@ -641,23 +759,20 @@
          
          nghttp2_option_new(&option);
          nghttp2_option_set_peer_max_concurrent_streams(option, 100);
@@ -3384,7 +4225,12 @@ Last-Update: 2019-08-17
          
          nghttp2_session_client_new2(&session->ngh2, cbs, session, option);
          
-@@ -653,10 +659,12 @@
+         nghttp2_option_del(option);
+         nghttp2_session_callbacks_del(cbs);
+ 
++        ping_new_session(session, p_conn);
+         ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, session->c, APLOGNO(03362)
+                       "setup session for %s", p_conn->hostname);
      }
      else {
          h2_proxy_session *session = p_conn->data;
@@ -3392,16 +4238,12 @@ Last-Update: 2019-08-17
 -        if (age > apr_time_from_sec(1)) {
 -            session->check_ping = 1;
 -            nghttp2_submit_ping(session->ngh2, 0, (const uint8_t *)"nevergonnagiveyouup");
-+        if (!session->check_ping) {
-+            apr_interval_time_t age = apr_time_now() - session->last_frame_received;
-+            if (age > apr_time_from_sec(1)) {
-+                session->check_ping = 1;
-+                nghttp2_submit_ping(session->ngh2, 0, (const uint8_t *)"nevergonnagiveyouup");
-+            }
-         }
+-        }
++        ping_reuse_session(session);
      }
      return p_conn->data;
-@@ -740,6 +748,8 @@
+ }
+@@ -740,6 +855,8 @@
      stream->real_server_uri = apr_psprintf(stream->pool, "%s://%s", scheme, authority); 
      stream->p_server_uri = apr_psprintf(stream->pool, "%s://%s", puri.scheme, authority); 
      path = apr_uri_unparse(stream->pool, &puri, APR_URI_UNP_OMITSITEPART);
@@ -3410,7 +4252,7 @@ Last-Update: 2019-08-17
      h2_proxy_req_make(stream->req, stream->pool, r->method, scheme,
                  authority, path, r->headers_in);
  
-@@ -826,6 +836,16 @@
+@@ -826,6 +943,16 @@
      return APR_EGENERAL;
  }
  
@@ -3427,7 +4269,55 @@ Last-Update: 2019-08-17
  static apr_status_t feed_brigade(h2_proxy_session *session, apr_bucket_brigade *bb)
  {
      apr_status_t status = APR_SUCCESS;
-@@ -1423,7 +1443,7 @@
+@@ -882,7 +1009,7 @@
+         apr_socket_t *socket = NULL;
+         apr_time_t save_timeout = -1;
+         
+-        if (block) {
++        if (block && timeout > 0) {
+             socket = ap_get_conn_socket(session->c);
+             if (socket) {
+                 apr_socket_timeout_get(socket, &save_timeout);
+@@ -954,6 +1081,14 @@
+     dispatch_event(session, H2_PROXYS_EV_STREAM_RESUMED, 0, NULL);
+ }
+ 
++static int is_waiting_for_backend(h2_proxy_session *session)
++{
++    return ((session->ping_state != H2_PING_ST_NONE) 
++            || ((session->suspended->nelts <= 0)
++                && !nghttp2_session_want_write(session->ngh2)
++                && nghttp2_session_want_read(session->ngh2)));
++}
++
+ static apr_status_t check_suspended(h2_proxy_session *session)
+ {
+     h2_proxy_stream *stream;
+@@ -1408,7 +1543,22 @@
+             break;
+             
+         case H2_PROXYS_ST_WAIT:
+-            if (check_suspended(session) == APR_EAGAIN) {
++            if (is_waiting_for_backend(session)) {
++                /* we can do a blocking read with the default timeout (as
++                 * configured via ProxyTimeout in our socket. There is
++                 * nothing we want to send or check until we get more data
++                 * from the backend. */
++                status = h2_proxy_session_read(session, 1, 0);
++                if (status == APR_SUCCESS) {
++                    have_read = 1;
++                    dispatch_event(session, H2_PROXYS_EV_DATA_READ, 0, NULL);
++                }
++                else {
++                    dispatch_event(session, H2_PROXYS_EV_CONN_ERROR, status, NULL);
++                    return status;
++                }
++            }
++            else if (check_suspended(session) == APR_EAGAIN) {
+                 /* no stream has become resumed. Do a blocking read with
+                  * ever increasing timeouts... */
+                 if (session->wait_timeout < 25) {
+@@ -1423,7 +1573,7 @@
                  ap_log_cerror(APLOG_MARK, APLOG_TRACE3, status, session->c, 
                                APLOGNO(03365)
                                "h2_proxy_session(%s): WAIT read, timeout=%fms", 
@@ -3436,7 +4326,7 @@ Last-Update: 2019-08-17
                  if (status == APR_SUCCESS) {
                      have_read = 1;
                      dispatch_event(session, H2_PROXYS_EV_DATA_READ, 0, NULL);
-@@ -1543,42 +1563,3 @@
+@@ -1543,42 +1693,3 @@
      int updated;
  } win_update_ctx;
  
@@ -3481,7 +4371,38 @@ Last-Update: 2019-08-17
 -
 --- a/modules/http2/h2_proxy_session.h
 +++ b/modules/http2/h2_proxy_session.h
-@@ -120,9 +120,6 @@
+@@ -60,6 +60,11 @@
+     H2_PROXYS_EV_PRE_CLOSE,        /* connection will close after this */
+ } h2_proxys_event_t;
+ 
++typedef enum {
++    H2_PING_ST_NONE,               /* normal connection mode, ProxyTimeout rules */
++    H2_PING_ST_AWAIT_ANY,          /* waiting for any frame from backend */
++    H2_PING_ST_AWAIT_PING,         /* waiting for PING frame from backend */
++} h2_ping_state_t;
+ 
+ typedef struct h2_proxy_session h2_proxy_session;
+ typedef void h2_proxy_request_done(h2_proxy_session *s, request_rec *r,
+@@ -74,7 +79,6 @@
+     nghttp2_session *ngh2;   /* the nghttp2 session itself */
+     
+     unsigned int aborted : 1;
+-    unsigned int check_ping : 1;
+     unsigned int h2_front : 1; /* if front-end connection is HTTP/2 */
+ 
+     h2_proxy_request_done *done;
+@@ -94,6 +98,10 @@
+     
+     apr_bucket_brigade *input;
+     apr_bucket_brigade *output;
++
++    h2_ping_state_t ping_state;
++    apr_time_t ping_timeout;
++    apr_time_t save_timeout;
+ };
+ 
+ h2_proxy_session *h2_proxy_session_setup(const char *id, proxy_conn_rec *p_conn,
+@@ -120,9 +128,6 @@
  
  void h2_proxy_session_cleanup(h2_proxy_session *s, h2_proxy_request_done *done);
  
@@ -3562,6 +4483,400 @@ Last-Update: 2019-08-17
  /*******************************************************************************
   * h2_proxy_request helpers
   ******************************************************************************/
+@@ -183,7 +185,7 @@
+     
+     apr_time_t request_time;
+     
+-    unsigned int chunked : 1;   /* iff requst body needs to be forwarded as chunked */
++    unsigned int chunked : 1;   /* iff request body needs to be forwarded as chunked */
+     unsigned int serialize : 1; /* iff this request is written in HTTP/1.1 serialization */
+ };
+ 
+--- a/modules/http2/h2_push.c
++++ b/modules/http2/h2_push.c
+@@ -464,33 +464,6 @@
+     return NULL;
+ }
+ 
+-/*******************************************************************************
+- * push diary 
+- *
+- * - The push diary keeps track of resources already PUSHed via HTTP/2 on this
+- *   connection. It records a hash value from the absolute URL of the resource
+- *   pushed.
+- * - Lacking openssl, it uses 'apr_hashfunc_default' for the value
+- * - with openssl, it uses SHA256 to calculate the hash value
+- * - whatever the method to generate the hash, the diary keeps a maximum of 64
+- *   bits per hash, limiting the memory consumption to about 
+- *      H2PushDiarySize * 8 
+- *   bytes. Entries are sorted by most recently used and oldest entries are
+- *   forgotten first.
+- * - Clients can initialize/replace the push diary by sending a 'Cache-Digest'
+- *   header. Currently, this is the base64url encoded value of the cache digest
+- *   as specified in https://datatracker.ietf.org/doc/draft-kazuho-h2-cache-digest/
+- *   This draft can be expected to evolve and the definition of the header
+- *   will be added there and refined.
+- * - The cache digest header is a Golomb Coded Set of hash values, but it may
+- *   limit the amount of bits per hash value even further. For a good description
+- *   of GCS, read here:
+- *      http://giovanni.bajo.it/post/47119962313/golomb-coded-sets-smaller-than-bloom-filters
+- * - The means that the push diary might be initialized with hash values of much
+- *   less than 64 bits, leading to more false positives, but smaller digest size.
+- ******************************************************************************/
+- 
+- 
+ #define GCSLOG_LEVEL   APLOG_TRACE1
+ 
+ typedef struct h2_push_diary_entry {
+@@ -617,38 +590,48 @@
+     return -1;
+ }
+ 
+-static h2_push_diary_entry *move_to_last(h2_push_diary *diary, apr_size_t idx)
++static void move_to_last(h2_push_diary *diary, apr_size_t idx)
+ {
+     h2_push_diary_entry *entries = (h2_push_diary_entry*)diary->entries->elts;
+     h2_push_diary_entry e;
+-    apr_size_t lastidx = diary->entries->nelts-1;
++    int lastidx;
+     
++    /* Move an existing entry to the last place */
++    if (diary->entries->nelts <= 0)
++        return;
++
+     /* move entry[idx] to the end */
++    lastidx = diary->entries->nelts - 1;
+     if (idx < lastidx) {
+         e =  entries[idx];
+-        memmove(entries+idx, entries+idx+1, sizeof(e) * (lastidx - idx));
++        memmove(entries+idx, entries+idx+1, sizeof(h2_push_diary_entry) * (lastidx - idx));
+         entries[lastidx] = e;
+     }
+-    return &entries[lastidx];
+ }
+ 
+-static void h2_push_diary_append(h2_push_diary *diary, h2_push_diary_entry *e)
++static void remove_first(h2_push_diary *diary)
+ {
+-    h2_push_diary_entry *ne;
++    h2_push_diary_entry *entries = (h2_push_diary_entry*)diary->entries->elts;
++    int lastidx;
+     
+-    if (diary->entries->nelts < diary->N) {
+-        /* append a new diary entry at the end */
+-        APR_ARRAY_PUSH(diary->entries, h2_push_diary_entry) = *e;
+-        ne = &APR_ARRAY_IDX(diary->entries, diary->entries->nelts-1, h2_push_diary_entry);
+-    }
+-    else {
+-        /* replace content with new digest. keeps memory usage constant once diary is full */
+-        ne = move_to_last(diary, 0);
+-        *ne = *e;
++    /* move remaining entries to index 0 */
++    lastidx = diary->entries->nelts - 1;
++    if (lastidx > 0) {
++        --diary->entries->nelts;
++        memmove(entries, entries+1, sizeof(h2_push_diary_entry) * diary->entries->nelts);
+     }
++}
++
++static void h2_push_diary_append(h2_push_diary *diary, h2_push_diary_entry *e)
++{
++    while (diary->entries->nelts >= diary->N) {
++        remove_first(diary);
++    }
++    /* append a new diary entry at the end */
++    APR_ARRAY_PUSH(diary->entries, h2_push_diary_entry) = *e;
+     /* Intentional no APLOGNO */
+     ap_log_perror(APLOG_MARK, GCSLOG_LEVEL, 0, diary->entries->pool,
+-                  "push_diary_append: %"APR_UINT64_T_HEX_FMT, ne->hash);
++                  "push_diary_append: %"APR_UINT64_T_HEX_FMT, e->hash);
+ }
+ 
+ apr_array_header_t *h2_push_diary_update(h2_session *session, apr_array_header_t *pushes)
+@@ -691,30 +674,12 @@
+                                            const struct h2_request *req, 
+                                            const struct h2_headers *res)
+ {
+-    h2_session *session = stream->session;
+-    const char *cache_digest = apr_table_get(req->headers, "Cache-Digest");
+     apr_array_header_t *pushes;
+-    apr_status_t status;
+     
+-    if (cache_digest && session->push_diary) {
+-        status = h2_push_diary_digest64_set(session->push_diary, req->authority, 
+-                                            cache_digest, stream->pool);
+-        if (status != APR_SUCCESS) {
+-            ap_log_cerror(APLOG_MARK, APLOG_DEBUG, status, session->c,
+-                          H2_SSSN_LOG(APLOGNO(03057), session,
+-                          "push diary set from Cache-Digest: %s"), cache_digest);
+-        }
+-    }
+     pushes = h2_push_collect(stream->pool, req, stream->push_policy, res);
+     return h2_push_diary_update(stream->session, pushes);
+ }
+ 
+-static apr_int32_t h2_log2inv(unsigned char log2)
+-{
+-    return log2? (1 << log2) : 1;
+-}
+-
+-
+ typedef struct {
+     h2_push_diary *diary;
+     unsigned char log2p;
+@@ -829,16 +794,11 @@
+     apr_size_t hash_count;
+     
+     nelts = diary->entries->nelts;
+-    
+-    if (nelts > APR_UINT32_MAX) {
+-        /* should not happen */
+-        return APR_ENOTIMPL;
+-    }
+     N = ceil_power_of_2(nelts);
+     log2n = h2_log2(N);
+     
+     /* Now log2p is the max number of relevant bits, so that
+-     * log2p + log2n == mask_bits. We can uise a lower log2p
++     * log2p + log2n == mask_bits. We can use a lower log2p
+      * and have a shorter set encoding...
+      */
+     log2pmax = h2_log2(ceil_power_of_2(maxP));
+@@ -895,166 +855,3 @@
+     return APR_SUCCESS;
+ }
+ 
+-typedef struct {
+-    h2_push_diary *diary;
+-    apr_pool_t *pool;
+-    unsigned char log2p;
+-    const unsigned char *data;
+-    apr_size_t datalen;
+-    apr_size_t offset;
+-    unsigned int bit;
+-    apr_uint64_t last_val;
+-} gset_decoder;
+-
+-static int gset_decode_next_bit(gset_decoder *decoder)
+-{
+-    if (++decoder->bit >= 8) {
+-        if (++decoder->offset >= decoder->datalen) {
+-            return -1;
+-        }
+-        decoder->bit = 0;
+-    }
+-    return (decoder->data[decoder->offset] & cbit_mask[decoder->bit])? 1 : 0;
+-}
+-
+-static apr_status_t gset_decode_next(gset_decoder *decoder, apr_uint64_t *phash)
+-{
+-    apr_uint64_t flex = 0, fixed = 0, delta;
+-    int i;
+-    
+-    /* read 1 bits until we encounter 0, then read log2n(diary-P) bits.
+-     * On a malformed bit-string, this will not fail, but produce results
+-     * which are pbly too large. Luckily, the diary will modulo the hash.
+-     */
+-    while (1) {
+-        int bit = gset_decode_next_bit(decoder);
+-        if (bit == -1) {
+-            return APR_EINVAL;
+-        }
+-        if (!bit) {
+-            break;
+-        }
+-        ++flex;
+-    }
+-    
+-    for (i = 0; i < decoder->log2p; ++i) {
+-        int bit = gset_decode_next_bit(decoder);
+-        if (bit == -1) {
+-            return APR_EINVAL;
+-        }
+-        fixed = (fixed << 1) | bit;
+-    }
+-    
+-    delta = (flex << decoder->log2p) | fixed;
+-    *phash = delta + decoder->last_val;
+-    decoder->last_val = *phash;
+-    
+-    /* Intentional no APLOGNO */
+-    ap_log_perror(APLOG_MARK, GCSLOG_LEVEL, 0, decoder->pool,
+-                  "h2_push_diary_digest_dec: val=%"APR_UINT64_T_HEX_FMT", delta=%"
+-                  APR_UINT64_T_HEX_FMT", flex=%d, fixed=%"APR_UINT64_T_HEX_FMT, 
+-                  *phash, delta, (int)flex, fixed);
+-                  
+-    return APR_SUCCESS;
+-}
+-
+-/**
+- * Initialize the push diary by a cache digest as described in 
+- * https://datatracker.ietf.org/doc/draft-kazuho-h2-cache-digest/
+- * .
+- * @param diary the diary to set the digest into
+- * @param data the binary cache digest
+- * @param len the length of the cache digest
+- * @return APR_EINVAL if digest was not successfully parsed
+- */
+-apr_status_t h2_push_diary_digest_set(h2_push_diary *diary, const char *authority, 
+-                                      const char *data, apr_size_t len)
+-{
+-    gset_decoder decoder;
+-    unsigned char log2n, log2p;
+-    int N, i;
+-    apr_pool_t *pool = diary->entries->pool;
+-    h2_push_diary_entry e;
+-    apr_status_t status = APR_SUCCESS;
+-    
+-    if (len < 2) {
+-        /* at least this should be there */
+-        return APR_EINVAL;
+-    }
+-    log2n = data[0];
+-    log2p = data[1];
+-    diary->mask_bits = log2n + log2p;
+-    if (diary->mask_bits > 64) {
+-        /* cannot handle */
+-        return APR_ENOTIMPL;
+-    }
+-    
+-    /* whatever is in the digest, it replaces the diary entries */
+-    apr_array_clear(diary->entries);
+-    if (!authority || !strcmp("*", authority)) {
+-        diary->authority = NULL;
+-    }
+-    else if (!diary->authority || strcmp(diary->authority, authority)) {
+-        diary->authority = apr_pstrdup(diary->entries->pool, authority);
+-    }
+-
+-    N = h2_log2inv(log2n + log2p);
+-
+-    decoder.diary    = diary;
+-    decoder.pool     = pool;
+-    decoder.log2p    = log2p;
+-    decoder.data     = (const unsigned char*)data;
+-    decoder.datalen  = len;
+-    decoder.offset   = 1;
+-    decoder.bit      = 8;
+-    decoder.last_val = 0;
+-    
+-    diary->N = N;
+-    /* Determine effective N we use for storage */
+-    if (!N) {
+-        /* a totally empty cache digest. someone tells us that she has no
+-         * entries in the cache at all. Use our own preferences for N+mask 
+-         */
+-        diary->N = diary->NMax;
+-        return APR_SUCCESS;
+-    }
+-    else if (N > diary->NMax) {
+-        /* Store not more than diary is configured to hold. We open us up
+-         * to DOS attacks otherwise. */
+-        diary->N = diary->NMax;
+-    }
+-    
+-    /* Intentional no APLOGNO */
+-    ap_log_perror(APLOG_MARK, GCSLOG_LEVEL, 0, pool,
+-                  "h2_push_diary_digest_set: N=%d, log2n=%d, "
+-                  "diary->mask_bits=%d, dec.log2p=%d", 
+-                  (int)diary->N, (int)log2n, diary->mask_bits, 
+-                  (int)decoder.log2p);
+-                  
+-    for (i = 0; i < diary->N; ++i) {
+-        if (gset_decode_next(&decoder, &e.hash) != APR_SUCCESS) {
+-            /* the data may have less than N values */
+-            break;
+-        }
+-        h2_push_diary_append(diary, &e);
+-    }
+-    
+-    /* Intentional no APLOGNO */
+-    ap_log_perror(APLOG_MARK, GCSLOG_LEVEL, 0, pool,
+-                  "h2_push_diary_digest_set: diary now with %d entries, mask_bits=%d", 
+-                  (int)diary->entries->nelts, diary->mask_bits);
+-    return status;
+-}
+-
+-apr_status_t h2_push_diary_digest64_set(h2_push_diary *diary, const char *authority, 
+-                                        const char *data64url, apr_pool_t *pool)
+-{
+-    const char *data;
+-    apr_size_t len = h2_util_base64url_decode(&data, data64url, pool);
+-    /* Intentional no APLOGNO */
+-    ap_log_perror(APLOG_MARK, GCSLOG_LEVEL, 0, pool,
+-                  "h2_push_diary_digest64_set: digest=%s, dlen=%d", 
+-                  data64url, (int)len);
+-    return h2_push_diary_digest_set(diary, authority, data, len);
+-}
+-
+--- a/modules/http2/h2_push.h
++++ b/modules/http2/h2_push.h
+@@ -35,6 +35,44 @@
+     H2_PUSH_DIGEST_SHA256
+ } h2_push_digest_type;
+ 
++/*******************************************************************************
++ * push diary 
++ *
++ * - The push diary keeps track of resources already PUSHed via HTTP/2 on this
++ *   connection. It records a hash value from the absolute URL of the resource
++ *   pushed.
++ * - Lacking openssl, 
++ * - with openssl, it uses SHA256 to calculate the hash value, otherwise it
++ *   falls back to apr_hashfunc_default()
++ * - whatever the method to generate the hash, the diary keeps a maximum of 64
++ *   bits per hash, limiting the memory consumption to about 
++ *      H2PushDiarySize * 8 
++ *   bytes. Entries are sorted by most recently used and oldest entries are
++ *   forgotten first.
++ * - While useful by itself to avoid duplicated PUSHes on the same connection,
++ *   the original idea was that clients provided a 'Cache-Digest' header with
++ *   the values of *their own* cached resources. This was described in
++ *   <https://datatracker.ietf.org/doc/draft-kazuho-h2-cache-digest/> 
++ *   and some subsequent revisions that tweaked values but kept the overall idea.
++ * - The draft was abandoned by the IETF http-wg, as support from major clients,
++ *   e.g. browsers, was lacking for various reasons.
++ * - For these reasons, mod_h2 abandoned its support for client supplied values
++ *   but keeps the diary. It seems to provide value for applications using PUSH,
++ *   is configurable in size and defaults to a very moderate amount of memory
++ *   used.
++ * - The cache digest header is a Golomb Coded Set of hash values, but it may
++ *   limit the amount of bits per hash value even further. For a good description
++ *   of GCS, read here:
++ *   <http://giovanni.bajo.it/post/47119962313/golomb-coded-sets-smaller-than-bloom-filters>
++ ******************************************************************************/
++ 
++ 
++/*
++ * The push diary is based on the abandoned draft 
++ * <https://datatracker.ietf.org/doc/draft-kazuho-h2-cache-digest/>
++ * that describes how to use golomb filters.
++ */
++
+ typedef struct h2_push_diary h2_push_diary;
+ 
+ typedef void h2_push_digest_calc(h2_push_diary *diary, apr_uint64_t *phash, h2_push *push);
+@@ -101,20 +139,4 @@
+                                       int maxP, const char *authority, 
+                                       const char **pdata, apr_size_t *plen);
+ 
+-/**
+- * Initialize the push diary by a cache digest as described in 
+- * https://datatracker.ietf.org/doc/draft-kazuho-h2-cache-digest/
+- * .
+- * @param diary the diary to set the digest into
+- * @param authority the authority to set the data for
+- * @param data the binary cache digest
+- * @param len the length of the cache digest
+- * @return APR_EINVAL if digest was not successfully parsed
+- */
+-apr_status_t h2_push_diary_digest_set(h2_push_diary *diary, const char *authority, 
+-                                      const char *data, apr_size_t len);
+-
+-apr_status_t h2_push_diary_digest64_set(h2_push_diary *diary, const char *authority, 
+-                                        const char *data64url, apr_pool_t *pool);
+-
+ #endif /* defined(__mod_h2__h2_push__) */
 --- a/modules/http2/h2_request.c
 +++ b/modules/http2/h2_request.c
 @@ -17,6 +17,7 @@
@@ -3572,6 +4887,19 @@ Last-Update: 2019-08-17
  
  #include <httpd.h>
  #include <http_core.h>
+@@ -46,9 +47,9 @@
+ static int set_h1_header(void *ctx, const char *key, const char *value)
+ {
+     h1_ctx *x = ctx;
+-    x->status = h2_req_add_header(x->headers, x->pool, key, strlen(key), 
+-                                  value, strlen(value));
+-    return (x->status == APR_SUCCESS)? 1 : 0;
++    int was_added;
++    h2_req_add_header(x->headers, x->pool, key, strlen(key), value, strlen(value), 0, &was_added);
++    return 1;
+ }
+ 
+ apr_status_t h2_request_rcreate(h2_request **preq, apr_pool_t *pool, 
 @@ -84,8 +85,7 @@
      req->path      = path;
      req->headers   = apr_table_make(pool, 10);
@@ -3582,7 +4910,42 @@ Last-Update: 2019-08-17
      }
  
      x.pool = pool;
-@@ -206,13 +206,11 @@
+@@ -99,10 +99,12 @@
+ 
+ apr_status_t h2_request_add_header(h2_request *req, apr_pool_t *pool, 
+                                    const char *name, size_t nlen,
+-                                   const char *value, size_t vlen)
++                                   const char *value, size_t vlen,
++                                   size_t max_field_len, int *pwas_added)
+ {
+     apr_status_t status = APR_SUCCESS;
+     
++    *pwas_added = 0;
+     if (nlen <= 0) {
+         return status;
+     }
+@@ -143,8 +145,9 @@
+         }
+     }
+     else {
+-        /* non-pseudo header, append to work bucket of stream */
+-        status = h2_req_add_header(req->headers, pool, name, nlen, value, vlen);
++        /* non-pseudo header, add to table */
++        status = h2_req_add_header(req->headers, pool, name, nlen, value, vlen, 
++                                   max_field_len, pwas_added);
+     }
+     
+     return status;
+@@ -156,7 +159,7 @@
+     
+     /* rfc7540, ch. 8.1.2.3:
+      * - if we have :authority, it overrides any Host header 
+-     * - :authority MUST be ommited when converting h1->h2, so we
++     * - :authority MUST be omitted when converting h1->h2, so we
+      *   might get a stream without, but then Host needs to be there */
+     if (!req->authority) {
+         const char *host = apr_table_get(req->headers, "Host");
+@@ -206,13 +209,11 @@
      return dst;
  }
  
@@ -3598,7 +4961,7 @@ Last-Update: 2019-08-17
  
      apr_pool_create(&p, c->pool);
      apr_pool_tag(p, "request");
-@@ -226,8 +224,8 @@
+@@ -226,8 +227,8 @@
      r->ap_auth_type    = NULL;
      
      r->allowed_methods = ap_make_method_list(p, 2);
@@ -3609,7 +4972,7 @@ Last-Update: 2019-08-17
      r->trailers_in     = apr_table_make(r->pool, 5);
      r->subprocess_env  = apr_table_make(r->pool, 25);
      r->headers_out     = apr_table_make(r->pool, 12);
-@@ -262,6 +260,24 @@
+@@ -262,6 +263,24 @@
      r->useragent_addr = c->client_addr;
      r->useragent_ip = c->client_ip;
      
@@ -3634,14 +4997,62 @@ Last-Update: 2019-08-17
      ap_run_pre_read_request(r, c);
      
      /* Time to populate r with the data we have. */
-@@ -337,3 +353,4 @@
+@@ -272,6 +291,9 @@
+     if (r->method_number == M_GET && r->method[0] == 'H') {
+         r->header_only = 1;
+     }
++    r->the_request = apr_psprintf(r->pool, "%s %s HTTP/2.0", 
++                                  req->method, req->path ? req->path : "");
++    r->headers_in = apr_table_clone(r->pool, req->headers);
+ 
+     rpath = (req->path ? req->path : "");
+     ap_parse_uri(r, rpath);
+@@ -288,7 +310,9 @@
+      */
+     r->hostname = NULL;
+     ap_update_vhost_from_headers(r);
+-    
++    r->protocol = "HTTP/2.0";
++    r->proto_num = HTTP_VERSION(2, 0);
++
+     /* we may have switched to another server */
+     r->per_dir_config = r->server->lookup_defaults;
+     
+@@ -337,3 +361,4 @@
  }
  
  
 +
+--- a/modules/http2/h2_request.h
++++ b/modules/http2/h2_request.h
+@@ -24,7 +24,8 @@
+ 
+ apr_status_t h2_request_add_header(h2_request *req, apr_pool_t *pool,
+                                    const char *name, size_t nlen,
+-                                   const char *value, size_t vlen);
++                                   const char *value, size_t vlen,
++                                   size_t max_field_len, int *pwas_added);
+ 
+ apr_status_t h2_request_add_trailer(h2_request *req, apr_pool_t *pool,
+                                     const char *name, size_t nlen,
 --- a/modules/http2/h2_session.c
 +++ b/modules/http2/h2_session.c
-@@ -390,9 +390,14 @@
+@@ -106,7 +106,7 @@
+ 
+ static void cleanup_unprocessed_streams(h2_session *session)
+ {
+-    h2_mplx_stream_do(session->mplx, rst_unprocessed_stream, session);
++    h2_mplx_m_stream_do(session->mplx, rst_unprocessed_stream, session);
+ }
+ 
+ static h2_stream *h2_session_open_stream(h2_session *session, int stream_id,
+@@ -385,14 +385,19 @@
+             break;
+         case NGHTTP2_RST_STREAM:
+             ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, session->c, APLOGNO(03067)
+-                          "h2_stream(%ld-%d): RST_STREAM by client, errror=%d",
++                          "h2_stream(%ld-%d): RST_STREAM by client, error=%d",
+                           session->id, (int)frame->hd.stream_id,
                            (int)frame->rst_stream.error_code);
              stream = h2_session_stream_get(session, frame->hd.stream_id);
              if (stream && stream->initiated_on) {
@@ -3652,10 +5063,19 @@ Last-Update: 2019-08-17
              else {
 +                /* A stream reset on a request it sent us. Could happen in a browser
 +                 * when the user navigates away or cancels loading - maybe. */
-+                h2_mplx_client_rst(session->mplx, frame->hd.stream_id);
++                h2_mplx_m_client_rst(session->mplx, frame->hd.stream_id);
                  ++session->streams_reset;
              }
              break;
+@@ -462,7 +467,7 @@
+ }
+ 
+ static int h2_session_continue_data(h2_session *session) {
+-    if (h2_mplx_has_master_events(session->mplx)) {
++    if (h2_mplx_m_has_master_events(session->mplx)) {
+         return 0;
+     }
+     if (h2_conn_io_needs_flush(&session->io)) {
 @@ -495,9 +500,7 @@
          return NGHTTP2_ERR_WOULDBLOCK;
      }
@@ -3726,7 +5146,25 @@ Last-Update: 2019-08-17
      return APR_SUCCESS;
  }
  
-@@ -757,9 +795,8 @@
+@@ -691,7 +729,7 @@
+          * Remove all streams greater than this number without submitting
+          * a RST_STREAM frame, since that should be clear from the GOAWAY
+          * we send. */
+-        session->local.accepted_max = h2_mplx_shutdown(session->mplx);
++        session->local.accepted_max = h2_mplx_m_shutdown(session->mplx);
+         session->local.error = error;
+     }
+     else {
+@@ -741,7 +779,7 @@
+     }
+ 
+     transit(session, trigger, H2_SESSION_ST_CLEANUP);
+-    h2_mplx_release_and_join(session->mplx, session->iowait);
++    h2_mplx_m_release_and_join(session->mplx, session->iowait);
+     session->mplx = NULL;
+ 
+     ap_assert(session->ngh2);
+@@ -757,13 +795,12 @@
  {
      conn_rec *c = data;
      h2_session *session;
@@ -3737,6 +5175,11 @@ Last-Update: 2019-08-17
          /* if the session is still there, now is the last chance
           * to perform cleanup. Normally, cleanup should have happened
           * earlier in the connection pre_close. Main reason is that
+-         * any ongoing requests on slave connections might still access
++         * any ongoing requests on secondary connections might still access
+          * data which has, at this time, already been freed. An example
+          * is mod_ssl that uses request hooks. */
+         ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, c,
 @@ -775,11 +812,8 @@
      return APR_SUCCESS;
  }
@@ -3780,7 +5223,7 @@ Last-Update: 2019-08-17
      
 -    session->mplx = h2_mplx_create(c, session->pool, session->config, 
 -                                   workers);
-+    session->mplx = h2_mplx_create(c, s, session->pool, workers);
++    session->mplx = h2_mplx_m_create(c, s, session->pool, workers);
      
      /* connection input filter that feeds the session */
      session->cin = h2_filter_cin_create(session);
@@ -3849,6 +5292,24 @@ Last-Update: 2019-08-17
      if (win_size != H2_INITIAL_WINDOW_SIZE) {
          settings[slen].settings_id = NGHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
          settings[slen].value = win_size;
+@@ -1156,7 +1179,7 @@
+     stream = h2_session_open_stream(session, nid, is->id);
+     if (!stream) {
+         ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, session->c, 
+-                      H2_STRM_LOG(APLOGNO(03077), stream, 
++                      H2_STRM_LOG(APLOGNO(03077), is,
+                       "failed to create stream obj %d"), nid);
+         /* kill the push_promise */
+         nghttp2_submit_rst_stream(session->ngh2, NGHTTP2_FLAG_NONE, nid,
+@@ -1262,7 +1285,7 @@
+ 
+         rv = nghttp2_session_change_stream_priority(session->ngh2, stream->id, &ps);
+         ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, session->c, 
+-                      ""H2_STRM_LOG(APLOGNO(03203), stream, 
++                      H2_STRM_LOG(APLOGNO(03203), stream, 
+                       "PUSH %s, weight=%d, depends=%d, returned=%d"),
+                       ptype, ps.weight, ps.stream_id, rv);
+         status = (rv < 0)? APR_EGENERAL : APR_SUCCESS;
 @@ -1280,7 +1303,7 @@
  {
      /* iff we can and they can and want */
@@ -3872,7 +5333,7 @@ Last-Update: 2019-08-17
              && h2_session_push_enabled(session)) {
 -            
 -            h2_stream_submit_pushes(stream, headers);
-+            /* PUSH is possibe and enabled on server, unless the request
++            /* PUSH is possible and enabled on server, unless the request
 +             * denies it, submit resources to push */
 +            s = apr_table_get(headers->notes, H2_PUSH_MODE_NOTE);
 +            if (!s || strcmp(s, "0")) {
@@ -3890,6 +5351,15 @@ Last-Update: 2019-08-17
              /* suppress sending this to the client, it might have triggered 
               * pushes and served its purpose nevertheless */
              rv = 0;
+@@ -1524,7 +1552,7 @@
+         if (stream) {
+             ap_assert(!stream->scheduled);
+             if (h2_stream_prep_processing(stream) == APR_SUCCESS) {
+-                h2_mplx_process(session->mplx, stream, stream_pri_cmp, session);
++                h2_mplx_m_process(session->mplx, stream, stream_pri_cmp, session);
+             }
+             else {
+                 h2_stream_rst(stream, H2_ERR_INTERNAL_ERROR);
 @@ -1680,7 +1708,7 @@
                       * that already served requests - not fair. */
                      session->idle_sync_until = apr_time_now() + apr_time_from_sec(1);
@@ -3910,14 +5380,34 @@ Last-Update: 2019-08-17
                  }
                  else {
                      /* normal keepalive setup */
-@@ -1954,6 +1982,7 @@
+@@ -1796,7 +1824,7 @@
+                           session->open_streams);
+             h2_conn_io_flush(&session->io);
+             if (session->open_streams > 0) {
+-                if (h2_mplx_awaits_data(session->mplx)) {
++                if (h2_mplx_m_awaits_data(session->mplx)) {
+                     /* waiting for at least one stream to produce data */
+                     transit(session, "no io", H2_SESSION_ST_WAIT);
+                 }
+@@ -1954,7 +1982,8 @@
              ev_stream_closed(session, stream);
              break;
          case H2_SS_CLEANUP:
+-            h2_mplx_stream_cleanup(session->mplx, stream);
 +            nghttp2_session_set_stream_user_data(session->ngh2, stream->id, NULL);
-             h2_mplx_stream_cleanup(session->mplx, stream);
++            h2_mplx_m_stream_cleanup(session->mplx, stream);
              break;
          default:
+             break;
+@@ -2044,7 +2073,7 @@
+ static apr_status_t dispatch_master(h2_session *session) {
+     apr_status_t status;
+     
+-    status = h2_mplx_dispatch_master_events(session->mplx, 
++    status = h2_mplx_m_dispatch_master_events(session->mplx, 
+                                             on_stream_resume, session);
+     if (status == APR_EAGAIN) {
+         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, status, session->c,
 @@ -2089,7 +2118,7 @@
          switch (session->state) {
              case H2_SESSION_ST_INIT:
@@ -3927,11 +5417,20 @@ Last-Update: 2019-08-17
                      update_child_status(session, SERVER_BUSY_READ, 
                                          "inadequate security");
                      h2_session_shutdown(session, 
+@@ -2112,7 +2141,7 @@
+                 break;
+                 
+             case H2_SESSION_ST_IDLE:
+-                if (session->idle_until && (apr_time_now() + session->idle_delay) > session->idle_until) {
++                if (session->idle_until && (now + session->idle_delay) > session->idle_until) {
+                     ap_log_cerror( APLOG_MARK, APLOG_TRACE1, status, c,
+                                   H2_SSSN_MSG(session, "idle, timeout reached, closing"));
+                     if (session->idle_delay) {
 @@ -2146,6 +2175,14 @@
                          session->have_read = 1;
                      }
                      else if (APR_STATUS_IS_EAGAIN(status) || APR_STATUS_IS_TIMEUP(status)) {
-+                        status = h2_mplx_idle(session->mplx);
++                        status = h2_mplx_m_idle(session->mplx);
 +                        if (status == APR_EAGAIN) {
 +                            break;
 +                        }
@@ -3942,6 +5441,33 @@ Last-Update: 2019-08-17
                          status = APR_EAGAIN;
                          goto out;
                      }
+@@ -2168,7 +2205,7 @@
+                     /* We wait in smaller increments, using a 1 second timeout.
+                      * That gives us the chance to check for MPMQ_STOPPING often. 
+                      */
+-                    status = h2_mplx_idle(session->mplx);
++                    status = h2_mplx_m_idle(session->mplx);
+                     if (status == APR_EAGAIN) {
+                         break;
+                     }
+@@ -2282,7 +2319,7 @@
+                                   "h2_session: wait for data, %ld micros", 
+                                   (long)session->wait_us);
+                 }
+-                status = h2_mplx_out_trywait(session->mplx, session->wait_us, 
++                status = h2_mplx_m_out_trywait(session->mplx, session->wait_us, 
+                                              session->iowait);
+                 if (status == APR_SUCCESS) {
+                     session->wait_us = 0;
+@@ -2319,7 +2356,7 @@
+             dispatch_event(session, H2_SESSION_EV_NGH2_DONE, 0, NULL); 
+         }
+         if (session->reprioritize) {
+-            h2_mplx_reprioritize(session->mplx, stream_pri_cmp, session);
++            h2_mplx_m_reprioritize(session->mplx, stream_pri_cmp, session);
+             session->reprioritize = 0;
+         }
+     }
 --- a/modules/http2/h2_session.h
 +++ b/modules/http2/h2_session.h
 @@ -80,12 +80,13 @@
@@ -3959,6 +5485,15 @@ Last-Update: 2019-08-17
      struct nghttp2_session *ngh2;   /* the nghttp2 session (internal use) */
  
      h2_session_state state;         /* state session is in */
+@@ -131,7 +132,7 @@
+     const char *last_status_msg;    /* the one already reported */
+     
+     struct h2_iqueue *in_pending;   /* all streams with input pending */
+-    struct h2_iqueue *in_process;   /* all streams ready for processing on slave */
++    struct h2_iqueue *in_process;   /* all streams ready for processing on a secondary */
+ 
+ } h2_session;
+ 
 @@ -142,27 +143,15 @@
   * The session will apply the configured parameter.
   * @param psession pointer receiving the created session on success or NULL
@@ -4027,7 +5562,13 @@ Last-Update: 2019-08-17
      return status;
  }
  
-@@ -456,13 +451,8 @@
+@@ -451,18 +446,13 @@
+                 ap_assert(stream->request == NULL);
+                 if (stream->rtmp == NULL) {
+                     /* This can only happen, if the stream has received no header
+-                     * name/value pairs at all. The lastest nghttp2 version have become
++                     * name/value pairs at all. The latest nghttp2 version have become
+                      * pretty good at detecting this early. In any case, we have
                       * to abort the connection here, since this is clearly a protocol error */
                      return APR_EINVAL;
                  }
@@ -4051,52 +5592,161 @@ Last-Update: 2019-08-17
      return status;
  }
  
-@@ -684,6 +675,8 @@
-     hvalue = apr_pstrndup(stream->pool, value, vlen);
+@@ -663,11 +654,14 @@
+ 
+ static apr_status_t add_trailer(h2_stream *stream,
+                                 const char *name, size_t nlen,
+-                                const char *value, size_t vlen)
++                                const char *value, size_t vlen,
++                                size_t max_field_len, int *pwas_added)
+ {
+     conn_rec *c = stream->session->c;
+     char *hname, *hvalue;
++    const char *existing;
+ 
++    *pwas_added = 0;
+     if (nlen == 0 || name[0] == ':') {
+         ap_log_cerror(APLOG_MARK, APLOG_DEBUG, APR_EINVAL, c, 
+                       H2_STRM_LOG(APLOGNO(03060), stream, 
+@@ -681,9 +675,18 @@
+         stream->trailers = apr_table_make(stream->pool, 5);
+     }
+     hname = apr_pstrndup(stream->pool, name, nlen);
+-    hvalue = apr_pstrndup(stream->pool, value, vlen);
      h2_util_camel_case_header(hname, nlen);
++    existing = apr_table_get(stream->trailers, hname);
++    if (max_field_len 
++        && ((existing? strlen(existing)+2 : 0) + vlen + nlen + 2 > max_field_len)) {
++        /* "key: (oldval, )?nval" is too long */
++        return APR_EINVAL;
++    }
++    if (!existing) *pwas_added = 1;
++    hvalue = apr_pstrndup(stream->pool, value, vlen);
      apr_table_mergen(stream->trailers, hname, hvalue);
 +    ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, c, 
 +                  H2_STRM_MSG(stream, "added trailer '%s: %s'"), hname, hvalue);
      
      return APR_SUCCESS;
  }
-@@ -703,15 +696,19 @@
+@@ -693,44 +696,31 @@
+                                   const char *value, size_t vlen)
+ {
+     h2_session *session = stream->session;
+-    int error = 0;
+-    apr_status_t status;
++    int error = 0, was_added = 0;
++    apr_status_t status = APR_SUCCESS;
+     
+     if (stream->has_response) {
+         return APR_EINVAL;    
+     }
+-    ++stream->request_headers_added;
++
      if (name[0] == ':') {
          if ((vlen) > session->s->limit_req_line) {
              /* pseudo header: approximation of request line size check */
 -            ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, session->c,
 -                          H2_STRM_MSG(stream, "pseudo %s too long"), name);
-+            ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, session->c,  
-+                          H2_STRM_LOG(APLOGNO(10178), stream, 
-+                                      "Request pseudo header exceeds "
-+                                      "LimitRequestFieldSize: %s"), name);
++            if (!h2_stream_is_ready(stream)) {
++                ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, session->c,
++                              H2_STRM_LOG(APLOGNO(10178), stream,
++                                          "Request pseudo header exceeds "
++                                          "LimitRequestFieldSize: %s"), name);
++            }
              error = HTTP_REQUEST_URI_TOO_LARGE;
++            goto cleanup;
          }
      }
-     else if ((nlen + 2 + vlen) > session->s->limit_req_fieldsize) {
-         /* header too long */
+-    else if ((nlen + 2 + vlen) > session->s->limit_req_fieldsize) {
+-        /* header too long */
 -        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, session->c,
 -                      H2_STRM_MSG(stream, "header %s too long"), name);
-+        ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, session->c,  
-+                      H2_STRM_LOG(APLOGNO(10180), stream,"Request header exceeds "
-+                                  "LimitRequestFieldSize: %.*s"),
-+                      (int)H2MIN(nlen, 80), name);
-         error = HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
-     }
-     
-@@ -723,8 +720,9 @@
-             h2_stream_rst(stream, H2_ERR_ENHANCE_YOUR_CALM);
-             return APR_ECONNRESET;
-         }
+-        error = HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
+-    }
+-    
+-    if (stream->request_headers_added > session->s->limit_req_fields + 4) {
+-        /* too many header lines, include 4 pseudo headers */
+-        if (stream->request_headers_added 
+-            > session->s->limit_req_fields + 4 + 100) {
+-            /* yeah, right */
+-            h2_stream_rst(stream, H2_ERR_ENHANCE_YOUR_CALM);
+-            return APR_ECONNRESET;
+-        }
 -        ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, session->c,
 -                      H2_STRM_MSG(stream, "too many header lines")); 
-+        ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, session->c, 
-+                      H2_STRM_LOG(APLOGNO(10181), stream, "Number of request headers "
-+                                  "exceeds LimitRequestFields"));
-         error = HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
+-        error = HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
+-    }
+     
+-    if (error) {
+-        set_error_response(stream, error);
+-        return APR_EINVAL; 
++    if (session->s->limit_req_fields > 0 
++        && stream->request_headers_added > session->s->limit_req_fields) {
++        /* already over limit, count this attempt, but do not take it in */
++        ++stream->request_headers_added;
+     }
+     else if (H2_SS_IDLE == stream->state) {
+         if (!stream->rtmp) {
+@@ -738,16 +728,55 @@
+                                          NULL, NULL, NULL, NULL, NULL, 0);
+         }
+         status = h2_request_add_header(stream->rtmp, stream->pool,
+-                                       name, nlen, value, vlen);
++                                       name, nlen, value, vlen,
++                                       session->s->limit_req_fieldsize, &was_added);
++        if (was_added) ++stream->request_headers_added;
+     }
+     else if (H2_SS_OPEN == stream->state) {
+-        status = add_trailer(stream, name, nlen, value, vlen);
++        status = add_trailer(stream, name, nlen, value, vlen,
++                             session->s->limit_req_fieldsize, &was_added);
++        if (was_added) ++stream->request_headers_added;
+     }
+     else {
+         status = APR_EINVAL;
++        goto cleanup;
++    }
++    
++    if (APR_EINVAL == status) {
++        /* header too long */
++        if (!h2_stream_is_ready(stream)) {
++            ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, session->c,
++                          H2_STRM_LOG(APLOGNO(10180), stream,"Request header exceeds "
++                                      "LimitRequestFieldSize: %.*s"),
++                          (int)H2MIN(nlen, 80), name);
++        }
++        error = HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
++        goto cleanup;
++    }
++    
++    if (session->s->limit_req_fields > 0 
++        && stream->request_headers_added > session->s->limit_req_fields) {
++        /* too many header lines */
++        if (stream->request_headers_added > session->s->limit_req_fields + 100) {
++            /* yeah, right, this request is way over the limit, say goodbye */
++            h2_stream_rst(stream, H2_ERR_ENHANCE_YOUR_CALM);
++            return APR_ECONNRESET;
++        }
++        if (!h2_stream_is_ready(stream)) {
++            ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, session->c,
++                          H2_STRM_LOG(APLOGNO(10181), stream, "Number of request headers "
++                                      "exceeds LimitRequestFields"));
++        }
++        error = HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE;
++        goto cleanup;
      }
      
-@@ -755,6 +753,47 @@
+-    if (status != APR_SUCCESS) {
++cleanup:
++    if (error) {
++        set_error_response(stream, error);
++        return APR_EINVAL; 
++    }
++    else if (status != APR_SUCCESS) {
+         ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, session->c,
+                       H2_STRM_MSG(stream, "header %s not accepted"), name);
+         h2_stream_dispatch(stream, H2_SEV_CANCELLED);
+@@ -755,6 +784,49 @@
      return status;
  }
  
@@ -4129,10 +5779,12 @@ Last-Update: 2019-08-17
 +        ctx.failed_key = NULL;
 +        apr_table_do(table_check_val_len, &ctx, stream->request->headers, NULL);
 +        if (ctx.failed_key) {
-+            ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, stream->session->c,  
-+                          H2_STRM_LOG(APLOGNO(10190), stream,"Request header exceeds "
-+                                      "LimitRequestFieldSize: %.*s"),
-+                          (int)H2MIN(strlen(ctx.failed_key), 80), ctx.failed_key);
++            if (!h2_stream_is_ready(stream)) {
++                ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, stream->session->c,
++                              H2_STRM_LOG(APLOGNO(10230), stream,"Request header exceeds "
++                                          "LimitRequestFieldSize: %.*s"),
++                              (int)H2MIN(strlen(ctx.failed_key), 80), ctx.failed_key);
++            }
 +            set_error_response(stream, HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE);
 +            /* keep on returning APR_SUCCESS, so that we send a HTTP response and
 +             * do not RST the stream. */
@@ -4144,7 +5796,7 @@ Last-Update: 2019-08-17
  static apr_bucket *get_first_headers_bucket(apr_bucket_brigade *bb)
  {
      if (bb) {
-@@ -855,7 +894,7 @@
+@@ -855,7 +927,7 @@
       * is requested. But we can reduce the size in case the master
       * connection operates in smaller chunks. (TSL warmup) */
      if (stream->session->io.write_size > 0) {
@@ -4153,7 +5805,16 @@ Last-Update: 2019-08-17
      }
      requested = (*plen > 0)? H2MIN(*plen, max_chunk) : max_chunk;
      
-@@ -987,7 +1026,7 @@
+@@ -864,7 +936,7 @@
+     
+     if (status == APR_EAGAIN) {
+         /* TODO: ugly, someone needs to retrieve the response first */
+-        h2_mplx_keep_active(stream->session->mplx, stream);
++        h2_mplx_m_keep_active(stream->session->mplx, stream);
+         ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, c,
+                       H2_STRM_MSG(stream, "prep, response eagain"));
+         return status;
+@@ -987,7 +1059,7 @@
          const char *ctype = apr_table_get(response->headers, "content-type");
          if (ctype) {
              /* FIXME: Not good enough, config needs to come from request->server */
@@ -4169,7 +5830,7 @@ Last-Update: 2019-08-17
                                    const char *name, size_t nlen,
                                    const char *value, size_t vlen);
 +                                  
-+/* End the contruction of request headers */
++/* End the construction of request headers */
 +apr_status_t h2_stream_end_headers(h2_stream *stream, int eos, size_t raw_bytes);
 +
  
@@ -4212,7 +5873,11 @@ Last-Update: 2019-08-17
          
          if (r != NULL) {
              apr_status_t status;
-@@ -164,8 +163,8 @@
+@@ -160,12 +159,11 @@
+              * right away.
+              */
+             ap_remove_input_filter_byhandle(r->input_filters, "http_in");
+-            ap_remove_input_filter_byhandle(r->input_filters, "reqtimeout");
              ap_remove_output_filter_byhandle(r->output_filters, "HTTP_HEADER");
              
              /* Ok, start an h2_conn on this one. */
@@ -4223,7 +5888,7 @@ Last-Update: 2019-08-17
              if (status != APR_SUCCESS) {
                  ap_log_rerror(APLOG_MARK, APLOG_DEBUG, status, r, APLOGNO(03088)
                                "session setup");
-@@ -173,7 +172,7 @@
+@@ -173,7 +171,7 @@
                  return !OK;
              }
              
@@ -4234,6 +5899,15 @@ Last-Update: 2019-08-17
      }
 --- a/modules/http2/h2_task.c
 +++ b/modules/http2/h2_task.c
+@@ -86,7 +86,7 @@
+                   task->request->authority, 
+                   task->request->path);
+     task->output.opened = 1;
+-    return h2_mplx_out_open(task->mplx, task->stream_id, task->output.beam);
++    return h2_mplx_t_out_open(task->mplx, task->stream_id, task->output.beam);
+ }
+ 
+ static apr_status_t send_out(h2_task *task, apr_bucket_brigade* bb, int block)
 @@ -97,7 +97,7 @@
      apr_brigade_length(bb, 0, &written);
      H2_TASK_OUT_LOG(APLOG_TRACE2, task, bb, "h2_task send_out");
@@ -4243,7 +5917,16 @@ Last-Update: 2019-08-17
      status = h2_beam_send(task->output.beam, bb, 
                            block? APR_BLOCK_READ : APR_NONBLOCK_READ);
      h2_beam_log(task->output.beam, task->c, APLOG_TRACE2, "send_out(after)");
-@@ -133,26 +133,9 @@
+@@ -126,33 +126,16 @@
+  * request_rec out filter chain) into the h2_mplx for further sending
+  * on the master connection. 
+  */
+-static apr_status_t slave_out(h2_task *task, ap_filter_t* f, 
+-                              apr_bucket_brigade* bb)
++static apr_status_t secondary_out(h2_task *task, ap_filter_t* f, 
++                                  apr_bucket_brigade* bb)
+ {
+     apr_bucket *b;
      apr_status_t rv = APR_SUCCESS;
      int flush = 0, blocking;
      
@@ -4272,7 +5955,46 @@ Last-Update: 2019-08-17
      for (b = APR_BRIGADE_FIRST(bb);
           b != APR_BRIGADE_SENTINEL(bb);
           b = APR_BUCKET_NEXT(b)) {
-@@ -236,7 +219,7 @@
+@@ -192,7 +175,7 @@
+             if (APR_SUCCESS == rv) {
+                 /* could not write all, buffer the rest */
+                 ap_log_cerror(APLOG_MARK, APLOG_DEBUG, rv, task->c, APLOGNO(03405)
+-                              "h2_slave_out(%s): saving brigade", task->id);
++                              "h2_secondary_out(%s): saving brigade", task->id);
+                 ap_assert(NULL);
+                 rv = ap_save_brigade(f, &task->output.bb, &bb, task->pool);
+                 flush = 1;
+@@ -206,7 +189,7 @@
+     }
+ out:
+     ap_log_cerror(APLOG_MARK, APLOG_TRACE2, rv, task->c, 
+-                  "h2_slave_out(%s): slave_out leave", task->id);    
++                  "h2_secondary_out(%s): secondary_out leave", task->id);    
+     return rv;
+ }
+ 
+@@ -219,14 +202,14 @@
+ }
+ 
+ /*******************************************************************************
+- * task slave connection filters
++ * task secondary connection filters
+  ******************************************************************************/
+ 
+-static apr_status_t h2_filter_slave_in(ap_filter_t* f,
+-                                       apr_bucket_brigade* bb,
+-                                       ap_input_mode_t mode,
+-                                       apr_read_type_e block,
+-                                       apr_off_t readbytes)
++static apr_status_t h2_filter_secondary_in(ap_filter_t* f,
++                                           apr_bucket_brigade* bb,
++                                           ap_input_mode_t mode,
++                                           apr_read_type_e block,
++                                           apr_off_t readbytes)
+ {
+     h2_task *task;
+     apr_status_t status = APR_SUCCESS;
+@@ -236,12 +219,12 @@
      apr_size_t rmax = ((readbytes <= APR_SIZE_MAX)? 
                         (apr_size_t)readbytes : APR_SIZE_MAX);
      
@@ -4281,6 +6003,30 @@ Last-Update: 2019-08-17
      ap_assert(task);
  
      if (trace1) {
+         ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, f->c,
+-                      "h2_slave_in(%s): read, mode=%d, block=%d, readbytes=%ld", 
++                      "h2_secondary_in(%s): read, mode=%d, block=%d, readbytes=%ld", 
+                       task->id, mode, block, (long)readbytes);
+     }
+     
+@@ -271,7 +254,7 @@
+         /* Get more input data for our request. */
+         if (trace1) {
+             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, status, f->c,
+-                          "h2_slave_in(%s): get more data from mplx, block=%d, "
++                          "h2_secondary_in(%s): get more data from mplx, block=%d, "
+                           "readbytes=%ld", task->id, block, (long)readbytes);
+         }
+         if (task->input.beam) {
+@@ -284,7 +267,7 @@
+         
+         if (trace1) {
+             ap_log_cerror(APLOG_MARK, APLOG_TRACE2, status, f->c,
+-                          "h2_slave_in(%s): read returned", task->id);
++                          "h2_secondary_in(%s): read returned", task->id);
+         }
+         if (APR_STATUS_IS_EAGAIN(status) 
+             && (mode == AP_MODE_GETLINE || block == APR_BLOCK_READ)) {
 @@ -310,11 +293,9 @@
          }
      }
@@ -4295,16 +6041,59 @@ Last-Update: 2019-08-17
      }
  
      if (trace1) {
-@@ -379,7 +360,7 @@
- static apr_status_t h2_filter_slave_output(ap_filter_t* filter,
-                                            apr_bucket_brigade* brigade)
+@@ -325,7 +306,7 @@
+     if (APR_BRIGADE_EMPTY(task->input.bb)) {
+         if (trace1) {
+             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, f->c,
+-                          "h2_slave_in(%s): no data", task->id);
++                          "h2_secondary_in(%s): no data", task->id);
+         }
+         return (block == APR_NONBLOCK_READ)? APR_EAGAIN : APR_EOF;
+     }
+@@ -353,7 +334,7 @@
+             buffer[len] = 0;
+             if (trace1) {
+                 ap_log_cerror(APLOG_MARK, APLOG_TRACE1, status, f->c,
+-                              "h2_slave_in(%s): getline: %s",
++                              "h2_secondary_in(%s): getline: %s",
+                               task->id, buffer);
+             }
+         }
+@@ -363,7 +344,7 @@
+          * to support it. Seems to work. */
+         ap_log_cerror(APLOG_MARK, APLOG_ERR, APR_ENOTIMPL, f->c,
+                       APLOGNO(03472) 
+-                      "h2_slave_in(%s), unsupported READ mode %d", 
++                      "h2_secondary_in(%s), unsupported READ mode %d", 
+                       task->id, mode);
+         status = APR_ENOTIMPL;
+     }
+@@ -371,19 +352,19 @@
+     if (trace1) {
+         apr_brigade_length(bb, 0, &bblen);
+         ap_log_cerror(APLOG_MARK, APLOG_TRACE1, status, f->c,
+-                      "h2_slave_in(%s): %ld data bytes", task->id, (long)bblen);
++                      "h2_secondary_in(%s): %ld data bytes", task->id, (long)bblen);
+     }
+     return status;
+ }
+ 
+-static apr_status_t h2_filter_slave_output(ap_filter_t* filter,
+-                                           apr_bucket_brigade* brigade)
++static apr_status_t h2_filter_secondary_output(ap_filter_t* filter,
++                                               apr_bucket_brigade* brigade)
  {
 -    h2_task *task = h2_ctx_cget_task(filter->c);
 +    h2_task *task = h2_ctx_get_task(filter->c);
      apr_status_t status;
      
      ap_assert(task);
-@@ -392,7 +373,7 @@
+-    status = slave_out(task, filter, brigade);
++    status = secondary_out(task, filter, brigade);
+     if (status != APR_SUCCESS) {
+         h2_task_rst(task, H2_ERR_INTERNAL_ERROR);
+     }
+@@ -392,14 +373,14 @@
  
  static apr_status_t h2_filter_parse_h1(ap_filter_t* f, apr_bucket_brigade* bb)
  {
@@ -4313,6 +6102,14 @@ Last-Update: 2019-08-17
      apr_status_t status;
      
      ap_assert(task);
+     /* There are cases where we need to parse a serialized http/1.1 
+      * response. One example is a 100-continue answer in serialized mode
+      * or via a mod_proxy setup */
+-    while (bb && !task->output.sent_response) {
++    while (bb && !task->c->aborted && !task->output.sent_response) {
+         status = h2_from_h1_parse_response(task, f, bb);
+         ap_log_cerror(APLOG_MARK, APLOG_TRACE2, status, f->c,
+                       "h2_task(%s): parsed response", task->id);
 @@ -425,8 +406,15 @@
              || !strcmp("OPTIONS", task->request->method));
  }
@@ -4329,40 +6126,142 @@ Last-Update: 2019-08-17
      task->rst_error = 0;
  }
  
-@@ -502,7 +490,7 @@
+@@ -468,9 +456,9 @@
+     ap_hook_process_connection(h2_task_process_conn, 
+                                NULL, NULL, APR_HOOK_FIRST);
+ 
+-    ap_register_input_filter("H2_SLAVE_IN", h2_filter_slave_in,
++    ap_register_input_filter("H2_SECONDARY_IN", h2_filter_secondary_in,
+                              NULL, AP_FTYPE_NETWORK);
+-    ap_register_output_filter("H2_SLAVE_OUT", h2_filter_slave_output,
++    ap_register_output_filter("H2_SECONDARY_OUT", h2_filter_secondary_output,
+                               NULL, AP_FTYPE_NETWORK);
+     ap_register_output_filter("H2_PARSE_H1", h2_filter_parse_h1,
+                               NULL, AP_FTYPE_NETWORK);
+@@ -502,17 +490,17 @@
      
      ctx = h2_ctx_get(c, 0);
      (void)arg;
 -    if (h2_ctx_is_task(ctx)) {
 +    if (ctx->task) {
          ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, c,
-                       "h2_slave(%s), pre_connection, adding filters", c->log_id);
-         ap_add_input_filter("H2_SLAVE_IN", NULL, NULL, c);
-@@ -525,6 +513,7 @@
+-                      "h2_slave(%s), pre_connection, adding filters", c->log_id);
+-        ap_add_input_filter("H2_SLAVE_IN", NULL, NULL, c);
++                      "h2_secondary(%s), pre_connection, adding filters", c->log_id);
++        ap_add_input_filter("H2_SECONDARY_IN", NULL, NULL, c);
+         ap_add_output_filter("H2_PARSE_H1", NULL, NULL, c);
+-        ap_add_output_filter("H2_SLAVE_OUT", NULL, NULL, c);
++        ap_add_output_filter("H2_SECONDARY_OUT", NULL, NULL, c);
+     }
+     return OK;
+ }
+ 
+-h2_task *h2_task_create(conn_rec *slave, int stream_id,
++h2_task *h2_task_create(conn_rec *secondary, int stream_id,
+                         const h2_request *req, h2_mplx *m,
+                         h2_bucket_beam *input, 
+                         apr_interval_time_t timeout,
+@@ -521,17 +509,18 @@
+     apr_pool_t *pool;
+     h2_task *task;
+     
+-    ap_assert(slave);
++    ap_assert(secondary);
      ap_assert(req);
  
-     apr_pool_create(&pool, slave->pool);
+-    apr_pool_create(&pool, slave->pool);
++    apr_pool_create(&pool, secondary->pool);
 +    apr_pool_tag(pool, "h2_task");
      task = apr_pcalloc(pool, sizeof(h2_task));
      if (task == NULL) {
          return NULL;
-@@ -564,7 +553,6 @@
+     }
+     task->id          = "000";
+     task->stream_id   = stream_id;
+-    task->c           = slave;
++    task->c           = secondary;
+     task->mplx        = m;
+     task->pool        = pool;
+     task->request     = req;
+@@ -564,41 +553,40 @@
      ap_assert(task);
      c = task->c;
      task->worker_started = 1;
 -    task->started_at = apr_time_now();
      
      if (c->master) {
-         /* Each conn_rec->id is supposed to be unique at a point in time. Since
-@@ -598,7 +586,6 @@
-             slave_id = worker_id; 
-         }
-         task->c->id = (c->master->id << free_bits)^slave_id;
+-        /* Each conn_rec->id is supposed to be unique at a point in time. Since
++        /* See the discussion at <https://github.com/icing/mod_h2/issues/195>
++         *
++         * Each conn_rec->id is supposed to be unique at a point in time. Since
+          * some modules (and maybe external code) uses this id as an identifier
+-         * for the request_rec they handle, it needs to be unique for slave 
++         * for the request_rec they handle, it needs to be unique for secondary 
+          * connections also.
+-         * The connection id is generated by the MPM and most MPMs use the formula
+-         *    id := (child_num * max_threads) + thread_num
+-         * which means that there is a maximum id of about
+-         *    idmax := max_child_count * max_threads
+-         * If we assume 2024 child processes with 2048 threads max, we get
+-         *    idmax ~= 2024 * 2048 = 2 ** 22
+-         * On 32 bit systems, we have not much space left, but on 64 bit systems
+-         * (and higher?) we can use the upper 32 bits without fear of collision.
+-         * 32 bits is just what we need, since a connection can only handle so
+-         * many streams. 
++         *
++         * The MPM module assigns the connection ids and mod_unique_id is using
++         * that one to generate identifier for requests. While the implementation
++         * works for HTTP/1.x, the parallel execution of several requests per
++         * connection will generate duplicate identifiers on load.
++         * 
++         * The original implementation for secondary connection identifiers used 
++         * to shift the master connection id up and assign the stream id to the 
++         * lower bits. This was cramped on 32 bit systems, but on 64bit there was
++         * enough space.
++         * 
++         * As issue 195 showed, mod_unique_id only uses the lower 32 bit of the
++         * connection id, even on 64bit systems. Therefore collisions in request ids.
++         *
++         * The way master connection ids are generated, there is some space "at the
++         * top" of the lower 32 bits on allmost all systems. If you have a setup
++         * with 64k threads per child and 255 child processes, you live on the edge.
++         *
++         * The new implementation shifts 8 bits and XORs in the worker
++         * id. This will experience collisions with > 256 h2 workers and heavy
++         * load still. There seems to be no way to solve this in all possible 
++         * configurations by mod_h2 alone. 
+          */
+-        int slave_id, free_bits;
+-        
++        task->c->id = (c->master->id << 8)^worker_id;
+         task->id = apr_psprintf(task->pool, "%ld-%d", c->master->id, 
+                                 task->stream_id);
+-        if (sizeof(unsigned long) >= 8) {
+-            free_bits = 32;
+-            slave_id = task->stream_id;
+-        }
+-        else {
+-            /* Assume we have a more limited number of threads/processes
+-             * and h2 workers on a 32-bit system. Use the worker instead
+-             * of the stream id. */
+-            free_bits = 8;
+-            slave_id = worker_id; 
+-        }
+-        task->c->id = (c->master->id << free_bits)^slave_id;
 -        c->keepalive = AP_CONN_KEEPALIVE;
      }
          
      h2_beam_create(&task->output.beam, c->pool, task->stream_id, "output", 
-@@ -633,18 +620,9 @@
+@@ -613,7 +601,7 @@
+     h2_ctx_create_for(c, task);
+     apr_table_setn(c->notes, H2_TASK_ID_NOTE, task->id);
+ 
+-    h2_slave_run_pre_connection(c, ap_get_conn_socket(c));            
++    h2_secondary_run_pre_connection(c, ap_get_conn_socket(c));            
+ 
+     task->input.bb = apr_brigade_create(task->pool, c->bucket_alloc);
+     if (task->request->serialize) {
+@@ -633,18 +621,9 @@
      task->c->current_thread = thread; 
      ap_run_process_connection(c);
      
@@ -4384,7 +6283,7 @@ Last-Update: 2019-08-17
  }
  
  static apr_status_t h2_task_process_request(h2_task *task, conn_rec *c)
-@@ -682,14 +660,8 @@
+@@ -682,14 +661,8 @@
          
          ap_process_request(r);
          
@@ -4401,7 +6300,7 @@ Last-Update: 2019-08-17
          
          /* After the call to ap_process_request, the
           * request pool may have been deleted.  We set
-@@ -724,7 +696,7 @@
+@@ -724,7 +697,7 @@
      }
      
      ctx = h2_ctx_get(c, 0);
@@ -4410,7 +6309,13 @@ Last-Update: 2019-08-17
          if (!ctx->task->request->serialize) {
              ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, c, 
                            "h2_h2, processing request directly");
-@@ -741,28 +713,3 @@
+@@ -736,33 +709,8 @@
+     }
+     else {
+         ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, c, 
+-                      "slave_conn(%ld): has no task", c->id);
++                      "secondary_conn(%ld): has no task", c->id);
+     }
      return DECLINED;
  }
  
@@ -4441,7 +6346,15 @@ Last-Update: 2019-08-17
 -}
 --- a/modules/http2/h2_task.h
 +++ b/modules/http2/h2_task.h
-@@ -42,7 +42,6 @@
+@@ -35,14 +35,13 @@
+  *
+  * Finally, to keep certain connection level filters, such as ourselves and
+  * especially mod_ssl ones, from messing with our data, we need a filter
+- * of our own to disble those.
++ * of our own to disable those.
+  */
+ 
+ struct h2_bucket_beam;
  struct h2_conn;
  struct h2_mplx;
  struct h2_task;
@@ -4449,7 +6362,7 @@ Last-Update: 2019-08-17
  struct h2_request;
  struct h2_response_parser;
  struct h2_stream;
-@@ -80,17 +79,15 @@
+@@ -80,20 +79,18 @@
      struct h2_mplx *mplx;
      
      unsigned int filters_set    : 1;
@@ -4470,7 +6383,11 @@ Last-Update: 2019-08-17
 -    struct h2_req_engine *assigned; /* engine that task has been assigned to */
  };
  
- h2_task *h2_task_create(conn_rec *slave, int stream_id,
+-h2_task *h2_task_create(conn_rec *slave, int stream_id,
++h2_task *h2_task_create(conn_rec *secondary, int stream_id,
+                         const h2_request *req, struct h2_mplx *m, 
+                         struct h2_bucket_beam *input, 
+                         apr_interval_time_t timeout,
 @@ -105,6 +102,7 @@
  
  void h2_task_redo(h2_task *task);
@@ -4488,6 +6405,274 @@ Last-Update: 2019-08-17
 -int h2_task_has_thawed(h2_task *task);
 -
  #endif /* defined(__mod_h2__h2_task__) */
+--- a/modules/http2/h2_util.c
++++ b/modules/http2/h2_util.c
+@@ -638,15 +638,6 @@
+     apr_status_t rv;
+     if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+         fifo->aborted = 1;
+-        apr_thread_mutex_unlock(fifo->lock);
+-    }
+-    return rv;
+-}
+-
+-apr_status_t h2_fifo_interrupt(h2_fifo *fifo)
+-{
+-    apr_status_t rv;
+-    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+         apr_thread_cond_broadcast(fifo->not_empty);
+         apr_thread_cond_broadcast(fifo->not_full);
+         apr_thread_mutex_unlock(fifo->lock);
+@@ -710,10 +701,6 @@
+ {
+     apr_status_t rv;
+     
+-    if (fifo->aborted) {
+-        return APR_EOF;
+-    }
+-
+     if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+         rv = fifo_push_int(fifo, elem, block);
+         apr_thread_mutex_unlock(fifo->lock);
+@@ -754,10 +741,6 @@
+ {
+     apr_status_t rv;
+     
+-    if (fifo->aborted) {
+-        return APR_EOF;
+-    }
+-    
+     if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+         rv = pull_head(fifo, pelem, block);
+         apr_thread_mutex_unlock(fifo->lock);
+@@ -946,15 +929,6 @@
+     apr_status_t rv;
+     if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+         fifo->aborted = 1;
+-        apr_thread_mutex_unlock(fifo->lock);
+-    }
+-    return rv;
+-}
+-
+-apr_status_t h2_ififo_interrupt(h2_ififo *fifo)
+-{
+-    apr_status_t rv;
+-    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+         apr_thread_cond_broadcast(fifo->not_empty);
+         apr_thread_cond_broadcast(fifo->not_full);
+         apr_thread_mutex_unlock(fifo->lock);
+@@ -1018,10 +992,6 @@
+ {
+     apr_status_t rv;
+     
+-    if (fifo->aborted) {
+-        return APR_EOF;
+-    }
+-
+     if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+         rv = ififo_push_int(fifo, id, block);
+         apr_thread_mutex_unlock(fifo->lock);
+@@ -1062,10 +1032,6 @@
+ {
+     apr_status_t rv;
+     
+-    if (fifo->aborted) {
+-        return APR_EOF;
+-    }
+-    
+     if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+         rv = ipull_head(fifo, pi, block);
+         apr_thread_mutex_unlock(fifo->lock);
+@@ -1088,10 +1054,6 @@
+     apr_status_t rv;
+     int id;
+     
+-    if (fifo->aborted) {
+-        return APR_EOF;
+-    }
+-    
+     if (APR_SUCCESS == (rv = apr_thread_mutex_lock(fifo->lock))) {
+         if (APR_SUCCESS == (rv = ipull_head(fifo, &id, block))) {
+             switch (fn(id, ctx)) {
+@@ -1117,39 +1079,40 @@
+     return ififo_peek(fifo, fn, ctx, 0);
+ }
+ 
+-apr_status_t h2_ififo_remove(h2_ififo *fifo, int id)
++static apr_status_t ififo_remove(h2_ififo *fifo, int id)
+ {
+-    apr_status_t rv;
++    int rc, i;
+     
+     if (fifo->aborted) {
+         return APR_EOF;
+     }
+ 
+-    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+-        int i, rc;
+-        int e;
+-        
+-        rc = 0;
+-        for (i = 0; i < fifo->count; ++i) {
+-            e = fifo->elems[inth_index(fifo, i)];
+-            if (e == id) {
+-                ++rc;
+-            }
+-            else if (rc) {
+-                fifo->elems[inth_index(fifo, i-rc)] = e;
+-            }
+-        }
+-        if (rc) {
+-            fifo->count -= rc;
+-            if (fifo->count + rc == fifo->nelems) {
+-                apr_thread_cond_broadcast(fifo->not_full);
+-            }
+-            rv = APR_SUCCESS;
++    rc = 0;
++    for (i = 0; i < fifo->count; ++i) {
++        int e = fifo->elems[inth_index(fifo, i)];
++        if (e == id) {
++            ++rc;
+         }
+-        else {
+-            rv = APR_EAGAIN;
++        else if (rc) {
++            fifo->elems[inth_index(fifo, i-rc)] = e;
+         }
+-        
++    }
++    if (!rc) {
++        return APR_EAGAIN;
++    }
++    fifo->count -= rc;
++    if (fifo->count + rc == fifo->nelems) {
++        apr_thread_cond_broadcast(fifo->not_full);
++    }
++    return APR_SUCCESS;
++}
++
++apr_status_t h2_ififo_remove(h2_ififo *fifo, int id)
++{
++    apr_status_t rv;
++    
++    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
++        rv = ififo_remove(fifo, id);
+         apr_thread_mutex_unlock(fifo->lock);
+     }
+     return rv;
+@@ -1373,7 +1336,7 @@
+         return status;
+     }
+     else if (blen == 0) {
+-        /* brigade without data, does it have an EOS bucket somwhere? */
++        /* brigade without data, does it have an EOS bucket somewhere? */
+         *plen = 0;
+         *peos = h2_util_has_eos(bb, -1);
+     }
+@@ -1840,22 +1803,29 @@
+ }
+ 
+ apr_status_t h2_req_add_header(apr_table_t *headers, apr_pool_t *pool, 
+-                               const char *name, size_t nlen,
+-                               const char *value, size_t vlen)
++                              const char *name, size_t nlen,
++                              const char *value, size_t vlen,
++                              size_t max_field_len, int *pwas_added)
+ {
+     char *hname, *hvalue;
++    const char *existing;
+     
++    *pwas_added = 0;
+     if (h2_req_ignore_header(name, nlen)) {
+         return APR_SUCCESS;
+     }
+     else if (H2_HD_MATCH_LIT("cookie", name, nlen)) {
+-        const char *existing = apr_table_get(headers, "cookie");
++        existing = apr_table_get(headers, "cookie");
+         if (existing) {
+             char *nval;
+             
+             /* Cookie header come separately in HTTP/2, but need
+              * to be merged by "; " (instead of default ", ")
+              */
++            if (max_field_len && strlen(existing) + vlen + nlen + 4 > max_field_len) {
++                /* "key: oldval, nval" is too long */
++                return APR_EINVAL;
++            }
+             hvalue = apr_pstrndup(pool, value, vlen);
+             nval = apr_psprintf(pool, "%s; %s", existing, hvalue);
+             apr_table_setn(headers, "Cookie", nval);
+@@ -1869,8 +1839,16 @@
+     }
+     
+     hname = apr_pstrndup(pool, name, nlen);
+-    hvalue = apr_pstrndup(pool, value, vlen);
+     h2_util_camel_case_header(hname, nlen);
++    existing = apr_table_get(headers, hname);
++    if (max_field_len) {
++        if ((existing? strlen(existing)+2 : 0) + vlen + nlen + 2 > max_field_len) {
++            /* "key: (oldval, )?nval" is too long */
++            return APR_EINVAL;
++        }
++    }
++    if (!existing) *pwas_added = 1;
++    hvalue = apr_pstrndup(pool, value, vlen);
+     apr_table_mergen(headers, hname, hvalue);
+     
+     return APR_SUCCESS;
+@@ -1960,7 +1938,8 @@
+         case NGHTTP2_GOAWAY: {
+             size_t len = (frame->goaway.opaque_data_len < s_len)?
+                 frame->goaway.opaque_data_len : s_len-1;
+-            memcpy(scratch, frame->goaway.opaque_data, len);
++            if (len)
++                memcpy(scratch, frame->goaway.opaque_data, len);
+             scratch[len] = '\0';
+             return apr_snprintf(buffer, maxlen, "GOAWAY[error=%d, reason='%s', "
+                                 "last_stream=%d]", frame->goaway.error_code, 
+--- a/modules/http2/h2_util.h
++++ b/modules/http2/h2_util.h
+@@ -209,7 +209,6 @@
+ apr_status_t h2_fifo_set_create(h2_fifo **pfifo, apr_pool_t *pool, int capacity);
+ 
+ apr_status_t h2_fifo_term(h2_fifo *fifo);
+-apr_status_t h2_fifo_interrupt(h2_fifo *fifo);
+ 
+ int h2_fifo_count(h2_fifo *fifo);
+ 
+@@ -229,7 +228,7 @@
+ 
+ typedef enum {
+     H2_FIFO_OP_PULL,   /* pull the element from the queue, ie discard it */
+-    H2_FIFO_OP_REPUSH, /* pull and immediatley re-push it */
++    H2_FIFO_OP_REPUSH, /* pull and immediately re-push it */
+ } h2_fifo_op_t;
+ 
+ typedef h2_fifo_op_t h2_fifo_peek_fn(void *head, void *ctx);
+@@ -280,7 +279,6 @@
+ apr_status_t h2_ififo_set_create(h2_ififo **pfifo, apr_pool_t *pool, int capacity);
+ 
+ apr_status_t h2_ififo_term(h2_ififo *fifo);
+-apr_status_t h2_ififo_interrupt(h2_ififo *fifo);
+ 
+ int h2_ififo_count(h2_ififo *fifo);
+ 
+@@ -412,9 +410,14 @@
+ apr_status_t h2_req_create_ngheader(h2_ngheader **ph, apr_pool_t *p, 
+                                     const struct h2_request *req);
+ 
++/**
++ * Add a HTTP/2 header and return the table key if it really was added
++ * and not ignored.
++ */
+ apr_status_t h2_req_add_header(apr_table_t *headers, apr_pool_t *pool, 
+                                const char *name, size_t nlen,
+-                               const char *value, size_t vlen);
++                               const char *value, size_t vlen,
++                               size_t max_field_len, int *pwas_added);
+ 
+ /*******************************************************************************
+  * h2_request helpers
 --- a/modules/http2/h2_version.h
 +++ b/modules/http2/h2_version.h
 @@ -27,7 +27,7 @@
@@ -4495,7 +6680,7 @@ Last-Update: 2019-08-17
   * Version number of the http2 module as c string
   */
 -#define MOD_HTTP2_VERSION "1.11.4"
-+#define MOD_HTTP2_VERSION "1.15.4"
++#define MOD_HTTP2_VERSION "1.15.14"
  
  /**
   * @macro
@@ -4505,9 +6690,41 @@ Last-Update: 2019-08-17
   */
 -#define MOD_HTTP2_VERSION_NUM 0x010b04
 -
-+#define MOD_HTTP2_VERSION_NUM 0x010f04
++#define MOD_HTTP2_VERSION_NUM 0x010f0e
  
  #endif /* mod_h2_h2_version_h */
+--- a/modules/http2/h2_workers.c
++++ b/modules/http2/h2_workers.c
+@@ -155,7 +155,7 @@
+ {
+     apr_status_t rv;
+     
+-    rv = h2_mplx_pop_task(m, &slot->task);
++    rv = h2_mplx_s_pop_task(m, &slot->task);
+     if (slot->task) {
+         /* Ok, we got something to give back to the worker for execution. 
+          * If we still have idle workers, we let the worker be sticky, 
+@@ -234,10 +234,10 @@
+              * mplx the opportunity to give us back a new task right away.
+              */
+             if (!slot->aborted && (--slot->sticks > 0)) {
+-                h2_mplx_task_done(slot->task->mplx, slot->task, &slot->task);
++                h2_mplx_s_task_done(slot->task->mplx, slot->task, &slot->task);
+             }
+             else {
+-                h2_mplx_task_done(slot->task->mplx, slot->task, NULL);
++                h2_mplx_s_task_done(slot->task->mplx, slot->task, NULL);
+                 slot->task = NULL;
+             }
+         }
+@@ -269,7 +269,6 @@
+         }
+ 
+         h2_fifo_term(workers->mplxs);
+-        h2_fifo_interrupt(workers->mplxs);
+ 
+         cleanup_zombies(workers);
+     }
 --- a/modules/http2/mod_http2.c
 +++ b/modules/http2/mod_http2.c
 @@ -172,27 +172,6 @@
@@ -4556,7 +6773,7 @@ Last-Update: 2019-08-17
 -            if (task) {
 -                h2_stream *stream = h2_mplx_stream_get(task->mplx, task->stream_id);
 +            if (ctx->task) {
-+                h2_stream *stream = h2_mplx_stream_get(ctx->task->mplx, ctx->task->stream_id);
++                h2_stream *stream = h2_mplx_t_stream_get(ctx->task->mplx, ctx->task);
                  if (stream && stream->push_policy != H2_PUSH_NONE) {
                      return "on";
                  }
@@ -4588,7 +6805,7 @@ Last-Update: 2019-08-17
 -        if (task && !H2_STREAM_CLIENT_INITIATED(task->stream_id)) {
 -            h2_stream *stream = h2_mplx_stream_get(task->mplx, task->stream_id);
 +        if (ctx->task && !H2_STREAM_CLIENT_INITIATED(ctx->task->stream_id)) {
-+            h2_stream *stream = h2_mplx_stream_get(ctx->task->mplx, ctx->task->stream_id);
++            h2_stream *stream = h2_mplx_t_stream_get(ctx->task->mplx, ctx->task);
              if (stream) {
                  return apr_itoa(p, stream->initiated_on);
              }
@@ -4665,7 +6882,7 @@ Last-Update: 2019-08-17
 +
 +/* The following functions were introduced for the experimental mod_proxy_http2
 + * support, but have been abandoned since.
-+ * They are still declared here for backward compatibiliy, in case someone
++ * They are still declared here for backward compatibility, in case someone
 + * tries to build an old mod_proxy_http2 against it, but will disappear
 + * completely sometime in the future.
 + */ 
@@ -5243,7 +7460,7 @@ Last-Update: 2019-08-17
      /* Step Two: Make the Connection (or check that an already existing
       * socket is still usable). On success, we have a socket connected to
       * backend->hostname. */
-@@ -575,70 +381,48 @@
+@@ -575,70 +381,56 @@
          ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, ctx->owner, APLOGNO(03352)
                        "H2: failed to make connection to backend: %s",
                        ctx->p_conn->hostname);
@@ -5298,9 +7515,6 @@ Last-Update: 2019-08-17
 -            ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, ctx->owner, APLOGNO(03376)
 -                          "run_session, again");
 -            goto run_session;
--        }
--        /* done */
--        ctx->engine = NULL;
 +    
 +    if (!ctx->p_conn->data && ctx->is_ssl) {
 +        /* New SSL connection: set a note on the connection about what
@@ -5308,6 +7522,16 @@ Last-Update: 2019-08-17
 +         */
 +        apr_table_setn(ctx->p_conn->connection->notes,
 +                       "proxy-request-alpn-protos", "h2");
++        if (ctx->p_conn->ssl_hostname) {
++            ap_log_cerror(APLOG_MARK, APLOG_TRACE1, 0, ctx->owner,
++                          "set SNI to %s for (%s)",
++                          ctx->p_conn->ssl_hostname,
++                          ctx->p_conn->hostname);
++            apr_table_setn(ctx->p_conn->connection->notes,
++                           "proxy-request-hostname", ctx->p_conn->ssl_hostname);
+         }
+-        /* done */
+-        ctx->engine = NULL;
      }
  
 -reconnect:
@@ -5341,7 +7565,7 @@ Last-Update: 2019-08-17
      }
      
  cleanup:
-@@ -647,17 +431,13 @@
+@@ -647,17 +439,13 @@
              /* close socket when errors happened or session shut down (EOF) */
              ctx->p_conn->close = 1;
          }

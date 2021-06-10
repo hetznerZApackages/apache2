@@ -29,5 +29,5 @@ foreach my $t (@testcases) {
     # Checking for return code
     ok t_cmp($r->code, 200, "Checking return code is '200'");
     # Checking for content
-    ok t_is_equal($r->content, $t->[1] x 1000000);
+    ok t_cmp($r->content, $t->[1] x 1000000, $r->content . ' equals ' . $t->[1]);
 }
