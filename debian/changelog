@@ -1,3 +1,18 @@
+apache2 (2.4.38-3+deb10u5+deb9hetz1~exp1) stretch-hetz-experimental; urgency=medium
+
+  * Apply DSA-4937-1 https://www.debian.org/security/2021/dsa-4937
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@xneelo.com>  Wed, 14 Jul 2021 08:57:45 +0200
+
+apache2 (2.4.38-3+deb10u5) buster-security; urgency=medium
+
+  * Fix "NULL pointer dereference on specially crafted HTTP/2 request"
+    (Closes: #989562, CVE-2021-31618)
+  * Fix various low security issues (Closes: CVE-2020-35452, CVE-2021-26690,
+    CVE-2021-26691, CVE-2021-30641) and fix related test
+
+ -- Yadd <yadd@debian.org>  Thu, 10 Jun 2021 12:13:06 +0200
+
 apache2 (2.4.38-3+deb10u4+deb9hetz1) stretch-hetz; urgency=high
 
   * Released 2.4.38-3+deb10u4+deb9hetz1~exp3 as 2.4.38-3+deb10u4+deb9hetz1
@@ -11,7 +26,7 @@ apache2 (2.4.38-3+deb10u4+deb9hetz1~exp3) stretch-hetz-experimental; urgency=hig
  -- Shaun Bugler - Hetzner <sb@hetzner.co.za>  Thu, 05 Nov 2020 11:46:08 +0200
 
 apache2 (2.4.38-3+deb10u4) buster-security; urgency=high
-  
+
   * Import http2 modules from 2.4.46 (Closes: CVE-2020-9490, CVE-2020-11993)
   * Fix error out on HTTP header larger than 16K (Closes: CVE-2020-11984)
   * Fix bad regexp in mod_rewrite (Closes: CVE-2020-1927)
