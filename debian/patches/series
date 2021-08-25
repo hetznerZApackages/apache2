@@ -9,32 +9,6 @@ reproducible_builds.diff
 #suexec-custom.patch
 spelling-errors.patch
 
-<<<<<<< HEAD
-fix_logresolve_segfault.patch
-mpm_event_restart_segfault_PR60487.patch
-
-CVE-2017-3167.diff
-CVE-2017-3169.diff
-CVE-2017-7668.diff
-CVE-2017-7679.diff
-CVE-2017-9788-mod_auth_digest.diff
-
-core-Disallow-Methods-registration-at-run-time-.htac.patch
-CVE-2017-15710-mod_authnz_ldap.diff
-CVE-2017-15715-regex-line-endings.diff
-CVE-2018-1283-mod_session.diff
-CVE-2018-1301-HTTP-request-read-out-of-bounds.diff
-CVE-2018-1303-mod_cache_socache-oob.diff
-CVE-2018-1312-mod_auth_digest-nonce.diff
-mod_http2-upgrade-to-2.4.33.diff
-mod_http2-revert-new-proxy-features.diff
-mod_http2_mem_usage_32bit.diff
-fcgi_crash.diff
-CVE-2018-1333-mod_http2_DoS.diff
-CVE-2018-11763-mod_http2_DoS-SETTINGS.diff
-xneelo_relax_ownership_enforcement.diff
-xneelo_symlinkprotection.diff
-=======
 CVE-2019-0196.patch
 CVE-2019-0211.patch
 CVE-2019-0215.patch
@@ -55,6 +29,5 @@ CVE-2021-30641.patch
 CVE-2021-26691.patch
 CVE-2021-26690.patch
 CVE-2020-35452.patch
-hetz_relax_ownership_enforcement.diff
-hetz_symlinkprotection.diff
->>>>>>> stretch-hetz
+xneelo_relax_ownership_enforcement.diff
+xneelo_symlinkprotection.diff

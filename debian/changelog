@@ -1,8 +1,14 @@
+apache2 (2.4.38-3+deb10u5+deb10hetz1~exp1) buster-hetz-experimental; urgency=medium
+
+  * Initial Buster version
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@xneelo.com>  Wed, 25 Aug 2021 14:37:21 +0200
+
 apache2 (2.4.38-3+deb10u5+deb9hetz1) stretch-hetz; urgency=medium
 
   * Released 2.4.38-3+deb10u5+deb9hetz1~exp1 as 2.4.38-3+deb10u5+deb9hetz1
 
- -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 19 Jul 2021 22:41:39 +0200
+ -- Walter Kleynscheldt <walter.kleynscheldt@xneelo.com>  Wed, 25 Aug 2021 14:37:21 +0200
 
 apache2 (2.4.38-3+deb10u5+deb9hetz1~exp1) stretch-hetz-experimental; urgency=medium
 
