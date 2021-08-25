@@ -1,3 +1,476 @@
+apache2 (2.4.38-3+deb10u5+deb9hetz1) stretch-hetz; urgency=medium
+
+  * Released 2.4.38-3+deb10u5+deb9hetz1~exp1 as 2.4.38-3+deb10u5+deb9hetz1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 19 Jul 2021 22:41:39 +0200
+
+apache2 (2.4.38-3+deb10u5+deb9hetz1~exp1) stretch-hetz-experimental; urgency=medium
+
+  * Apply DSA-4937-1 https://www.debian.org/security/2021/dsa-4937
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@xneelo.com>  Wed, 14 Jul 2021 08:57:45 +0200
+
+apache2 (2.4.38-3+deb10u5) buster-security; urgency=medium
+
+  * Fix "NULL pointer dereference on specially crafted HTTP/2 request"
+    (Closes: #989562, CVE-2021-31618)
+  * Fix various low security issues (Closes: CVE-2020-35452, CVE-2021-26690,
+    CVE-2021-26691, CVE-2021-30641) and fix related test
+
+ -- Yadd <yadd@debian.org>  Thu, 10 Jun 2021 12:13:06 +0200
+
+apache2 (2.4.38-3+deb10u4+deb9hetz1) stretch-hetz; urgency=high
+
+  * Released 2.4.38-3+deb10u4+deb9hetz1~exp3 as 2.4.38-3+deb10u4+deb9hetz1
+
+ -- Shaun Bugler - Hetzner <sb@hetzner.co.za>  Fri, 06 Nov 2020 08:28:03 +0200
+
+apache2 (2.4.38-3+deb10u4+deb9hetz1~exp3) stretch-hetz-experimental; urgency=high
+
+  * Import upstream release 
+
+ -- Shaun Bugler - Hetzner <sb@hetzner.co.za>  Thu, 05 Nov 2020 11:46:08 +0200
+
+apache2 (2.4.38-3+deb10u4) buster-security; urgency=high
+
+  * Import http2 modules from 2.4.46 (Closes: CVE-2020-9490, CVE-2020-11993)
+  * Fix error out on HTTP header larger than 16K (Closes: CVE-2020-11984)
+  * Fix bad regexp in mod_rewrite (Closes: CVE-2020-1927)
+  * Fix uninitialized memory when proxying to a malicious FTP server
+    (Closes: CVE-2020-1934)
+
+ -- Xavier Guimard <yadd@debian.org>  Tue, 25 Aug 2020 22:08:29 +0200
+
+apache2 (2.4.38-3+deb10u3+deb9hetz1) stretch-hetz; urgency=high
+
+  * Released 2.4.38-3+deb10u3+deb9hetz1~exp1 as 2.4.38-3+deb10u3+deb9hetz1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Tue, 19 Nov 2019 11:23:36 +0200
+
+apache2 (2.4.38-3+deb10u3+deb9hetz1~exp1) stretch-hetz-experimental; urgency=high
+
+  * Import changes for CVE-2019-10092
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 18 Nov 2019 14:40:24 +0200
+
+apache2 (2.4.38-3+deb10u3) buster-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * Annoatate patch for CVE-2019-10092: Add missing APLOGNO's in
+    modules/proxy/mod_proxy.c and modules/proxy/mod_proxy_ftp.c
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Tue, 15 Oct 2019 21:53:42 +0200
+
+apache2 (2.4.38-3+deb10u2) buster-security; urgency=medium
+
+  * Fix CVE-2019-10092 patch (Closes: #941202)
+
+ -- Xavier Guimard <yadd@debian.org>  Sun, 13 Oct 2019 22:23:11 +0200
+
+apache2 (2.4.38-3+deb10u1+deb9hetz1) stretch-hetz; urgency=high
+
+  * Released 2.4.38-3+deb10u1+deb9hetz1~exp2 as 2.4.38-3+deb10u1+deb9hetz1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Wed, 25 Sep 2019 16:01:34 +0200
+
+apache2 (2.4.38-3+deb10u1+deb9hetz1~exp2) stretch-hetz-experimental; urgency=high
+
+  * Clean up and ensure it matches Buster as close as possible
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Wed, 25 Sep 2019 13:44:21 +0200
+
+apache2 (2.4.38-3+deb10u1+deb9hetz1~exp1) stretch-hetz-experimental; urgency=high
+
+  * Initial backport from Buster
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Wed, 25 Sep 2019 10:38:52 +0200
+
+apache2 (2.4.38-3+deb10u1) buster-security; urgency=high
+
+  * Add patch to limit cross-site scripting in mod_proxy (Closes: CVE-2019-10092)
+  * Add patch to fix stack buffer overflow and NULL pointer dereference in
+    mod_remoteip (Closes: CVE-2019-10097)
+  * Import http2 modules from 2.4.41 (Closes: CVE-2019-9517, CVE-2019-10082 and
+    CVE-2019-10081
+  * Add patch to set PCRE_DOTALL by default (Closes: CVE-2019-10098)
+
+ -- Xavier Guimard <yadd@debian.org>  Sun, 18 Aug 2019 15:34:20 +0200
+
+apache2 (2.4.38-3) unstable; urgency=high
+
+  [ Marc Deslauriers ]
+  * SECURITY UPDATE: read-after-free on a string compare in mod_http2
+    - debian/patches/CVE-2019-0196.patch: disentangelment of stream and
+      request method in modules/http2/h2_request.c.
+    - CVE-2019-0196
+  * SECURITY UPDATE: privilege escalation from modules' scripts
+    - debian/patches/CVE-2019-0211.patch: bind the bucket number of each
+      child to its slot number in include/scoreboard.h,
+      server/mpm/event/event.c, server/mpm/prefork/prefork.c,
+      server/mpm/worker/worker.c.
+    - CVE-2019-0211
+  * SECURITY UPDATE: mod_ssl access control bypass
+    - debian/patches/CVE-2019-0215.patch: restore SSL verify state after
+      PHA failure in TLSv1.3 in modules/ssl/ssl_engine_kernel.c.
+    - CVE-2019-0215
+  * SECURITY UPDATE: mod_auth_digest access control bypass
+    - debian/patches/CVE-2019-0217.patch: fix a race condition in
+      modules/aaa/mod_auth_digest.c.
+    - CVE-2019-0217
+  * SECURITY UPDATE: URL normalization inconsistincy
+    - debian/patches/CVE-2019-0220-1.patch: merge consecutive slashes in
+      the path in include/http_core.h, include/httpd.h, server/core.c,
+      server/request.c, server/util.c.
+    - debian/patches/CVE-2019-0220-2.patch: fix r->parsed_uri.path safety
+      in server/request.c, server/util.c.
+    - debian/patches/CVE-2019-0220-3.patch: maintainer mode fix in
+      server/util.c.
+    - CVE-2019-0220
+
+  [ Stefan Fritsch ]
+  * Pull security fixes from 2.4.39 via Ubuntu
+  * CVE-2019-0197: mod_http2: Fix possible crash on late upgrade
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 07 Apr 2019 20:15:40 +0200
+
+apache2 (2.4.38-2) unstable; urgency=medium
+
+  * Disable "reset" test in allowmethods.t (Closes: #921024)
+
+ -- Xavier Guimard <yadd@debian.org>  Thu, 31 Jan 2019 21:54:05 +0100
+
+apache2 (2.4.38-1) unstable; urgency=medium
+
+  [ Jelmer Vernooĳ ]
+  * Reverted for now: Transition to automatic debug package (from: apache2-dbg)
+  * Trim trailing whitespace
+  * Use secure copyright file specification URI
+
+  [ Niels Thykier ]
+  * Add Rules-Requires-Root: binary-targets
+
+  [ Xavier Guimard ]
+  * Convert signing-key.pgp into signing-key.asc
+  * Add http2.conf (Closes: #880993)
+  * Remove unnecessary greater-than versioned dependency to dpkg-dev,
+    libbrotli-dev and libapache2-mod-md
+  * Declare compliance with policy 4.2.1
+  * Add spelling errors patch (reported)
+  * Fix some spelling errors in debian files
+  * Add myself to uploaders
+  * Refresh patches
+  * Bump debhelper compatibility level to 10
+  * debian/rules:
+    - Remove unnecessary dh argument --parallel
+    - use /usr/share/dpkg/pkg-info.mk instead of dpkg-parsechangelog
+  * Add upstream/metadata
+  * Replace MIT by Expat in debian/copyright
+  * debian/watch: use https url
+  * Add documentation links in systemd service files
+  * Team upload
+
+  [ Cyrille Bollu ]
+  * Put HTTP2 configuration within <IfModule !mpm_prefork></IfModule> tags as
+    it gets automatically de-activated upon apache 'startup when using
+    mpm_prefork.
+  * Updated http2.conf to inform user that they may want to change their
+    LogFormat directives.
+
+  [ Xavier Guimard ]
+  * New upstream version 2.4.38 (Closes: #920220, #920302, #920303)
+  * Refresh patches
+  * Remove setenvifexpr.diff patch now included in upstream
+  * Replace libapache2-mod-proxy-uwsgi.{post*,prerm} by a maintscript
+  * Add a "sleep" in debian/tests/htcacheclean and skip result if "stop" failed
+  * Declare compliance with policy 4.3.0
+  * Fix homepage to https
+  * Update debian/copyright
+
+ -- Xavier Guimard <yadd@debian.org>  Tue, 29 Jan 2019 23:49:49 +0100
+
+apache2 (2.4.37-1) unstable; urgency=medium
+
+  * New upstream version
+    - mod_ssl: Add support for TLSv1.3
+  * Add docs symlink for libapache2-mod-proxy-uwsgi.  Closes: #910218
+  * Update test-framework to r1845652
+  * Fix test suite to actually run by creating a test user. It turns out
+    the test suite refuses to run as root but returns true even in that
+    case. It seems this has been broken since 2.4.27-4, where the test suite
+    had been updated and the debci test duration dropped from 15min to
+    3min. Also, don't rely on the exit status anymore but parse the test
+    output.
+  * Backport a fix from trunk for SetEnvIfExpr. This fixes a test failure.
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 03 Nov 2018 14:26:31 +0100
+
+apache2 (2.4.35-1) unstable; urgency=medium
+
+  * New upstream version 2.4.35
+    Security fix:
+    - CVE-2018-11763: DoS for HTTP/2 connections by continuous SETTINGS
+      Closes: #909591
+  * Fix lintian warning: Don't force xz in builddeb override.
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 07 Oct 2018 12:54:58 +0200
+
+apache2 (2.4.34-1) unstable; urgency=medium
+
+  [ Ondřej Surý ]
+  * New upstream version 2.4.34
+    Security fixes:
+    - CVE-2018-1333: Denial of service in mod_http2. Closes: #904106
+    - CVE-2018-8011: Denial of service in mod_md. Closes: #904107
+  * Refresh patches for Apache2 2.4.34 release
+  * Update the suexec-custom.patch for 2.4.34 release
+
+  [ Stefan Fritsch ]
+  * Remove load order dependency introduced in mod_lbmethod_* in 2.4.34
+  * Remove debian/gbp.conf. Closes: #904641
+  * Fix typo in apache2_switch_mpm() in apache2-maintscript-helper.
+    Closes: #904150
+
+ -- Stefan Fritsch <sf@debian.org>  Fri, 27 Jul 2018 21:37:37 +0200
+
+apache2 (2.4.33-3) unstable; urgency=medium
+
+  * Add Breaks for libapache2-mod-proxy-uwsgi and libapache2-mod-md, too.
+    Closes: #894785
+  * mod_http2: Avoid high memory usage with large files, causing crashes on
+    32bit archs. Closes: #897218
+  * Migrate from alioth to salsa.
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 05 May 2018 11:34:47 +0200
+
+apache2 (2.4.33-2) unstable; urgency=medium
+
+  * Add Replaces: and transitional packages for libapache2-mod-proxy-uwsgi
+    and libapache2-mod-md.
+    Closes: #894760, #894761, #894785
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 22 Apr 2018 11:14:19 +0200
+
+apache2 (2.4.33-1) unstable; urgency=medium
+
+  * New upstream version.
+    Security fixes:
+    - CVE-2017-15710
+      Out of bound write in mod_authnz_ldap with AuthLDAPCharsetConfig enabled
+    - CVE-2018-1283
+      mod_session: CGI-like applications that intend to read from mod_session's
+      'SessionEnv ON' could be fooled into reading user-supplied data instead.
+    - CVE-2018-1303
+      mod_cache_socache: Fix request headers parsing to avoid a possible crash
+      with specially crafted input data.
+    - CVE-2018-1301
+      core: Possible crash with excessively long HTTP request headers.
+      Impractical to exploit with a production build and production LogLevel.
+    - CVE-2017-15715
+      core: Configure the regular expression engine to match '$' to the end of
+      the input string only, excluding matching the end of any embedded
+      newline characters. Behavior can be changed with new directive
+      'RegexDefaultOptions'.
+    - CVE-2018-1312
+      mod_auth_digest: Fix generation of nonce values to prevent replay
+      attacks across servers using a common Digest domain. This change
+      may cause problems if used with round robin load balancers. PR 54637
+    - CVE-2018-1302
+      mod_http2: Potential crash w/ mod_http2.
+
+    - mod_proxy_uwsgi: New UWSGI proxy submodule.
+    - mod_md: New experimental module for managing domains across virtual
+      hosts, implementing the Let's Encrypt ACMEv1 protocol to signup and
+      renew certificates.
+    - core: silently ignore a not existent file path when IncludeOptional
+      is used. Closes: #878920
+    - mod_ldap: Avoid possible crashes, hangs, and busy loops. Closes: #814980
+
+  * Fix lintian warnings:
+    - Include SupportApache-small.png in apache2-doc package instead of
+      linking to apache.org, to avoid privacy issues.
+    - Use /usr/share/dpkg/architecture.mk instead of setting DEB_*_GNU_TYPE
+    - Remove deprecated use of autotools_dev with dh.
+    - Add some overrides
+  * Bump standards-version to 4.1.2 (no changes)
+
+ -- Stefan Fritsch <sf@debian.org>  Fri, 30 Mar 2018 22:53:13 +0200
+
+apache2 (2.4.29-2) unstable; urgency=medium
+
+  * Add myself to Uploaders
+  * Bump required version of apr/apr-util to 1.6.0 (Closes: #879634)
+  * Run wrap-and-sort -a to canonicalize the debian/ directory
+  * Add Build-Depends on libbrotli-dev and enable brotli module
+
+ -- Ondřej Surý <ondrej@debian.org>  Sun, 14 Jan 2018 11:01:58 +0000
+
+apache2 (2.4.29-1) unstable; urgency=medium
+
+  [ Stefan Fritsch ]
+  * Replace outdated dependency on dh-systemd
+
+  [ Ondřej Surý ]
+  * New upstream version 2.4.29
+  * Refresh quilt patches
+  * Add mod_ssl_md patch needed for libapache2-mod-md (Closes: #877343)
+  * Refresh patches on top of upstream release 2.4.29
+  * Fix Apache crash on restarts (ASF Bug 61558)
+  * Add deconfigure to the list of recognized scripts (Closes: #877524)
+
+ -- Ondřej Surý <ondrej@debian.org>  Mon, 23 Oct 2017 14:46:55 +0000
+
+apache2 (2.4.27-6) unstable; urgency=high
+
+  * CVE-2017-9798: Don't allow new methods to be registered in .htaccess files
+    which could result in HTTP OPTIONS method leaking Apache's server memory.
+    Closes: #876109
+  * Fix argument escaping in apachectl. Closes: #876384
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 24 Sep 2017 00:08:01 +0200
+
+apache2 (2.4.27-5) unstable; urgency=medium
+
+  * Upload to unstable.
+  * Update "Breaks:" for openssl transition.
+  * Bump Standards-Version to 4.1.0. No changes needed.
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 03 Sep 2017 17:18:57 +0200
+
+apache2 (2.4.27-4) experimental; urgency=medium
+
+  * Use 'invoke-rc.d' instead of init script in logrotate script.
+    Closes: #857607
+  * Make the apache-htcacheclean init script actually look into
+    /etc/default/apache-htcacheclean for its config. LP: #1691495
+  * mime.conf: Guard AddOutputFilter INCLUDES with proper <IfModule>.
+    LP: #1675184
+  * Use 'service' instead of init script in monit example config.
+  * Bump Standards-Version to 4.0.1. Other changes:
+    - change package priorities from extra to optional
+  * Use libprotocol-http2-perl in autopkgtest.
+  * Update test suite to svn r1804214.
+  * Various tweaks to the test suite autopkgtest to avoid having to skip
+    any test.
+  * Also remove -DBUILD_DATETIME and -fdebug-prefix-map from config_vars.mk
+    to avoid them being used by apxs.
+  * deflate.conf: Remove mention of MSIE6
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 08 Aug 2017 21:59:37 +0200
+
+apache2 (2.4.27-3) experimental; urgency=medium
+
+  * Switch to openssl 1.1. Again closes: #851094
+  * Add versioned breaks for gridsite, libapache2-mod-dacs because of
+    openssl transition.
+  * Provide new apache2-api-20120211-openssl1.1 virtual package and make
+    dh_apache2 generate a dependency on it if there is a build-dep on
+    apache2-ssl-dev.
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 16 Jul 2017 23:11:07 +0200
+
+apache2 (2.4.27-2) unstable; urgency=medium
+
+  * Switch back to openssl 1.0 for now. The transition to 1.1 needs more
+    work and should go into experimental, first. Reopens: #851094
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 16 Jul 2017 23:01:10 +0200
+
+apache2 (2.4.27-1) unstable; urgency=medium
+
+  [ New upstream release ]
+  * Fix CVE-2017-9788: mod_auth_digest: Uninitialized memory reflection
+    Closes: #868467
+
+  [ Stefan Fritsch ]
+  * Switch to openssl 1.1. Closes: #851094
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 16 Jul 2017 10:39:15 +0200
+
+apache2 (2.4.25-4) unstable; urgency=high
+
+  * Backport security fixes from 2.4.26:
+  * CVE-2017-3167: Authentication bypass with ap_get_basic_auth_pw()
+  * CVE-2017-3169: mod_ssl NULL pointer dereference
+  * CVE-2017-7668: Buffer overrun in ap_find_token()
+  * CVE-2017-7679: mod_mime buffer overread
+  * CVE-2017-7659: mod_http2 NULL pointer dereference
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 20 Jun 2017 21:31:51 +0200
+
+apache2 (2.4.25-3+deb9u8+deb9hetz2~exp1) stretch-hetz-experimental; urgency=high
+
+  * Bump hetz version to rebase to the stretch version after numerous failed
+    attempts at getting proxy_fcgi to play fair.
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 09 Sep 2019 13:36:20 +0200
+
+apache2 (2.4.25-3+deb9u8+deb9hetz1) stretch-hetz; urgency=high
+
+  * Released 2.4.25-3+deb9u8+deb9hetz1~exp3 as 2.4.25-3+deb9u8+deb9hetz1
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Mon, 09 Sep 2019 13:36:20 +0200
+
+apache2 (2.4.25-3+deb9u8+deb9hetz1~exp3) stretch-hetz-experimental; urgency=high
+
+  * Correct series file for patches 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Tue, 27 Aug 2019 08:35:58 +0200
+
+apache2 (2.4.25-3+deb9u8+deb9hetz1~exp2) stretch-hetz-experimental; urgency=high
+
+  * Correct bad git conflict 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Tue, 27 Aug 2019 08:27:06 +0200
+
+apache2 (2.4.25-3+deb9u8+deb9hetz1~exp1) stretch-hetz-experimental; urgency=high
+
+  * Importing deb9u8 with the below patches 
+
+ -- Geoff Robertson <gr@hetzner.co.za>  Tue, 27 Aug 2019 08:22:38 +0200
+
+apache2 (2.4.25-3+deb9u8) stretch-security; urgency=high
+
+  [ Xavier Guimard ]
+  * Add patch to limit cross-site scripting in mod_proxy (Closes: CVE-2019-10092)
+  * Import http2 modules from 2.4.41 (Closes: CVE-2019-9517, CVE-2019-10082, CVE-2019-10081)
+  * Add patch to set PCRE_DOTALL by default (Closes: CVE-2019-10098)
+
+  [ Stefan Fritsch ]
+  * Add -Werror=implicit-function-declaration to compile options to catch
+    problems with backports.
+
+ -- Stefan Fritsch <sf@debian.org>  Mon, 19 Aug 2019 21:25:31 +0200
+
+apache2 (2.4.25-3+deb9u7) stretch-security; urgency=medium
+
+  * Pull stretch-hetz-experimental to jessie-hetz-experimental
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 14:40:32 +0200
+
+apache2 (2.4.25-3+deb9u6+deb9hetz1~exp3) stretch-hetz-experimental; urgency=medium
+
+  * Version bump
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 14:40:32 +0200
+
+apache2 (2.4.25-3+deb9u6+deb9hetz1~exp2) stretch-hetz-experimental; urgency=medium
+
+  * Bump version to build again
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 30 Jun 2019 13:14:20 +0200
+
+apache2 (2.4.25-3+deb9u6+deb9hetz1~exp1) stretch-hetz-experimental; urgency=medium
+
+  * First custom Apache2.4.25 build for Stretch managed hosting servers
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Tue, 25 Jun 2019 14:36:34 +0200
+
+apache2 (2.4.25-3+deb9u6+hetz1~exp1) stretch-hetz-experimental; urgency=medium
+
+  * First custom Apache2.4.25 build for Stretch managed hosting servers
+
+ -- Walter Kleynscheldt <walter.kleynscheldt@hetzner.co.za>  Sun, 17 Feb 2019 11:09:31 +0200
+
 apache2 (2.4.25-3+deb9u6) stretch; urgency=medium
 
   * CVE-2018-1333: mod_http2: Fix DoS by worker exhaustion. Closes: #904106
@@ -17,55 +490,8 @@ apache2 (2.4.25-3+deb9u5) stretch; urgency=medium
       (Closes: #850947)
     Unfortunately, this also removes support for http2 when running on
     mpm_prefork.
-  * mod_http2: Avoid high memory usage with large files, causing crashes on
-    32bit archs. Closes: #897218
-  * Make the apache-htcacheclean init script actually look into
-    /etc/default/apache-htcacheclean for its config. Closes: #898563
 
- -- Stefan Fritsch <sf@debian.org>  Sat, 02 Jun 2018 10:01:13 +0200
-
-apache2 (2.4.25-3+deb9u4) stretch-security; urgency=medium
-
-  * CVE-2017-15710: mod_authnz_ldap: Out of bound write in mod_authnz_ldap
-    when using too small Accept-Language values.
-  * CVE-2017-15715: <FilesMatch> bypass with a trailing newline in the file
-    name.
-    Configure the regular expression engine to match '$' to the end of
-    the input string only, excluding matching the end of any embedded
-    newline characters. Behavior can be changed with new directive
-    'RegexDefaultOptions'.
-  * CVE-2018-1283: Tampering of mod_session data for CGI applications.
-  * CVE-2018-1301: Possible out of bound access after failure in reading the
-    HTTP request
-  * CVE-2018-1303: Possible out of bound read in mod_cache_socache
-  * CVE-2018-1312: mod_auth_digest: Weak Digest auth nonce generation
-
- -- Stefan Fritsch <sf@debian.org>  Sat, 31 Mar 2018 10:47:16 +0200
-
-apache2 (2.4.25-3+deb9u3) stretch-security; urgency=high
-
-  * Non-maintainer upload by the Security Team.
-  * CVE-2017-9798: Use-after-free by limiting unregistered HTTP method
-    (Closes: #876109)
-
- -- Salvatore Bonaccorso <carnil@debian.org>  Tue, 19 Sep 2017 20:58:57 +0200
-
-apache2 (2.4.25-3+deb9u2) stretch-security; urgency=medium
-
-  * CVE-2017-9788: mod_auth_digest: Fix leak of uninitialized memory
-
- -- Stefan Fritsch <sf@debian.org>  Tue, 18 Jul 2017 20:37:33 +0200
-
-apache2 (2.4.25-3+deb9u1) stretch-security; urgency=high
-
-  * Backport security fixes from 2.4.26:
-  * CVE-2017-3167: Authentication bypass with ap_get_basic_auth_pw()
-  * CVE-2017-3169: mod_ssl NULL pointer dereference
-  * CVE-2017-7668: Buffer overrun in ap_find_token()
-  * CVE-2017-7679: mod_mime buffer overread
-  * CVE-2017-7659: mod_http2 NULL pointer dereference
-
- -- Stefan Fritsch <sf@debian.org>  Tue, 20 Jun 2017 21:29:11 +0200
+ -- Stefan Fritsch <sf@debian.org>  Sat, 03 Nov 2018 19:46:19 +0100
 
 apache2 (2.4.25-3) unstable; urgency=medium
 
@@ -312,6 +738,93 @@ apache2 (2.4.17-1) unstable; urgency=medium
   * Don't treat mpm_itk as MPM module in deferred actions in postinst.
     Hopefully really closes: #789914
   * Don't treat mpm_itk as MPM module in a2enmod.
+  [ Jean-Michel Vourgère ]
+  * Updated upstream keyring used to check source authenticity.
+
+ -- Stefan Fritsch <sf@debian.org>  Sat, 24 Oct 2015 22:14:32 +0200
+
+apache2 (2.4.16-3) unstable; urgency=medium
+
+  [ Jean-Michel Vourgère ]
+  * Have apache2.postrm removes content of /var/lib/apache2, not the
+    directory itself. Closes: #793862
+  * d/p/reproducible_builds.diff: Sort exported symbols list.
+
+  [ Stefan Fritsch ]
+  * apxs: Don't pass --silent to libtool. Closes: #795820
+  * Remove default /var/www/html/index.html on package purge.
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 18 Aug 2015 13:49:09 +0200
+
+apache2 (2.4.16-2) unstable; urgency=medium
+
+  * Make dh_apache2 add a versioned dependency on apache2-bin, for the
+    new symbols required for the CVE-2015-3185 fix.
+
+ -- Stefan Fritsch <sf@debian.org>  Fri, 07 Aug 2015 23:43:16 +0200
+
+apache2 (2.4.16-1) unstable; urgency=medium
+
+  [ Stefan Fritsch ]
+  * New upstream version, fixing the following security issues:
+    + CVE-2015-3183: Fix chunk header parsing defect.
+    + CVE-2015-3185: ap_some_auth_required() broken in apache 2.4 in an
+      unfixable way. Add a new replacement API ap_some_authn_required()
+      and ap_force_authn hook.
+
+  [ Jean-Michel Vourgère ]
+  * Allow "triggers-awaited" and "triggers-pending" states in addition to
+    "installed" when determining whether to defer actions or process
+    deferred actions. Thanks Colin Watson. Closes: #787103
+  * Allow a2dismod cgi on threaded mpms. Thanks Raul Dias. Closes:
+    #733979
+  * Remove pre-Jessie transition scripts, and remaining breaks.
+  * Made builds reproducible: d/rules set the date from the changelog in
+    CPPFLAGS, new reproducible_builds.diff patch to use it.
+  * Moved bash_completion from /etc to /usr/share/bash_completion. Added
+    links there for dynamic loading.
+  * Upgrade security.conf comments to 2.4 auth format. Thanks Werner
+    Detter. Closes: #789788
+  * apache2.postinst: Fixed tests on deferred mpm switch. Closes:
+    #789914
+
+ -- Stefan Fritsch <sf@debian.org>  Sun, 02 Aug 2015 00:44:07 +0200
+
+apache2 (2.4.12-2) unstable; urgency=medium
+
+  [ Jean-Michel Nirgal Vourgère ]
+  * d/control:
+    + Update Vcs-Browser.
+  * d/copyright:
+    + Change d/debhelper/dh_apache2 to dh_apache2.in.
+    + Drop paragraph about inexistant itk patches.
+
+  [ Stefan Fritsch ]
+  * Remove all the transitional packages:
+    apache2-mpm-worker, apache2-mpm-prefork, apache2-mpm-event,
+    apache2-mpm-itk, apache2.2-bin, apache2.2-common,
+    libapache2-mod-proxy-html, libapache2-mod-macro, apache2-suexec
+    This also fixes the dependency problems caused by a recent version
+    of debhelper (see #784803).
+
+ -- Stefan Fritsch <sf@debian.org>  Mon, 11 May 2015 22:07:26 +0200
+
+apache2 (2.4.12-1) unstable; urgency=medium
+
+  * New upstream version
+  * Add a patch for CVE-2015-0253 which was introduced in 2.4.11 which
+    was never shipped in Debian.
+  * Ship mod_proxy_html's default config file. Closes: #782022
+  * Fix typo in dh_apache2 man page. Closes: #781032
+
+ -- Stefan Fritsch <sf@debian.org>  Tue, 28 Apr 2015 22:54:41 +0200
+
+apache2 (2.4.10-11) unstable; urgency=medium
+
+  * core: Fix -D[efined] or <Define>[d] variables lifetime accross restarts.
+    This could cause all kinds of strange behavior. PR 56008. PR 57328
+  * mpm_event: Fix process deadlock when shutting down a worker. PR 56960
+  * mpm_event: Fix crashes due to various race conditions. Closes: #779078
 
   [ Jean-Michel Vourgère ]
   * Updated upstream keyring used to check source authenticity.
@@ -823,7 +1336,7 @@ apache2 (2.4.4-3) experimental; urgency=low
     apache2 doc-dir when upgrading (Closes: #707795)
 
   [ Stefan Fritsch ]
-  * Backport various fixes from upstream svn branch '2.4.x'. 
+  * Backport various fixes from upstream svn branch '2.4.x'.
   * Remove paragraph about MaxMemFree in README.Debian. The issue should be
     fixed in 2.4.
   * Enable mod_authn_core when upgrading from wheezy (Closes: #702866)
@@ -1221,11 +1734,11 @@ apache2 (2.2.22-1) unstable; urgency=low
        message.
    * Move httxt2dbm to apache2-utils
    * Adjust debian/control to point to new git repository.
- 
+
    [ Arno Töll ]
    * Fix "typo in /etc/apache2/apache2.conf" (Closes: #653801)
 
- -- Stefan Fritsch <sf@debian.org>  Wed, 01 Feb 2012 21:49:04 +0100 
+ -- Stefan Fritsch <sf@debian.org>  Wed, 01 Feb 2012 21:49:04 +0100
 
 apache2 (2.2.21-5) unstable; urgency=low
 
@@ -1286,7 +1799,7 @@ apache2 (2.2.21-3) unstable; urgency=medium
     reverse proxy configurations. (Similar to CVE-2011-3368, but different
     attack vector.)
   * Fix CVE-2011-3607: Integer overflow in ap_pregsub could cause segfault
-    via malicious .htaccess. 
+    via malicious .htaccess.
   * Mention dpkg-statoverride for changing permissions of suexec. LP: #897120
   * Fix broken link in docs. Closes: #650528
   * Remove Tollef Fog Heen, Thom May, and Peter Samuelson from uploaders.
@@ -1325,7 +1838,7 @@ apache2 (2.2.19-2) unstable; urgency=high
 
   * Fix CVE-2011-3192: DoS by high memory usage for a large number of
     overlapping ranges.
-  * Reduce default KeepAliveTimeout from 15 to 5 seconds. 
+  * Reduce default KeepAliveTimeout from 15 to 5 seconds.
   * Use "linux-any" in build-deps. Closes: #634709
   * Improve reload message of a2enmod. Closes: #639291
   * Improve description of the prefork MPM. Closes: #634242
@@ -1668,7 +2181,7 @@ apache2 (2.2.14-1) unstable; urgency=low
 apache2 (2.2.13-2) unstable; urgency=high
 
   * mod_proxy_ftp security fixes (closes: #545951):
-    - DoS by malicious ftp server (CVE-2009-3094) 
+    - DoS by malicious ftp server (CVE-2009-3094)
     - missing input sanitization: a user could execute arbitrary ftp commands
       on the backend ftp server (CVE-2009-3095)
   * Add entries to NEWS.Debian and README.Debian about Apache being stricter
@@ -1745,7 +2258,7 @@ apache2 (2.2.11-7) unstable; urgency=low
   * Add symlinks for the debug info to the mpm packages.
   * Be slightly more informative in the default index.html without pointing
     to Apache or Debian (LP: #89364)
-  * Remove dependency on net-tools, which is no longer necessary 
+  * Remove dependency on net-tools, which is no longer necessary
     (closes: #535849)
   * Bump Standards-Version (no changes)
 
@@ -2073,14 +2586,14 @@ apache2 (2.2.8-2) unstable; urgency=low
   * Add missing ${APACHE_ARGUMENTS} to *) case in apache2ctl.
   * In upgrades from etch, replace /etc/apache2/default without asking also in
     the NO_START=1 case, in order to not break piuparts (closes: #466367).
-  * Print file name where "Useless use of AllowOverride" occured.
+  * Print file name where "Useless use of AllowOverride" occurred.
     (Closes: #410334)
   * Make bugreport script source /etc/apache2/envvars before calling apache2.
   * Add note about MSIE SSL workaround to README.Debian.
   * Don't ship empty /var/www/apache2-default in apache2-doc.
     (Closes: #469145)
   * mod_autoindex: Use the bomb icon only for the name 'core', not for
-    '*core'. (Closes: #467480) 
+    '*core'. (Closes: #467480)
   * Include module name in a2enmod error messages (closes: #461341).
 
  -- Stefan Fritsch <sf@debian.org>  Sat, 08 Mar 2008 12:28:14 +0100
@@ -2398,7 +2911,7 @@ apache2 (2.2.3-3) unstable; urgency=medium
   * Clean up CPPFLAGS and CFLAGS, including making all of CFLAGS a
     superset of CPPFLAGS.  Also make sure to include -I switches with
     absolute paths so the apache headers are useful.
-  * Warn when not starting HTTPD due to missing apache binary.  
+  * Warn when not starting HTTPD due to missing apache binary.
     Closes: #384128
   * Provide sample disk and memory cache configurations.  Closes: #278564
   * Provide dir.conf.   Closes: #392356
@@ -2488,7 +3001,7 @@ apache2 (2.2.3-1~exp.r170) experimental; urgency=low
     - Fixes LFS support. Closes: #341460, #285337, #241223
     - Fixes off-by-one error in mod_rewrite ldap schema handling
       (CVE-2006-3747)
-    - Fixes XSS issue in mod_imap/mod_imagemap (CVE-2005-3352).  
+    - Fixes XSS issue in mod_imap/mod_imagemap (CVE-2005-3352).
       Closes: #343467.
     - mpm_perchild no longer exists, so closing bugs for perchild.
       Closes: #236193, #238586
@@ -2498,7 +3011,7 @@ apache2 (2.2.3-1~exp.r170) experimental; urgency=low
     package.
   * Mangle the Debian layout to be more FHS compatible
   * No longer build-conflict with libgdbm-dev
-  * Use external PCRE  
+  * Use external PCRE
   * Make apache2-utils stop providing apache2-utils.  Also make it stop
     conflicting with itself.
   * Rename default site from default-site to just default.
@@ -2506,7 +3019,7 @@ apache2 (2.2.3-1~exp.r170) experimental; urgency=low
     authz_host, autoindex, dir, env, negotiation, setenvif, status.
   * Mod imap has been renamed to imagemap, ditto for auth_ldap =>
     authnz_ldap.  Cope with that in postinst.
-  * Stop globbing in apache2.conf.  
+  * Stop globbing in apache2.conf.
     Closes: #337817, #340955, #348189, #379015, #368497
   * Don't install CHANGES into the apache2 package.  It's just a
     metapackage.
@@ -3005,7 +3518,7 @@ apache2 (2.0.50-6) unstable; urgency=high
  -- Thom May <thom@debian.org>  Tue, 27 Jul 2004 10:31:46 +0100
 
 apache2 (2.0.50-5) unstable; urgency=high
-  
+
   * Add necessary suexec information to central build
     (Closes: #258453, #258772)
   * Exclude lines starting with a space from removal from the env
@@ -3064,8 +3577,8 @@ apache2 (2.0.50-1) unstable; urgency=medium
 apache2 (2.0.49-1) unstable; urgency=high
 
   * New Upstream release. (Closes: #240100)
-  * Add missing $ to init-script (closes: #240301) 
-  * Provides: httpd-cgi in reference to #117916 
+  * Add missing $ to init-script (closes: #240301)
+  * Provides: httpd-cgi in reference to #117916
 
  -- Thom May <thom@debian.org>  Sun,  4 Apr 2004 11:32:20 +0100
 
@@ -3124,7 +3637,7 @@ apache2 (2.0.48-4) unstable; urgency=medium
 
 apache2 (2.0.48-3) unstable; urgency=medium
 
-  * Grmmp. stuffed the upload  
+  * Grmmp. stuffed the upload
 
  -- Thom May <thom@debian.org>  Wed, 12 Nov 2003 18:18:54 +0000
 
@@ -3133,7 +3646,7 @@ apache2 (2.0.48-2) unstable; urgency=high
   * (Thom May)
     - Fix locking busted by NPTL (Closes: #220299)
     - Fix IPv6 weirdness (thanks to Jordi/Fabio) (Closes: #220334)
-    
+
  -- Thom May <thom@debian.org>  Wed, 12 Nov 2003 13:04:04 +0000
 
 apache2 (2.0.48-1) unstable; urgency=low
@@ -3147,7 +3660,7 @@ apache2 (2.0.48-1) unstable; urgency=low
     - Take preventative action against SCTP
     - Add apache2-prefork-dev to work around PHP.
     - Shut Oskuro up - startup time changed to 91 (Closes: #208569)
-    - Install README.etc into apache2-common's doc dir 
+    - Install README.etc into apache2-common's doc dir
       (Closes: #208751,#177941)
     - Auth_LDAP loads mod_ldap as well. (Closes: #217795)
     - Make sure /var/lock/apache2 has correct ownership (Closes: #206375)
@@ -3161,7 +3674,7 @@ apache2 (2.0.48-1) unstable; urgency=low
 
 apache2 (2.0.47-2) unstable; urgency=low
 
-  * Move dav.conf to dav_fs.conf (Closes: #201530) 
+  * Move dav.conf to dav_fs.conf (Closes: #201530)
   * Fix the manual, and only ship it once. (Closes: #201648)
   * Enable SymLinksIfOwnerMatch for cgi-bin (Closes: #200829)
 
@@ -3170,15 +3683,15 @@ apache2 (2.0.47-2) unstable; urgency=low
 apache2 (2.0.47-1) unstable; urgency=high
 
   * New Upstream Release. Bunch of security fixes (Closes: #200593)
-  * Add asis.load, auth_ldap.load, cache.load, dav_fs.load, disk_cache.load, 
-    ext_filter.load, file_cache.load, imap.load, ldap.load, mem_cache.load, 
+  * Add asis.load, auth_ldap.load, cache.load, dav_fs.load, disk_cache.load,
+    ext_filter.load, file_cache.load, imap.load, ldap.load, mem_cache.load,
     include.load (Closes: #197152, #198389, #196115)
     Note that dav_fs was previously loaded by dav.load, and is now broken out
     into a seperate file.
-  * Patch apxs2 to use datadir rather than prefix for top_builddir. 
+  * Patch apxs2 to use datadir rather than prefix for top_builddir.
     (Closes: #198607)
   * Kill a couple of pointless conflicts. (Closes: #197242)
-  * Change suexec docroot from /var/www/apache2-default to /var/www 
+  * Change suexec docroot from /var/www/apache2-default to /var/www
     (Closes: #198981)
   * Make sure we use Expat rather than xmltok (Closes: #197020)
   * Ship find_ap{r,u}.m4 (per Nuutti Kotivuori)
@@ -3187,7 +3700,7 @@ apache2 (2.0.47-1) unstable; urgency=high
 
 apache2 (2.0.46-3) unstable; urgency=low
 
-  * Clean up the proxy config although it's not enabled by default. 
+  * Clean up the proxy config although it's not enabled by default.
     (Closes: #195187)
   * Remove all traces of gdbm. (Closes: #196231)
   * Re-enable ldap support (Closes: #190092)
@@ -3210,7 +3723,7 @@ apache2 (2.0.46-1) unstable; urgency=critical
   * Oh the pain.
   * Move ScriptSocket to /var/run/apache2 (Closes: #188655)
   * Restore mod_include (Closes: #188483)
-  * Move the virtual hosts config to the end of the config file 
+  * Move the virtual hosts config to the end of the config file
     (Closes:  #188584)
   * Add Mod-Ext-Filter (Closes: #182770)
   * Add actions.load (Closes: #178087, #179571, #181527)
@@ -3244,7 +3757,7 @@ apache2 (2.0.45-1) unstable; urgency=critical
 
   * New upstream release (Closes: #187502)
   * Fix korean language type, thanks to Donggyoo Lee
-    <donggyoo@kmaritime.ac.kr> (Closes: #179542) 
+    <donggyoo@kmaritime.ac.kr> (Closes: #179542)
   * Add explicit dependency to libsasl-dev (Closes: #179674)
   * Remove ErrorLog from ssl.conf
   * forward ported patches courtesy of Roberto Moreda <moreda@debian.org>; big
@@ -3277,7 +3790,7 @@ apache2 (2.0.44-4) unstable; urgency=low
     (Closes: #177876, #177795)
   * Restore symlink for libapr.so.0 (Closes: #177792)
   * Apache2-common must depend on libssl0.9.7 (Closes: #177845)
-  * Rename ssl-certificate so we don't conflict with apache-ssl 
+  * Rename ssl-certificate so we don't conflict with apache-ssl
     (Closes: #177881)
   * Only create the certificate if it's not there already (Duh!)
 
@@ -3286,14 +3799,14 @@ apache2 (2.0.44-4) unstable; urgency=low
 apache2 (2.0.44-3) unstable; urgency=low
 
   * The "This one goes out wearing a brown paper bag" release
-  * Fix apxs to correctly return the header locations (Closes: #177729) 
+  * Fix apxs to correctly return the header locations (Closes: #177729)
 
  -- Thom May <thom@debian.org>  Tue, 21 Jan 2003 16:35:14 +0000
 
 apache2 (2.0.44-2) unstable; urgency=low
 
   * The "Ooops, I did it again" release
-  * Fixup of sections and priorities. 
+  * Fixup of sections and priorities.
   * Add dependency of libldap2-dev to libapr0-dev
   * Correct dependencies to be db4.1 not db4.0
 
@@ -3327,11 +3840,11 @@ apache2 (2.0.44-1) unstable; urgency=low
   * Fix a couple of typos in debian/ssl-certificate, with thanks to Nuutti
     Kotivuori
   * Change to restart rather than reload in logrotate, to work round a nasty
-    PHP bug (PHP has bugs? *gasp* I thought it was perfect!) with thanks to 
+    PHP bug (PHP has bugs? *gasp* I thought it was perfect!) with thanks to
     Adam Conrad for the suggestion
   * Clarify what needs to be installed for a working system (Thanks to Sean
     Abrahams)
-  * Support debug DEB_BUILD_OPTIONS setting, thanks to Karl Hegbloom 
+  * Support debug DEB_BUILD_OPTIONS setting, thanks to Karl Hegbloom
     (Closes: #174221)
   * Add -pipe to the CFLAGS, thanks to Karl Hegbloom
   * Force apr-util to build against db4
@@ -3406,8 +3919,8 @@ apache2 (2.0.40-1) unstable; urgency=low
     apache2ctl.
   * Check for the existence of apache2 and exit if it's not there (Closes: #156640)
   * Nuke ssl_scache on startup (Closes: #157445)
-  * patch apxs to not need an mpm installed. Correct dependencies for -dev. 
-    Stop messing around with ap_config_auto.h. 
+  * patch apxs to not need an mpm installed. Correct dependencies for -dev.
+    Stop messing around with ap_config_auto.h.
     This hopefully resolves James Troup's objections to apache2. (Closes: #157895)
   * Add code to check for a 2.2 based kernel and set up the Scoreboard
     accordingly. (Closes: #156899)
@@ -3432,11 +3945,11 @@ apache2 (2.0.39+cvs.1028741220-1) unstable; urgency=low
   * Added a conf.d directory for random conf snippets
   * Ensure that the /manual/ alias is setup by the correct package (Closes: #155179)
   * Ensure that DAVLockDB is created in the right directory (Closes: #155096)
-  * Now Building in a pbuilder chroot environment. 
+  * Now Building in a pbuilder chroot environment.
   * Perchild is now pseudo working (Closes: #154148)
   * Cumulatively (note to Lazarus Long: this means all the things in this
     changelog added together) (Closes: #155297, #155307, #155317, #155717, #155363, #155719, #155801)
-  * Note that preceeding changelog entry may not be parseable by strict grammar 
+  * Note that preceeding changelog entry may not be parseable by strict grammar
     checks. Thanks to Jamie Wilkinson for pointing this out.
   * Turn MultiViews back on for the default site (Closes: #155450)
     checks. Thanks to Jamie Wilkinson for pointing this out.
@@ -3450,7 +3963,7 @@ apache2 (2.0.39+cvs.1028741220-1) unstable; urgency=low
   * Removed 'ServerName localhost' line (Closes: #155359)
   * Placed apr-util headers in correct package
   * Ensured that the init.d script restarts apache properly
-  
+
  -- Thom May <thom@debian.org>  Tue, 30 Jul 2002 22:37:52 +0100
 
 apache2 (2.0.39+cvs.1027964860-1) unstable; urgency=low
@@ -3466,7 +3979,7 @@ apache2 (2.0.39+cvs.1027964860-1) unstable; urgency=low
   * place the manual in the right place, thanks to Md  (Closes: #151766)
   * David Kimdon
     - add build depends on zlib1g-dev (Closes: #151286)
-    
+
  -- Thom May <thom@debian.org>  Fri, 29 Jul 2002 19:12:56 +0100
 
 apache2 (2.0.39-1) unstable; urgency=low
@@ -3476,7 +3989,7 @@ apache2 (2.0.39-1) unstable; urgency=low
   * David Kimdon
     - fix path for envvars in apxs2
     - use generalized directives in ssl.conf ( SSLLog -> ErrorLog,
-      SSLLogLevel -> LogLevel ), this allows server to load ssl 
+      SSLLogLevel -> LogLevel ), this allows server to load ssl
       module
 
  -- Thom May <thom@debian.org>  Fri, 14 Jun 2002 17:29:59 -0700
@@ -3529,7 +4042,7 @@ apache2 (2.0.36-1) unstable; urgency=low
     that didn't exist. The person who suggested it is lost in the mists of my
     mailbox. If it was you, please email me!
   * debian/vhost-base/add.d/apache2 - apply patch from "Omniflux"
-    <josh@nebonet.com> to fix some brainos 
+    <josh@nebonet.com> to fix some brainos
 
  -- Thom May <thom@debian.org>  Mon,  6 May 2002 16:39:18 +0100
 
@@ -3542,9 +4055,9 @@ apache2 (2.0.35+cvs.20020420-1) unstable; urgency=low
   * Attempting to build with multiple MPMs, so speedfreaks can have a threaded
     MPM. (Available MPMs are: prefork, worker, threadpool, and
     leader/follower).
-  * Now sedding ap{r,u}-config in the install target. 
+  * Now sedding ap{r,u}-config in the install target.
   * vpath build evilness suggested by Andrew Suffield and others. I hate them
-    all. :) 
+    all. :)
 
  -- Thom May <thom@debian.org>  Sat, 20 Apr 2002 17:04:46 +0100
 
@@ -3599,7 +4112,7 @@ apache2 (2.0.33-1) unstable; urgency=low
  -- Thom May <thom@debian.org>  Sat,  9 Mar 2002 23:33:09 +0000
 
 apache2 (2.0.32+cvs.20020228-1) unstable; urgency=low
-  
+
   * The "bathwater, no baby" release.
   * Submitted patches upstream like crazy.
   * Tossed the insanely bogus apachectl patch
@@ -3611,7 +4124,7 @@ apache2 (2.0.32+cvs.20020228-1) unstable; urgency=low
 
 apache2 (2.0.32-1) unstable; urgency=low
 
-  * The "Throwing stuff away like mad and seeing if it still builds" release. 
+  * The "Throwing stuff away like mad and seeing if it still builds" release.
   * Ditched apache2-modules* on the principle of least surprise - the deb
     layouts now pretty closely follow apache.
   * Trying to triage away patches that have been fixed upstream.
@@ -3748,7 +4261,7 @@ apache2 (2.0.28-1) unstable; urgency=low
 
 apache2 (2.0.26+cvs.20011028-2) unstable; urgency=low
 
-  * Added vhost-base support. 
+  * Added vhost-base support.
     - Removed Debconfage and moved all the templates to
       debian/vhost-base/templates.d (/etc/vhosts/templates.d).
       Removed apache2.postinst and apache2.config.
@@ -3763,7 +4276,7 @@ apache2 (2.0.26+cvs.20011028-1) unstable; urgency=low
   * Resync with HEAD (another coming to fix segfaults, but no net connectivity
     at the moment - 4-11-2001, 2:12pm. Grrr).
   * New patches:
-    - 011_mod_autoindex-symlink: make icons for symlinks to files and dirs 
+    - 011_mod_autoindex-symlink: make icons for symlinks to files and dirs
                                  special cases.
       + Touches modules/generators/mod_autoindex.c
       + Special cases: ^^SYMDIR^^ and ^^SYMLINK^^.
@@ -3787,9 +4300,9 @@ apache2 (2.0.26+cvs.20011028-1) unstable; urgency=low
     debian/patches/004b_debian_layout:
     - Add a new alias /cgi-pub/ to /usr/lib/cgi-bin. Packages should put
       scripts here.
-  * debian/control: 
+  * debian/control:
     - changed the Suggests: on apache2-doc to a Recommends:
-      + otherwise /manual/ will be a broken alias, as it points to 
+      + otherwise /manual/ will be a broken alias, as it points to
         /usr/share/doc/apache2-doc/manual.
     - changed libapr-dev to Architecture: all (from Arch: any) - whoops.
   * Added support for multiple ports on the one virtual host. At the moment
@@ -3816,7 +4329,7 @@ apache2 (2.0.26+cvs.20011028-1) unstable; urgency=low
 
 apache2 (2.0.26+cvs.20011023-1) unstable; urgency=low
 
-  * Damnit, resync with HEAD (2_0_26 was unstable). 
+  * Damnit, resync with HEAD (2_0_26 was unstable).
 
  -- Daniel Stone <daniel@sfarc.net>  Tue, 23 Oct 2001 18:36:42 +1000
 
@@ -3878,11 +4391,11 @@ apache2 (2.0.25+cvs.20010923-1) unstable; urgency=low
 
 apache2 (2.0.25+cvs.20010908-1) unstable; urgency=low
 
-  * Synched everything with CVS; it works now. 
+  * Synched everything with CVS; it works now.
   * We now build with ./buildconf due to the above; redo all the patches
     against configure.in. I swear this will be the last change, and that I'll
     test it.
-  * Removed php4 and modperl-2.0 from the tree. I should keep the changelogs 
+  * Removed php4 and modperl-2.0 from the tree. I should keep the changelogs
     internal, as this is now getting not only very silly, but very embarassing.
   * I corrected myself in the ITP that it was licensed under the Apache
     Software License, not GPLed, but forgot to do that in debian/copyright.
@@ -3905,12 +4418,12 @@ apache2 (2.0.24-2) unstable; urgency=low
   * The "Farewell Buddha" Release.
   * Or, alternatively: The "Darren Milburn is an Idiot for Inciting Crowds"
     Release.
-  * Yes, it's the height of evil, I know: modperl-2.0 goes into the source 
+  * Yes, it's the height of evil, I know: modperl-2.0 goes into the source
     tree. (from CVS).
     Separate tarballs, thanks to DBS, but still, yeah.
   * Ditto php4.
   * Still no Thom's laptop; hence no merges, and I'm not going to duplicate
-    work. 
+    work.
 
  -- Daniel Stone <daniel@sfarc.net>  Sun,  2 Sep 2001 21:50:59 +1000
 
@@ -3918,12 +4431,12 @@ apache2 (2.0.24-1) unstable; urgency=low
 
   * New upstream version.
   * Use prefork, not threaded, MPM. (threaded is currently broken).
-  * Update example httpd.conf for mod_ssl and have lines for all the modules. 
+  * Update example httpd.conf for mod_ssl and have lines for all the modules.
   * Build-Depends, all the Build-Depends!
   * Update maintainer email address (thanks Joey).
   * Turns out using buildconf was what broke modules. I swear I won't do
     anything like that again. Promise! (thanks Thom for pointing this out)
-  * Implied by the above, rediff all patches against configure, not 
+  * Implied by the above, rediff all patches against configure, not
     configure.in.
   * Also, don't copy configure.{guess,sub} over anymore, because we don't need
     them.
@@ -3935,7 +4448,7 @@ apache2 (2.0.24-1) unstable; urgency=low
 
 apache2 (2.0.23-2) unstable; urgency=low
   * SSL finally works, and beat instructions on how to get it going out
-    of someone on new-httpd. Moved SSL stuff to apache2-modules. 
+    of someone on new-httpd. Moved SSL stuff to apache2-modules.
   * Disabled TLS, because it's unstable and unnecessary.
   * Merge from Thom May's tree:
       005b_debian_layout - The Debian layout for stuff
@@ -3965,7 +4478,7 @@ apache2 (2.0.23-1) unstable; urgency=low
   * New patches:
     004_conffile_in_etc_apache2 - Make an ugly init.d hack unnecessary.
     005_perl_in_usr_bin - Make example CGI scripts use /usr/bin/perl.
-  * Fix mime_magic stuff by copying magic to /etc/apache2. 
+  * Fix mime_magic stuff by copying magic to /etc/apache2.
   * Remove debian/patches/003_cgisock_in_var_log_apache2, instead found a new
     conffile directive, put this into the default distributed conffile.
 
@@ -3974,7 +4487,7 @@ apache2 (2.0.23-1) unstable; urgency=low
 apache2 (2.0.22-2) unstable; urgency=low
 
   * Aargh, I'm an idiot. Fix a bug in mod_cgid.c that had a hardcoded path.
-    That's now debian/pactches/003*. 
+    That's now debian/pactches/003*.
 
  -- Daniel Stone <daniel@sfarc.net>  Sat, 11 Aug 2001 08:04:13 +1000
 
@@ -3989,7 +4502,7 @@ apache2 (2.0.22-1) unstable; urgency=low
 
 apache2 (2.0.20-2) unstable; urgency=low
 
-  * New SSL fixes from new-httpd. Apparently, this (generally) works. 
+  * New SSL fixes from new-httpd. Apparently, this (generally) works.
 
  -- Daniel Stone <daniels@yakko.doogie.org>  Fri, 13 Jul 2001 07:57:18 -0500
 

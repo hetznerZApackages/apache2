@@ -7,7 +7,9 @@ reproducible_builds.diff
 
 # This patch is applied manually
 #suexec-custom.patch
+spelling-errors.patch
 
+<<<<<<< HEAD
 fix_logresolve_segfault.patch
 mpm_event_restart_segfault_PR60487.patch
 
@@ -32,3 +34,27 @@ CVE-2018-1333-mod_http2_DoS.diff
 CVE-2018-11763-mod_http2_DoS-SETTINGS.diff
 xneelo_relax_ownership_enforcement.diff
 xneelo_symlinkprotection.diff
+=======
+CVE-2019-0196.patch
+CVE-2019-0211.patch
+CVE-2019-0215.patch
+CVE-2019-0217.patch
+CVE-2019-0220-1.patch
+CVE-2019-0220-2.patch
+CVE-2019-0220-3.patch
+CVE-2019-0197.patch
+CVE-2019-10092.patch
+CVE-2019-10097.patch
+CVE-2019-10098.patch
+import-http2-module-from-2.4.46.patch
+CVE-2020-11984.patch
+CVE-2020-1927.patch
+CVE-2020-1934.patch
+CVE-2021-31618.patch
+CVE-2021-30641.patch
+CVE-2021-26691.patch
+CVE-2021-26690.patch
+CVE-2020-35452.patch
+hetz_relax_ownership_enforcement.diff
+hetz_symlinkprotection.diff
+>>>>>>> stretch-hetz

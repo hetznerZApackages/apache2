@@ -1,9 +1,11 @@
 Description: the actual patch to make suexec-custom read a config file
 Forwarded: not-needed
 Author: Stefan Fritsch <sf@debian.org>
-Last-Update: 2014-05-29
---- apache2.orig/support/suexec-custom.c
-+++ apache2/support/suexec-custom.c
+Last-Update: 2018-07-17
+diff --git a/support/suexec-custom.c b/support/suexec-custom.c
+index f3811a97..30bb644b 100644
+--- a/support/suexec-custom.c
++++ b/support/suexec-custom.c
 @@ -29,6 +29,7 @@
   *
   *
@@ -20,7 +22,7 @@ Last-Update: 2014-05-29
  #if APR_HAVE_UNISTD_H
  #include <unistd.h>
  #endif
-@@ -197,6 +199,26 @@ static void log_no_err(const char *fmt,.
+@@ -222,6 +224,26 @@ static void log_no_err(const char *fmt,...)
      return;
  }
  
@@ -47,7 +49,7 @@ Last-Update: 2014-05-29
  static void clean_env(void)
  {
      char pathbuf[512];
-@@ -263,6 +285,11 @@ int main(int argc, char *argv[])
+@@ -288,6 +310,11 @@ int main(int argc, char *argv[])
      struct stat dir_info;   /* directory info holder     */
      struct stat prg_info;   /* program info holder       */
      int cwdh;               /* handle to cwd             */
@@ -59,7 +61,7 @@ Last-Update: 2014-05-29
  
      /*
       * Start with a "clean" environment
-@@ -292,15 +319,10 @@ int main(int argc, char *argv[])
+@@ -317,15 +344,10 @@ int main(int argc, char *argv[])
              || (! strcmp(AP_HTTPD_USER, pw->pw_name)))
  #endif /* _OSD_POSIX */
          ) {
@@ -73,20 +75,20 @@ Last-Update: 2014-05-29
 -#ifdef AP_HTTPD_USER
 -        fprintf(stderr, " -D AP_HTTPD_USER=\"%s\"\n", AP_HTTPD_USER);
 -#endif
- #ifdef AP_LOG_EXEC
-         fprintf(stderr, " -D AP_LOG_EXEC=\"%s\"\n", AP_LOG_EXEC);
+ #if defined(AP_LOG_SYSLOG)
+         fprintf(stderr, " -D AP_LOG_SYSLOG\n");
+ #elif defined(AP_LOG_EXEC)
+@@ -339,9 +361,6 @@ int main(int argc, char *argv[])
  #endif
-@@ -313,9 +335,6 @@ int main(int argc, char *argv[])
  #ifdef AP_UID_MIN
          fprintf(stderr, " -D AP_UID_MIN=%d\n", AP_UID_MIN);
- #endif
+-#endif
 -#ifdef AP_USERDIR_SUFFIX
 -        fprintf(stderr, " -D AP_USERDIR_SUFFIX=\"%s\"\n", AP_USERDIR_SUFFIX);
--#endif
+ #endif
          exit(0);
      }
-     /*
-@@ -330,23 +349,6 @@ int main(int argc, char *argv[])
+@@ -357,23 +376,6 @@ int main(int argc, char *argv[])
      target_gname = argv[2];
      cmd = argv[3];
  
@@ -110,10 +112,11 @@ Last-Update: 2014-05-29
  
      /*
       * Check for a leading '/' (absolute path) in the command to be executed,
-@@ -371,6 +373,59 @@ int main(int argc, char *argv[])
+@@ -397,6 +399,59 @@ int main(int argc, char *argv[])
+         userdir = 1;
      }
  
-     /*
++    /*
 +     * Check to see if the user running this program
 +     * is the user allowed to do so as defined in
 +     * SUEXEC_CONFIG_DIR/username
@@ -166,11 +169,10 @@ Last-Update: 2014-05-29
 +            }
 +    }
 +
-+    /*
+     /*
       * Error out if the target username is invalid.
       */
-     if (strspn(target_uname, "1234567890") != strlen(target_uname)) {
-@@ -511,7 +566,7 @@ int main(int argc, char *argv[])
+@@ -538,7 +593,7 @@ int main(int argc, char *argv[])
  
      if (userdir) {
          if (((chdir(target_homedir)) != 0) ||
@@ -179,7 +181,7 @@ Last-Update: 2014-05-29
              ((getcwd(dwd, AP_MAXPATH)) == NULL) ||
              ((fchdir(cwdh)) != 0)) {
              log_err("cannot get docroot information (%s)\n", target_homedir);
-@@ -519,7 +574,7 @@ int main(int argc, char *argv[])
+@@ -546,7 +601,7 @@ int main(int argc, char *argv[])
          }
      }
      else {

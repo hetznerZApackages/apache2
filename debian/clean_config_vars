@@ -20,7 +20,9 @@ sub clean_and_deduplicate
 	{
 		#print("FLAG: $flag\n");
 		$return_flags .= "$flag " unless
-			$flag =~ m/PLATFORM/;
+			$flag =~ m/PLATFORM/ ||
+			$flag =~ m/-DBUILD_DATETIME/ ||
+			$flag =~ m/-fdebug-prefix-map/;
 	}
 	return $return_flags;
 }

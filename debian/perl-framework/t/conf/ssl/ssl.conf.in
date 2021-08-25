@@ -28,6 +28,8 @@
     #SSLRandomSeed connect file:/dev/random  512
     #SSLRandomSeed connect file:/dev/urandom 512
 
+    SSLProtocol @sslproto@
+
     <IfModule mod_log_config.c>
         LogFormat "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %>s %b" ssl
         CustomLog logs/ssl_request_log ssl
@@ -235,6 +237,28 @@
        <Location />
            SSLVerifyClient require
        </Location>
+    </VirtualHost>
+
+    # For t/ssl/ocsp.t --
+    <Location /modules/ssl/ocsp>
+        SetEnv SSL_CA_ROOT @sslca@/asf
+    </Location>
+    Alias /modules/ssl/ocsp            @DocumentRoot@/modules/cgi/ocsp.pl
+
+    <VirtualHost ssl_ocsp>
+       SSLEngine on
+
+     # SSLOCSPResponderCertificateFile is available from 2.4.26
+     <IfVersion >= 2.4.26>
+       SSLVerifyClient on
+
+       SSLOCSPEnable on
+       SSLOCSPDefaultResponder http://@SERVERNAME@:@PORT@/modules/ssl/ocsp
+       SSLOCSPResponderCertificateFile @SSLCA@/asf/certs/server.crt
+
+       # Ignore CRL check results
+       SSLCARevocationCheck none
+     </IfVersion>
     </VirtualHost>
 
     # For t/ssl/pr43738.t:
