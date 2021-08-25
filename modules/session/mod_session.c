@@ -126,20 +126,23 @@ static apr_status_t ap_session_load(request_rec * r, session_rec ** z)
 
     /* found a session that hasn't expired? */
     now = apr_time_now();
+
     if (zz) {
-        if (zz->expiry && zz->expiry < now) {
+        /* load the session attibutes */
+        rv = ap_run_session_decode(r, zz);
+ 
+        /* having a session we cannot decode is just as good as having
+           none at all */
+       if (OK != rv) {
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01817)
+                    "error while decoding the session, "
+                    "session not loaded: %s", r->uri);
             zz = NULL;
         }
-        else {
-            /* having a session we cannot decode is just as good as having
-               none at all */
-            rv = ap_run_session_decode(r, zz);
-            if (OK != rv) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01817)
-                              "error while decoding the session, "
-                              "session not loaded: %s", r->uri);
-                zz = NULL;
-            }
+
+       /* invalidate session if session is expired */
+        if (zz && zz->expiry && zz->expiry < now) {
+            zz = NULL;
         }
     }
 
@@ -510,12 +513,15 @@ static int session_fixups(request_rec * r)
      */
     ap_session_load(r, &z);
 
-    if (z && conf->env) {
-        session_identity_encode(r, z);
-        if (z->encoded) {
-            apr_table_set(r->subprocess_env, HTTP_SESSION, z->encoded);
-            z->encoded = NULL;
+    if (conf->env) {
+        if (z) {
+            session_identity_encode(r, z);
+            if (z->encoded) {
+                apr_table_set(r->subprocess_env, HTTP_SESSION, z->encoded);
+                z->encoded = NULL;
+            }
         }
+        apr_table_unset(r->headers_in, "Session");
     }
 
     return OK;

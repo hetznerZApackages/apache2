@@ -823,6 +823,7 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
     apr_pool_t *p;
     apr_bucket *e;
     apr_table_t *headers;
+    const char *query;
 
     conf = (cache_server_conf *) ap_get_module_config(r->server->module_config,
                                                       &cache_module);
@@ -926,6 +927,8 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
             return ap_pass_brigade(f, in);
         }
     }
+
+    query = cache_use_early_url(r) ? r->parsed_uri.query : r->args;
 
     /* read expiry date; if a bad date, then leave it so the client can
      * read it
@@ -1037,8 +1040,11 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
     if (reason) {
         /* noop */
     }
-    else if (exps != NULL && exp == APR_DATE_BAD) {
-        /* if a broken Expires header is present, don't cache it */
+    else if (!control.s_maxage && !control.max_age && !dconf->store_expired
+             && exps != NULL && exp == APR_DATE_BAD) {
+        /* if a broken Expires header is present, don't cache it
+         * Unless CC: s-maxage or max-age is present
+         */
         reason = apr_pstrcat(p, "Broken expires header: ", exps, NULL);
     }
     else if (!control.s_maxage && !control.max_age
@@ -1057,7 +1063,7 @@ static apr_status_t cache_save_filter(ap_filter_t *f, apr_bucket_brigade *in)
         reason
                 = "s-maxage or max-age zero and no Last-Modified or Etag; not cacheable";
     }
-    else if (!conf->ignorequerystring && r->parsed_uri.query && exps == NULL
+    else if (!conf->ignorequerystring && query && exps == NULL
             && !control.max_age && !control.s_maxage) {
         /* if a query string is present but no explicit expiration time,
          * don't cache it (RFC 2616/13.9 & 13.2.1)

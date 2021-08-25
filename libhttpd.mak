@@ -37,11 +37,11 @@ OutDir=.\Release
 
 !IF "$(RECURSE)" == "0" 
 
-ALL : ".\include\mod_dav.h" "$(OUTDIR)\libhttpd.dll" "$(DS_POSTBUILD_DEP)"
+ALL : ".\include\mod_dav.h" ".\include\mod_watchdog.h" "$(OUTDIR)\libhttpd.dll" "$(DS_POSTBUILD_DEP)"
 
 !ELSE 
 
-ALL : "gen_test_char - Win32 Release" "libaprutil - Win32 Release" "libapriconv - Win32 Release" "libapr - Win32 Release" ".\include\mod_dav.h" "$(OUTDIR)\libhttpd.dll" "$(DS_POSTBUILD_DEP)"
+ALL : "gen_test_char - Win32 Release" "libaprutil - Win32 Release" "libapriconv - Win32 Release" "libapr - Win32 Release" ".\include\mod_dav.h" ".\include\mod_watchdog.h" "$(OUTDIR)\libhttpd.dll" "$(DS_POSTBUILD_DEP)"
 
 !ENDIF 
 
@@ -85,6 +85,7 @@ CLEAN :
 	-@erase "$(INTDIR)\util.obj"
 	-@erase "$(INTDIR)\util_cfgtree.obj"
 	-@erase "$(INTDIR)\util_cookies.obj"
+	-@erase "$(INTDIR)\util_debug.obj"
 	-@erase "$(INTDIR)\util_expr_eval.obj"
 	-@erase "$(INTDIR)\util_expr_parse.obj"
 	-@erase "$(INTDIR)\util_expr_scan.obj"
@@ -176,6 +177,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\util.obj" \
 	"$(INTDIR)\util_cfgtree.obj" \
 	"$(INTDIR)\util_cookies.obj" \
+	"$(INTDIR)\util_debug.obj" \
 	"$(INTDIR)\util_expr_eval.obj" \
 	"$(INTDIR)\util_expr_scan.obj" \
 	"$(INTDIR)\util_expr_parse.obj" \
@@ -233,11 +235,11 @@ OutDir=.\Debug
 
 !IF "$(RECURSE)" == "0" 
 
-ALL : ".\server\test_char.h" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll" "$(DS_POSTBUILD_DEP)"
+ALL : ".\server\test_char.h" ".\include\mod_watchdog.h" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll" "$(DS_POSTBUILD_DEP)"
 
 !ELSE 
 
-ALL : "gen_test_char - Win32 Debug" "libaprutil - Win32 Debug" "libapriconv - Win32 Debug" "libapr - Win32 Debug" ".\server\test_char.h" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll" "$(DS_POSTBUILD_DEP)"
+ALL : "gen_test_char - Win32 Debug" "libaprutil - Win32 Debug" "libapriconv - Win32 Debug" "libapr - Win32 Debug" ".\server\test_char.h" ".\include\mod_watchdog.h" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll" "$(DS_POSTBUILD_DEP)"
 
 !ENDIF 
 
@@ -281,6 +283,7 @@ CLEAN :
 	-@erase "$(INTDIR)\util.obj"
 	-@erase "$(INTDIR)\util_cfgtree.obj"
 	-@erase "$(INTDIR)\util_cookies.obj"
+	-@erase "$(INTDIR)\util_debug.obj"
 	-@erase "$(INTDIR)\util_expr_eval.obj"
 	-@erase "$(INTDIR)\util_expr_parse.obj"
 	-@erase "$(INTDIR)\util_expr_scan.obj"
@@ -305,6 +308,7 @@ CLEAN :
 	-@erase ".\include\mod_include.h"
 	-@erase ".\include\mod_proxy.h"
 	-@erase ".\include\mod_so.h"
+	-@erase ".\include\mod_watchdog.h"
 	-@erase ".\server\test_char.h"
 
 "$(OUTDIR)" :
@@ -378,6 +382,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\util.obj" \
 	"$(INTDIR)\util_cfgtree.obj" \
 	"$(INTDIR)\util_cookies.obj" \
+	"$(INTDIR)\util_debug.obj" \
 	"$(INTDIR)\util_expr_eval.obj" \
 	"$(INTDIR)\util_expr_scan.obj" \
 	"$(INTDIR)\util_expr_parse.obj" \
@@ -483,6 +488,7 @@ CLEAN :
 	-@erase "$(INTDIR)\util.obj"
 	-@erase "$(INTDIR)\util_cfgtree.obj"
 	-@erase "$(INTDIR)\util_cookies.obj"
+	-@erase "$(INTDIR)\util_debug.obj"
 	-@erase "$(INTDIR)\util_expr_eval.obj"
 	-@erase "$(INTDIR)\util_expr_parse.obj"
 	-@erase "$(INTDIR)\util_expr_scan.obj"
@@ -576,6 +582,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\util.obj" \
 	"$(INTDIR)\util_cfgtree.obj" \
 	"$(INTDIR)\util_cookies.obj" \
+	"$(INTDIR)\util_debug.obj" \
 	"$(INTDIR)\util_expr_eval.obj" \
 	"$(INTDIR)\util_expr_scan.obj" \
 	"$(INTDIR)\util_expr_parse.obj" \
@@ -765,6 +772,34 @@ InputPath=.\modules\core\mod_so.h
 	<<tempfile.bat 
 	@echo off 
 	type .\modules\core\mod_so.h > .\include\mod_so.h
+<< 
+	
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Lexical"
+
+!ENDIF 
+
+SOURCE=.\modules\core\mod_watchdog.h
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+InputPath=.\modules\core\mod_watchdog.h
+
+".\include\mod_watchdog.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	<<tempfile.bat 
+	@echo off 
+	type .\modules\core\mod_watchdog.h > .\include\mod_watchdog.h
+<< 
+	
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+InputPath=.\modules\core\mod_watchdog.h
+
+".\include\mod_watchdog.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	<<tempfile.bat 
+	@echo off 
+	type .\modules\core\mod_watchdog.h > .\include\mod_watchdog.h
 << 
 	
 
@@ -970,6 +1005,12 @@ SOURCE=.\server\util_cfgtree.c
 SOURCE=.\server\util_cookies.c
 
 "$(INTDIR)\util_cookies.obj" : $(SOURCE) "$(INTDIR)" ".\include\os.h" ".\include\ap_config_layout.h"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=.\server\util_debug.c
+
+"$(INTDIR)\util_debug.obj" : $(SOURCE) "$(INTDIR)" ".\include\os.h" ".\include\ap_config_layout.h"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
